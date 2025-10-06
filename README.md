@@ -5,7 +5,7 @@ An extension of [Scripture App Builder](https://software.sil.org/scriptureappbui
 Demo of current version at http://kaddugyalla.com/app
 
 <p align="center">
-  <img src="https://github.com/ngaretou/wolof_bible/blob/master/screenshot.png">
+  <img src="https://github.com/ngaretou/wolof_bible/blob/main/screenshot.png">
   <br>
   <i>Screenshot of wolof_bible on a web browser</i>
 </p>
