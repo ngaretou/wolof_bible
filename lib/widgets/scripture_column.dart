@@ -1045,8 +1045,8 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
                               //if it's not the web app, share using the device share function
 
                               if (!kIsWeb) {
-                                
-                                Share.share(text);
+                                SharePlus.instance
+                                    .share(ShareParams(text: text));
                               } else {
                                 //If it's the web app version best way to share is probably email, so put the text to share in an email
                                 final String url =
