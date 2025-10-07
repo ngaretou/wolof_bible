@@ -34,32 +34,32 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   provider: ^6.0.2
-  system_theme: ^2.0.0
-  window_manager: ^0.3.0
+  system_theme: ^3.1.2
+  window_manager: ^0.5.1
   flutter_acrylic: ^1.0.0+2
-  url_strategy: ^0.2.0
+  url_strategy: ^0.3.0
   url_launcher: ^6.1.9
-  share_plus: ^7.1.0
-  clipboard: ^0.1.3
-  fluent_ui: ^4.1.0
+  share_plus: ^12.0.0
+  clipboard: ^2.0.2
+  fluent_ui: ^4.13.0
   hive: ^2.2.1
   hive_flutter: ^1.1.0
   intl: ^0.20.2
   xml: ^6.1.0
   # just_audio: ^0.9.24
   # audio_session: ^0.1.6+1
-  firebase_core: ^2.21.0
-  firebase_analytics: ^10.6.3
+  firebase_core: ^4.1.1
+  firebase_analytics: ^12.0.2
   scrollable_positioned_list: ^0.3.2
   google_fonts: ^6.0.0
 
   flutter_html: ^3.0.0-alpha.6
-  context_menus: ^1.0.2
+  context_menus: ^2.0.0+1
   flutter_native_splash: ^2.3.7
   diacritic: ^0.1.3
   universal_html: ^2.0.8
   pwa_install: ^0.0.5
-  package_info_plus: ^5.0.1
+  package_info_plus: ^9.0.0
   path_provider: ^2.1.1
 
 dev_dependencies:
@@ -67,8 +67,8 @@ dev_dependencies:
     sdk: flutter
   hive_generator: ^2.0.0
   build_runner: ^2.1.11
-  flutter_launcher_icons: ^0.13.1
-  flutter_lints: ^3.0.1
+  flutter_launcher_icons: ^0.14.4
+  flutter_lints: ^6.0.0
   msix: ^3.7.0
 
 flutter_icons:

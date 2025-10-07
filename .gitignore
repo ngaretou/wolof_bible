@@ -10,6 +10,8 @@ pubspec.lock
 .vscode
 ios/build
 assets/project/data.old
+assets/json/
+sfm_parser/assets/json/
 
 
 **/firebase_app_id_file.json
@@ -32,9 +34,11 @@ assets/project/data.old
 *.swp
 .DS_Store
 .atom/
+.build/
 .buildlog/
 .history
 .svn/
+.swiftpm/
 migrate_working_dir/
 
 # IntelliJ related

@@ -56,7 +56,7 @@ class UserPrefs with ChangeNotifier {
     notifyListeners();
   }
 
-  loadUserPrefs(AppInfo appInfo) async {
+  Future<void> loadUserPrefs(AppInfo appInfo) async {
     //Check if the user has an existing session. If not, set up the initial session.
     if (main.userColumnsBox.isEmpty) {
       initializePrefs(appInfo);
@@ -207,7 +207,7 @@ class UserPrefs with ChangeNotifier {
     // printWhatsInBox();
   }
 
-  deleteColumnFromBox(String keyAsString) {
+  void deleteColumnFromBox(String keyAsString) {
     main.userColumnsBox.delete(keyAsString);
   }
 }

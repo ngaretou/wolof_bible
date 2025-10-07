@@ -525,8 +525,6 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
                   case ThemeMode.light:
                     widget.appTheme.mode = ThemeMode.dark;
                     break;
-                  default:
-                    widget.appTheme.mode = ThemeMode.dark;
                 }
                 saveThemeMode(widget.appTheme.mode.toString());
               },
@@ -642,8 +640,6 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
                       case NavigationIndicators.end:
                         return const EndNavigationIndicator();
                       case NavigationIndicators.sticky:
-                      default:
-                        return const StickyNavigationIndicator();
                     }
                   }(),
                   items: [
@@ -876,8 +872,6 @@ class LightDarkModePaneItemAction extends PaneItem {
         case ThemeMode.light:
           appTheme.mode = ThemeMode.dark;
           break;
-        default:
-          appTheme.mode = ThemeMode.dark;
       }
       saveThemeMode(appTheme.mode.toString());
     }
