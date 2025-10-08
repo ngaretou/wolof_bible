@@ -393,7 +393,7 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
         } else {
           List<NavigationPaneItem> finalNavPaneItems = [];
 
-          //For Wolof only and on web only on biblewolof.com
+          //For Wolof only and on web only on kaddugyalla.com
           List<NavigationPaneItem> wolofWebOnlyNavPaneItems = [
             if (kIsWeb)
               PaneItemAction(
@@ -684,7 +684,7 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
                                           Button(
                                               onPressed: () async {
                                                 const url =
-                                                    'https://biblewolof.com/av/';
+                                                    'https://kaddugyalla.com/av/';
                                                 if (await canLaunchUrl(
                                                     Uri.parse(url))) {
                                                   await launchUrl(
