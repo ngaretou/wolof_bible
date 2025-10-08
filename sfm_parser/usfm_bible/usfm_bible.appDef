@@ -3044,7 +3044,10 @@
       <canon-name>Western Protestant Bible</canon-name>
     </book-order>
 
-    <writing-system code="">
+    <writing-system code="grc">
+      <display-names>
+        <form lang="default">Ancient Greek</form>
+      </display-names>
     </writing-system>
 
     <book id="MAT">

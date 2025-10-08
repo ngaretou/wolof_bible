@@ -15,10 +15,11 @@ import '../logic/verse_composer.dart';
 import '../widgets/paragraph_builder.dart';
 
 import '../providers/user_prefs.dart';
+import '../logic/chapter_fetch_service.dart';
 
 class ScriptureColumn extends StatefulWidget {
   final int myColumnIndex;
-  final AppInfo appInfo;
+  final List<Collection> collections;
   final BibleReference bibleReference;
   final Function deleteColumn;
   final String? comboBoxFont;
@@ -26,7 +27,7 @@ class ScriptureColumn extends StatefulWidget {
   const ScriptureColumn({
     required super.key,
     required this.myColumnIndex,
-    required this.appInfo,
+    required this.collections,
     required this.bibleReference,
     required this.deleteColumn,
     this.comboBoxFont,
@@ -49,7 +50,7 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
   List<ParsedLine> rangeOfVersesToCopy = [];
 
   //All verses in Collection
-  List<ParsedLine> versesInCollection = [];
+  List<ParsedLine> versesInMemory = [];
 
   List<String> collectionNames = [];
   List<Book> currentCollectionBooks = [];
@@ -93,12 +94,12 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
 
   //Function called on first open
   //and also from combobox selectors to go to a Bible reference
-  void scrollToReference(
+  Future<void> scrollToReference(
       {String? collection,
       String? bookID,
       String? chapter,
       String? verse,
-      bool isInitState = false}) {
+      bool isInitState = false}) async {
     Key? activeColumnKey = context.read<ScrollGroup>().getActiveColumnKey;
 
     /// Function to check if a reference is in the collection, return the index of the PARAGRAPH it is in or if not found, null
@@ -141,37 +142,45 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
       currentCollection.value = collection;
 
       //reset the components of the paragraph builder
-      versesInCollection = [];
+      versesInMemory = [];
       versesByParagraph = [];
       currentParagraph = [];
 
-      versesInCollection = widget.appInfo.verses
-          .where((element) => element.collectionid == currentCollection.value)
-          .toList();
+      // old
+      // versesInMemory = widget.appInfo.verses
+      //     .where((element) => element.collectionid == currentCollection.value)
+      //     .toList();
+
+      //new
+      FetchResult fetchResult = await ChapterFetchService().getInitialChunk(
+          collectionId: collection,
+          bookId: bookID!,
+          chapter: int.parse(chapter!));
+      versesInMemory = fetchResult.lines;
 
       //Books in current collection
-      currentCollectionBooks = widget.appInfo.collections
+      currentCollectionBooks = widget.collections
           .where((element) => element.id == currentCollection.value)
           .toList()[0]
           .books;
 
       // Organize the verses into paragraphs
-      for (var i = 0; i < versesInCollection.length; i++) {
+      for (var i = 0; i < versesInMemory.length; i++) {
         //If it is a new paragraph marker, add the existing verses to the big list, and start over with a new paragraph
-        if (versesInCollection[i].verseStyle.contains(RegExp(
+        if (versesInMemory[i].verseStyle.contains(RegExp(
             r'[p,po,pr,cls,pmo,pm,pmc,pmr,pi\d,mi,nb,pc,ph\d,b,mt\d,mte\d,ms\d,mr,s\d*,sr,sp,sd\d,q,q1,q2,qr,qc,qa,qm\d,qd,lh,li\d,lf,lim\d]'))) {
           versesByParagraph.add(currentParagraph);
-          currentParagraph = [versesInCollection[i]];
+          currentParagraph = [versesInMemory[i]];
           //If it's a one line paragraph
-        } else if ((versesInCollection[i]
+        } else if ((versesInMemory[i]
             .verseStyle
             .contains(RegExp(r'[m,r,d]')))) {
           versesByParagraph.add(currentParagraph);
-          versesByParagraph.add([versesInCollection[i]]);
+          versesByParagraph.add([versesInMemory[i]]);
           currentParagraph = [];
         } else {
           //otheriwise just add the line to the paragraph
-          currentParagraph.add(versesInCollection[i]);
+          currentParagraph.add(versesInMemory[i]);
         }
       }
       //Get that last paragraph added!
@@ -435,7 +444,7 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
   void setUpComboBoxesChVs() {
     // print('setUp ComboBoxesChVs');
 
-    List<String> temp = versesInCollection
+    List<String> temp = versesInMemory
         .where((element) => element.book == currentBook.value)
         .map((e) => e.chapter)
         .toList();
@@ -443,7 +452,7 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
     //.toSet().toList() here reduces a big list to unique values
     currentBookChapters = temp.toSet().toList();
 
-    currentChapterVerseNumbers = versesInCollection
+    currentChapterVerseNumbers = versesInMemory
         .where((element) =>
             element.book == currentBook.value &&
             element.chapter == currentChapter.value &&
@@ -481,12 +490,12 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
       /*add all between the first and last index. 
       Because the user can select up as well as down (select vs 5 then 1 as well as 1 and then 5)
       Check first which way round we're going */
-      int oneEnd = versesInCollection.indexWhere((element) =>
+      int oneEnd = versesInMemory.indexWhere((element) =>
           element.book == rangeOfVersesToCopy.first.book &&
           element.chapter == rangeOfVersesToCopy.first.chapter &&
           element.verse == rangeOfVersesToCopy.first.verse);
 
-      int otherEnd = versesInCollection.indexWhere((element) =>
+      int otherEnd = versesInMemory.indexWhere((element) =>
           element.book == rangeOfVersesToCopy.last.book &&
           element.chapter == rangeOfVersesToCopy.last.chapter &&
           element.verse == rangeOfVersesToCopy.last.verse);
@@ -496,20 +505,20 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
       if (result < 0) {
         startIndex = oneEnd;
         // endIndex = otherEnd;
-        endIndex = versesInCollection.lastIndexWhere((element) =>
+        endIndex = versesInMemory.lastIndexWhere((element) =>
             element.book == rangeOfVersesToCopy.last.book &&
             element.chapter == rangeOfVersesToCopy.last.chapter &&
             element.verse == rangeOfVersesToCopy.last.verse);
       } else {
         startIndex = otherEnd;
-        endIndex = versesInCollection.lastIndexWhere((element) =>
+        endIndex = versesInMemory.lastIndexWhere((element) =>
             element.book == rangeOfVersesToCopy.first.book &&
             element.chapter == rangeOfVersesToCopy.first.chapter &&
             element.verse == rangeOfVersesToCopy.first.verse);
       }
       rangeOfVersesToCopy = [];
       for (var i = startIndex; i <= endIndex; i++) {
-        rangeOfVersesToCopy.add(versesInCollection[i]);
+        rangeOfVersesToCopy.add(versesInMemory[i]);
       }
     }
 
@@ -763,7 +772,7 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
                                               fontFamily: widget.comboBoxFont,
                                               fontSize: comboBoxFontSize),
                                       isExpanded: true,
-                                      items: widget.appInfo.collections
+                                      items: widget.collections
                                           .map((e) => ComboBoxItem<String>(
                                                 value: e.id,
                                                 child: Align(

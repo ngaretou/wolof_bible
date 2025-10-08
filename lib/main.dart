@@ -303,21 +303,21 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
     myProgress.value = progress;
   }
 
-  Future<AppInfo> callInititalization() async {
+  Future<List<Collection>> callInititalization() async {
     // String response = await asyncGetProjectName(context);
     // appTitle = response;
     UserPrefs userPrefs = Provider.of<UserPrefs>(context, listen: false);
-    AppInfo appInfo = await buildDatabaseFromXML(context, updateProgress);
-    await userPrefs.loadUserPrefs(appInfo);
+    final collections = await collectionsFromXML(context, updateProgress);
+    await userPrefs.loadUserPrefs(collections);
 
-    return appInfo;
+    return collections;
   }
 
   Future<void> callInterfaceInitialization() async {
     await asyncGetTranslations(context);
   }
 
-  late Future<AppInfo> initAppInfo = callInititalization();
+  late Future<List<Collection>> initCollections = callInititalization();
   late Future<void> initInterface = callInterfaceInitialization();
 
   @override
@@ -645,7 +645,7 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
                   items: [
                     PaneItem(
                       body: FutureBuilder(
-                        future: initAppInfo,
+                        future: initCollections,
                         builder: (ctx, snapshot) {
                           // Remove splash screen when bootstrap is complete
                           FlutterNativeSplash.remove();
@@ -707,7 +707,7 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
                           }
                           //Main row that holds the text columns
                           else {
-                            AppInfo appInfo = snapshot.data as AppInfo;
+                            List<Collection> collections = snapshot.data as List<Collection>;
                             //Sets a default in case there is no RTL below
                             late String comboBoxFont =
                                 collections.first.fonts.first.fontFamily;
@@ -725,7 +725,7 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
                             }
 
                             return BibleView(
-                                appInfo: appInfo, comboBoxFont: comboBoxFont);
+                                collections: collections, comboBoxFont: comboBoxFont);
                           }
                         },
                       ),
