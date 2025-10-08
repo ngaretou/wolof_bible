@@ -56,10 +56,10 @@ class UserPrefs with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> loadUserPrefs(AppInfo appInfo) async {
+  Future<void> loadUserPrefs(List<Collection> collections) async {
     //Check if the user has an existing session. If not, set up the initial session.
     if (main.userColumnsBox.isEmpty) {
-      initializePrefs(appInfo);
+      initializePrefs(collections);
     } else {
       try {
         // print('loading usercolumns from userColumnsBox');
@@ -105,29 +105,29 @@ class UserPrefs with ChangeNotifier {
         // safety valve in case seomething goes wrong - reset db and start over
         debugPrint('Error in loading user prefs, reinitializing columns...');
         await main.userColumnsBox.clear();
-        initializePrefs(appInfo);
+        initializePrefs(collections);
       }
     }
   }
 
   //If no prefs, set them up. This gets called from loadUserPrefs.
-  Future<void> initializePrefs(AppInfo appInfo) async {
+  Future<void> initializePrefs(List<Collection> collections) async {
     // print('initializePrefs');
     late bool partOfScrollGroup;
     late String currentCollection;
     late int numberOfColumns;
 
     //How many columns should we initially open?
-    if (appInfo.collections.length == 1) {
+    if (collections.length == 1) {
       numberOfColumns = 2;
-    } else if (appInfo.collections.length == 2) {
+    } else if (collections.length == 2) {
       numberOfColumns = 2;
-    } else if (appInfo.collections.length > 2) {
+    } else if (collections.length > 2) {
       numberOfColumns = 3;
     }
 
     //If just one collection, initially give the users two views but not tied to the same scrollgroup.
-    if (appInfo.collections.length == 1) {
+    if (collections.length == 1) {
       partOfScrollGroup = false;
       currentCollection = "C01";
       userColumns = List.generate(

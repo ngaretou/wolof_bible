@@ -1,6 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:xml/xml.dart';
+import 'stopwords.dart';
+import 'package:snowball_stemmer/snowball_stemmer.dart';
+
 
 // Note: This script is intended to be run from the root of the `sfm_parser` directory.
 
@@ -29,32 +32,24 @@ void sfmToJson() async {
   }
 
   print('Using app definition file: ${appDefFile.path}');
+  final document = XmlDocument.parse(await appDefFile.readAsString());
+
+  // Get default language as a fallback
+  final defaultLang =
+      document
+          .getElement('app-definition')!
+          .getElement('translation-mappings')
+          ?.getAttribute('default-lang') ??
+      'en';
 
   // Derive data folder name from appDef file name
   String appDefFilename = appDefFile.path.split('/').last;
   int dotIndex = appDefFilename.lastIndexOf('.');
-  String appDefName = (dotIndex != -1) ? appDefFilename.substring(0, dotIndex) : appDefFilename;
+  String appDefName = (dotIndex != -1)
+      ? appDefFilename.substring(0, dotIndex)
+      : appDefFilename;
   final String dataFolderName = '${appDefName}_data';
   print('Using data folder: $dataFolderName');
-
-  final document = XmlDocument.parse(await appDefFile.readAsString());
-
-  // Get global text changes from appDef.appDef
-  final Map<String, String> changes = {};
-  final xmlChanges = document
-      .getElement('app-definition')!
-      .getElement('changes')
-      ?.findAllElements('change');
-
-  if (xmlChanges != null) {
-    for (var xmlChange in xmlChanges) {
-      final findText = xmlChange.getElement('find')?.innerText;
-      final replaceText = xmlChange.getElement('replace')?.innerText;
-      if (findText != null && replaceText != null) {
-        changes[findText] = replaceText;
-      }
-    }
-  }
 
   final collections = document.findAllElements('books');
   print('Found ${collections.length} collections.');
@@ -63,10 +58,29 @@ void sfmToJson() async {
     final collectionId = collection.getAttribute('id');
     final books = collection.findAllElements('book');
 
-    // TOC data structure for the current collection
-    final Map<String, dynamic> collectionToc = {};
+    // Determine language for this collection
+    final lang =
+        collection.getElement('writing-system')?.getAttribute('code') ??
+        defaultLang;
+    print(
+      'Processing collection: $collectionId (${books.length} books) with language: $lang',
+    );
 
-    print('Processing collection: $collectionId (${books.length} books)');
+    // Select processor based on language
+    final stemmer = (lang == 'en')
+        ? SnowballStemmer(Algorithm.english)
+        : (lang == 'fr')
+        ? SnowballStemmer(Algorithm.french)
+        : null;
+    final stopWords = (lang == 'en')
+        ? enStopWords
+        : (lang == 'fr')
+        ? frStopWords
+        : <String>{};
+
+    // Data structures for TOC and Search Index
+    final Map<String, dynamic> collectionToc = {};
+    final Map<String, List<List<dynamic>>> invertedIndex = {};
 
     for (final book in books) {
       final bookId = book.getAttribute('id');
@@ -78,48 +92,35 @@ void sfmToJson() async {
         continue;
       }
 
-      // TOC data structure for the current book
       final Map<String, dynamic> bookToc = {
         'name': bookName,
         'chapters': <String, String>{},
       };
 
-      final sfmFilePath = 'project/$dataFolderName/books/$collectionId/$bookFilename';
+      final sfmFilePath =
+          'project/$dataFolderName/books/$collectionId/$bookFilename';
       final sfmFile = File(sfmFilePath);
 
       if (await sfmFile.exists()) {
         print('  - Processing SFM file for book: $bookId');
-
         String bookText = await sfmFile.readAsString();
 
-        // 1. Apply global and hardcoded text replacements
-        for (var k in changes.keys) {
-          String findString = k.replaceAll(r'\', '\\');
-          bookText = bookText.replaceAll(RegExp(findString), changes[k]!);
-        }
-        bookText = bookText.replaceAll(RegExp(r'\+fw\s*'), '');
-        var wMarkers = RegExp(r'(\\\w\s)(.*?)(\|\\w\*)');
-        bookText = bookText.replaceAllMapped(wMarkers, (Match m) => '${m[2]}');
-
-        // 2. Split book into chapters
         final chapters = bookText.split(r'\c ');
-        chapters.removeAt(0); // Remove header content before the first \c
+        chapters.removeAt(0);
 
-        // 3. Process each chapter
         for (var chapterContent in chapters) {
           final match = RegExp(r'(\d+)(\s|$)').firstMatch(chapterContent);
           if (match == null) continue;
 
-          final chapterNumber = match.group(1)!;
+          final chapterNumber = int.parse(match.group(1)!);
           final lines = chapterContent.split('\n');
-          lines.removeAt(0); // Remove chapter number line
+          lines.removeAt(0);
 
           final List<Map<String, dynamic>> chapterData = [];
           String currentVerseNumber = '';
-          String lastVerseLabel = ''; // For TOC
+          String lastVerseLabel = '';
 
-          // Add book title as the first element of the first chapter
-          if (chapterNumber == '1') {
+          if (chapterNumber == 1) {
             chapterData.add({'style': 'mt1', 'text': bookName});
           }
 
@@ -135,59 +136,96 @@ void sfmToJson() async {
             final Map<String, dynamic> lineData = {'style': style};
 
             if (style == 'v') {
-              // Updated regex to handle verse ranges like '15-16'
               final verseMatch = RegExp(r'([\w-]+)\s+(.*)').firstMatch(text);
               if (verseMatch != null) {
                 currentVerseNumber = verseMatch.group(1)!;
-                lastVerseLabel = currentVerseNumber; // Track last verse for TOC
+                lastVerseLabel = currentVerseNumber;
                 text = verseMatch.group(2)!;
                 lineData['verse'] = currentVerseNumber;
-              }
-            } else {
-              // This line is not a verse start, but should be associated with the last verse number
-              if (currentVerseNumber.isNotEmpty) {
-                // lineData['verse'] = currentVerseNumber; // Decide if we need this
               }
             }
 
             lineData['text'] = text;
             chapterData.add(lineData);
+
+            // Index the text content, avoiding titles and metadata
+            if (text.isNotEmpty &&
+                !{'mt1', 'h', 'toc1', 'toc2', 'toc3'}.contains(style)) {
+              final tokens = text.toLowerCase().split(
+                RegExp(r'[^\p{L}\p{N}]+', unicode: true),
+              );
+              for (var token in tokens) {
+                if (token.isEmpty || stopWords.contains(token)) continue;
+                final processedToken = stemmer?.stem(token) ?? token;
+
+                final location = [bookId, chapterNumber, currentVerseNumber];
+                // Add to index, but prevent duplicate locations for the same verse
+                final locations = invertedIndex.putIfAbsent(
+                  processedToken,
+                  () => [],
+                );
+                if (locations.every(
+                  (l) =>
+                      l[0] != location[0] ||
+                      l[1] != location[1] ||
+                      l[2] != location[2],
+                )) {
+                  locations.add(location);
+                }
+              }
+            }
           }
 
-          // Add chapter's last verse to the book's TOC
           if (lastVerseLabel.isNotEmpty) {
-            bookToc['chapters']![chapterNumber] = lastVerseLabel;
+            bookToc['chapters']![chapterNumber.toString()] = lastVerseLabel;
           }
 
-          // 4. Write chapter to JSON file
           if (chapterData.isNotEmpty) {
             final outputDir = Directory('../assets/json/$collectionId/$bookId');
             if (!await outputDir.exists()) {
               await outputDir.create(recursive: true);
             }
             final outputFile = File('${outputDir.path}/$chapterNumber.json');
-            final jsonContent = json.encode(chapterData);
-            await outputFile.writeAsString(jsonContent);
+            await outputFile.writeAsString(json.encode(chapterData));
           }
         }
-        // Add the completed book TOC to the collection TOC
         collectionToc[bookId] = bookToc;
-
       } else {
         print('  - SFM file not found for book: $bookId at $sfmFilePath');
       }
     }
 
-    // Write the TOC for the entire collection
     if (collectionId != null) {
-      final outputDir = Directory('../assets/json/');
-      if (!await outputDir.exists()) {
-        await outputDir.create(recursive: true);
+      // Write TOC file
+      final tocDir = Directory('../assets/json/');
+      if (!await tocDir.exists()) {
+        await tocDir.create(recursive: true);
       }
-      final tocFile = File('${outputDir.path}/${collectionId}_toc.json');
-      final jsonContent = json.encode(collectionToc);
-      await tocFile.writeAsString(jsonContent);
+      final tocFile = File('${tocDir.path}/${collectionId}_toc.json');
+      await tocFile.writeAsString(json.encode(collectionToc));
       print('Generated TOC for $collectionId at ${tocFile.path}');
+
+      // Partition the index by the first letter of the token
+      final Map<String, Map<String, List<List<dynamic>>>> partitionedIndex = {};
+      invertedIndex.forEach((token, locations) {
+        if (token.isNotEmpty) {
+          final firstLetter = token[0];
+          partitionedIndex.putIfAbsent(firstLetter, () => {})[token] = locations;
+        }
+      });
+
+      // Write the partitioned index files
+      for (var entry in partitionedIndex.entries) {
+        final letter = entry.key;
+        final indexData = entry.value;
+        final indexDir = Directory('../assets/json/$collectionId/index');
+        if (!await indexDir.exists()) {
+          await indexDir.create(recursive: true);
+        }
+        final indexFile = File('${indexDir.path}/$letter.json');
+        await indexFile.writeAsString(json.encode(indexData));
+      }
+      print('Generated partitioned index for $collectionId in ../assets/json/$collectionId/index/');
     }
   }
 
@@ -249,8 +287,20 @@ Future<void> deleteExistingJsonFiles() async {
   }
 }
 
+void testingsplit() {
+  String text = 'Yàlla sàkk na ásamën';
+  // final tokens = text.toLowerCase().split(RegExp(r'\W+'));
+  final tokens = text.toLowerCase().split(
+    RegExp(r'[^\p{L}\p{N}]+', unicode: true),
+  );
+  for (String token in tokens) {
+    print(token);
+  }
+}
+
 void main(List<String> arguments) async {
   await deleteExistingJsonFiles();
   copyAppDef();
   sfmToJson();
+  // testingsplit();
 }

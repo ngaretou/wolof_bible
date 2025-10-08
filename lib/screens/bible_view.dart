@@ -10,10 +10,10 @@ import '../providers/column_manager.dart';
 import '../widgets/search.dart';
 
 class BibleView extends StatefulWidget {
-  final AppInfo appInfo;
+  final List<Collection> collections;
   final String? comboBoxFont;
 
-  const BibleView({super.key, required this.appInfo, this.comboBoxFont});
+  const BibleView({super.key, required this.collections, this.comboBoxFont});
 
   @override
   State<BibleView> createState() => _BibleViewState();
@@ -52,7 +52,7 @@ class _BibleViewState extends State<BibleView> {
       return ScriptureColumn(
         key: userColumns[index].key,
         myColumnIndex: userColumns[index].columnIndex,
-        appInfo: widget.appInfo,
+        collections: widget.collections,
         bibleReference: userColumns[index],
         deleteColumn: deleteColumn,
         comboBoxFont: widget.comboBoxFont,
@@ -106,7 +106,7 @@ class _BibleViewState extends State<BibleView> {
         ScriptureColumn(
           key: key,
           myColumnIndex: position,
-          appInfo: widget.appInfo,
+          collections: widget.collections,
           bibleReference: newDefaultRef,
           deleteColumn: deleteColumn,
           comboBoxFont: widget.comboBoxFont,

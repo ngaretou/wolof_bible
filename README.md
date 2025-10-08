@@ -34,6 +34,10 @@ Demo of current version at http://kaddugyalla.com/app
   - Lexham English Bible
   - Society of Biblical Literature Greek NT
 
+### Running
+use dart script @ `sfm_parser % dart run`
+to pre-process SAB data into assets
+
 ## To do:
 ### Minimal
 - SBL/GNT word parsing under mouse-over

@@ -58,13 +58,13 @@ class _SearchWidgetState extends State<SearchWidget> {
     //     .toList();
 
     //fuzzy search
-    results = verses
-        .where((element) =>
-            collectionsToSearch.any((id) => id == element.collectionid) &&
-            removeDiacritics(element.verseText)
-                .contains(normalizedSearchRequest) &&
-            element.verseStyle == 'v')
-        .toList();
+    // results = verses
+    //     .where((element) =>
+    //         collectionsToSearch.any((id) => id == element.collectionid) &&
+    //         removeDiacritics(element.verseText)
+    //             .contains(normalizedSearchRequest) &&
+    //         element.verseStyle == 'v')
+    //     .toList();
 
     setState(() {
       searchResults = results;
