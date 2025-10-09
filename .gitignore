@@ -10,7 +10,6 @@ pubspec.lock
 .vscode
 ios/build
 assets/project/data.old
-assets/json/
 sfm_parser/assets/json/
 
 
@@ -20,11 +19,6 @@ sfm_parser/assets/json/
 
 **/GeneratedPluginRegistrant.*
 **/generated_plugin_registrant.*
-
-
-.idea
-.fvm
-.vscode
 
 
 # Miscellaneous
@@ -45,7 +39,6 @@ migrate_working_dir/
 *.iml
 *.ipr
 *.iws
-.idea/
 
 # The .vscode folder contains launch configuration and tasks you configure in
 # VS Code which you may wish to be included in version control, so this line

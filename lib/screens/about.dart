@@ -5,7 +5,7 @@ import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../logic/database_builder.dart';
+import '../logic/data_initializer.dart';
 import 'package:xml/xml.dart';
 
 import '../main.dart';

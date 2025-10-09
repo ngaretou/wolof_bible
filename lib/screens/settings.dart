@@ -5,7 +5,7 @@ import 'package:flutter_acrylic/flutter_acrylic.dart';
 import 'package:provider/provider.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../main.dart';
-import '../logic/database_builder.dart';
+import '../logic/data_initializer.dart';
 import '../providers/user_prefs.dart';
 
 import '../theme.dart';

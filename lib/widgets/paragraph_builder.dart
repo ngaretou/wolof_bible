@@ -1,7 +1,7 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'dart:ui' as ui;
 import 'dart:core';
-import '../logic/database_builder.dart';
+import '../logic/data_initializer.dart';
 import '../logic/verse_composer.dart';
 
 class ParagraphBuilder extends StatefulWidget {
