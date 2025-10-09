@@ -10,7 +10,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/services.dart';
 import 'package:context_menus/context_menus.dart';
 
-import '../logic/database_builder.dart';
+import '../logic/data_initializer.dart';
 import '../logic/verse_composer.dart';
 import '../widgets/paragraph_builder.dart';
 
@@ -49,7 +49,7 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
   late double baseFontSize;
   List<ParsedLine> rangeOfVersesToCopy = [];
 
-  //All verses in Collection
+  //All verses in memory
   List<ParsedLine> versesInMemory = [];
 
   List<String> collectionNames = [];

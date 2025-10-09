@@ -4,7 +4,7 @@ import 'package:flutter/material.dart' as material;
 import 'package:provider/provider.dart';
 import 'package:diacritic/diacritic.dart';
 
-import '../logic/database_builder.dart';
+import '../logic/data_initializer.dart';
 import '../logic/verse_composer.dart';
 import '../providers/user_prefs.dart';
 import '../providers/column_manager.dart';

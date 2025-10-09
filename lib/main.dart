@@ -22,6 +22,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'dart:io';
 
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'firebase_options.dart';
 
 import 'screens/about.dart';
@@ -31,7 +32,7 @@ import 'screens/settings.dart';
 import 'widgets/onboarding_panel.dart';
 
 import 'theme.dart';
-import 'logic/database_builder.dart';
+import 'logic/data_initializer.dart';
 
 import 'providers/user_prefs.dart';
 import 'providers/column_manager.dart';
@@ -120,6 +121,8 @@ void main() async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
+    FirebaseAnalytics analytics = FirebaseAnalytics.instance;
+    await analytics.logAppOpen();
   }
 
   if (isDesktop) {
@@ -707,7 +710,8 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
                           }
                           //Main row that holds the text columns
                           else {
-                            List<Collection> collections = snapshot.data as List<Collection>;
+                            List<Collection> collections =
+                                snapshot.data as List<Collection>;
                             //Sets a default in case there is no RTL below
                             late String comboBoxFont =
                                 collections.first.fonts.first.fontFamily;
@@ -725,7 +729,8 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
                             }
 
                             return BibleView(
-                                collections: collections, comboBoxFont: comboBoxFont);
+                                collections: collections,
+                                comboBoxFont: comboBoxFont);
                           }
                         },
                       ),

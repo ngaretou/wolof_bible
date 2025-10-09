@@ -10,9 +10,9 @@ import 'package:snowball_stemmer/snowball_stemmer.dart';
 void sfmToJson() async {
   print('Starting SFM to JSON pre-processing...');
 
+  // --- 1. Find appDef file ---
   final projectDir = Directory('project');
   File? appDefFile;
-
   try {
     await for (final entity in projectDir.list()) {
       if (entity is File && entity.path.endsWith('.appDef')) {
@@ -27,58 +27,39 @@ void sfmToJson() async {
 
   if (appDefFile == null) {
     print('Error: No .appDef file found in the `project` directory.');
-    print('Please run this script from the `sfm_parser` directory.');
     return;
   }
-
   print('Using app definition file: ${appDefFile.path}');
   final document = XmlDocument.parse(await appDefFile.readAsString());
 
-  // Get default language as a fallback
-  final defaultLang =
-      document
-          .getElement('app-definition')!
-          .getElement('translation-mappings')
-          ?.getAttribute('default-lang') ??
-      'en';
-
-  // Derive data folder name from appDef file name
+  // --- 2. Prepare variables and asset path tracking ---
+  final defaultLang = document.getElement('app-definition')!.getElement('translation-mappings')?.getAttribute('default-lang') ?? 'en';
   String appDefFilename = appDefFile.path.split('/').last;
   int dotIndex = appDefFilename.lastIndexOf('.');
-  String appDefName = (dotIndex != -1)
-      ? appDefFilename.substring(0, dotIndex)
-      : appDefFilename;
+  String appDefName = (dotIndex != -1) ? appDefFilename.substring(0, dotIndex) : appDefFilename;
   final String dataFolderName = '${appDefName}_data';
   print('Using data folder: $dataFolderName');
 
+  // Set to automatically handle unique paths
+  final assetPaths = <String>{
+    'assets/images/',
+    'assets/project/',
+    'assets/translations.json',
+  };
+
+  // --- 3. Process Collections ---
   final collections = document.findAllElements('books');
   print('Found ${collections.length} collections.');
 
   for (final collection in collections) {
     final collectionId = collection.getAttribute('id');
     final books = collection.findAllElements('book');
+    final lang = collection.getElement('writing-system')?.getAttribute('code') ?? defaultLang;
+    print('Processing collection: $collectionId (${books.length} books) with language: $lang');
 
-    // Determine language for this collection
-    final lang =
-        collection.getElement('writing-system')?.getAttribute('code') ??
-        defaultLang;
-    print(
-      'Processing collection: $collectionId (${books.length} books) with language: $lang',
-    );
+    final stemmer = (lang == 'en') ? SnowballStemmer(Algorithm.english) : (lang == 'fr') ? SnowballStemmer(Algorithm.french) : null;
+    final stopWords = (lang == 'en') ? enStopWords : (lang == 'fr') ? frStopWords : <String>{};
 
-    // Select processor based on language
-    final stemmer = (lang == 'en')
-        ? SnowballStemmer(Algorithm.english)
-        : (lang == 'fr')
-        ? SnowballStemmer(Algorithm.french)
-        : null;
-    final stopWords = (lang == 'en')
-        ? enStopWords
-        : (lang == 'fr')
-        ? frStopWords
-        : <String>{};
-
-    // Data structures for TOC and Search Index
     final Map<String, dynamic> collectionToc = {};
     final Map<String, List<List<dynamic>>> invertedIndex = {};
 
@@ -87,24 +68,15 @@ void sfmToJson() async {
       final bookName = book.getElement('name')?.innerText;
       final bookFilename = book.getElement('filename')?.innerText;
 
-      if (bookId == null || bookFilename == null || bookName == null) {
-        print('Skipping book with missing id, name, or filename.');
-        continue;
-      }
+      if (bookId == null || bookFilename == null || bookName == null) continue;
 
-      final Map<String, dynamic> bookToc = {
-        'name': bookName,
-        'chapters': <String, String>{},
-      };
-
-      final sfmFilePath =
-          'project/$dataFolderName/books/$collectionId/$bookFilename';
+      final Map<String, dynamic> bookToc = {'name': bookName, 'chapters': <String, String>{}};
+      final sfmFilePath = 'project/$dataFolderName/books/$collectionId/$bookFilename';
       final sfmFile = File(sfmFilePath);
 
       if (await sfmFile.exists()) {
         print('  - Processing SFM file for book: $bookId');
         String bookText = await sfmFile.readAsString();
-
         final chapters = bookText.split(r'\c ');
         chapters.removeAt(0);
 
@@ -126,14 +98,11 @@ void sfmToJson() async {
 
           for (var line in lines) {
             if (line.trim().isEmpty) continue;
-
             final lineMatch = RegExp(r'\\(\w+)\s*(.*)').firstMatch(line);
             if (lineMatch == null) continue;
 
             final style = lineMatch.group(1)!;
             String text = lineMatch.group(2)!;
-
-            final Map<String, dynamic> lineData = {'style': style};
 
             if (style == 'v') {
               final verseMatch = RegExp(r'([\w-]+)\s+(.*)').firstMatch(text);
@@ -141,35 +110,19 @@ void sfmToJson() async {
                 currentVerseNumber = verseMatch.group(1)!;
                 lastVerseLabel = currentVerseNumber;
                 text = verseMatch.group(2)!;
-                lineData['verse'] = currentVerseNumber;
               }
             }
 
-            lineData['text'] = text;
-            chapterData.add(lineData);
+            chapterData.add({'style': style, 'text': text});
 
-            // Index the text content, avoiding titles and metadata
-            if (text.isNotEmpty &&
-                !{'mt1', 'h', 'toc1', 'toc2', 'toc3'}.contains(style)) {
-              final tokens = text.toLowerCase().split(
-                RegExp(r'[^\p{L}\p{N}]+', unicode: true),
-              );
+            if (text.isNotEmpty && !{'mt1', 'h', 'toc1', 'toc2', 'toc3'}.contains(style)) {
+              final tokens = text.toLowerCase().split(RegExp(r'[^\p{L}\p{N}]+', unicode: true));
               for (var token in tokens) {
                 if (token.isEmpty || stopWords.contains(token)) continue;
                 final processedToken = stemmer?.stem(token) ?? token;
-
                 final location = [bookId, chapterNumber, currentVerseNumber];
-                // Add to index, but prevent duplicate locations for the same verse
-                final locations = invertedIndex.putIfAbsent(
-                  processedToken,
-                  () => [],
-                );
-                if (locations.every(
-                  (l) =>
-                      l[0] != location[0] ||
-                      l[1] != location[1] ||
-                      l[2] != location[2],
-                )) {
+                final locations = invertedIndex.putIfAbsent(processedToken, () => []);
+                if (locations.every((l) => l[0] != location[0] || l[1] != location[1] || l[2] != location[2])) {
                   locations.add(location);
                 }
               }
@@ -185,6 +138,7 @@ void sfmToJson() async {
             if (!await outputDir.exists()) {
               await outputDir.create(recursive: true);
             }
+            assetPaths.add('assets/json/$collectionId/$bookId/'); // Add path to set
             final outputFile = File('${outputDir.path}/$chapterNumber.json');
             await outputFile.writeAsString(json.encode(chapterData));
           }
@@ -196,16 +150,12 @@ void sfmToJson() async {
     }
 
     if (collectionId != null) {
-      // Write TOC file
       final tocDir = Directory('../assets/json/');
-      if (!await tocDir.exists()) {
-        await tocDir.create(recursive: true);
-      }
+      assetPaths.add('assets/json/'); // Add path to set
       final tocFile = File('${tocDir.path}/${collectionId}_toc.json');
       await tocFile.writeAsString(json.encode(collectionToc));
       print('Generated TOC for $collectionId at ${tocFile.path}');
 
-      // Partition the index by the first letter of the token
       final Map<String, Map<String, List<List<dynamic>>>> partitionedIndex = {};
       invertedIndex.forEach((token, locations) {
         if (token.isNotEmpty) {
@@ -214,7 +164,6 @@ void sfmToJson() async {
         }
       });
 
-      // Write the partitioned index files
       for (var entry in partitionedIndex.entries) {
         final letter = entry.key;
         final indexData = entry.value;
@@ -222,6 +171,7 @@ void sfmToJson() async {
         if (!await indexDir.exists()) {
           await indexDir.create(recursive: true);
         }
+        assetPaths.add('assets/json/$collectionId/index/'); // Add path to set
         final indexFile = File('${indexDir.path}/$letter.json');
         await indexFile.writeAsString(json.encode(indexData));
       }
@@ -229,7 +179,27 @@ void sfmToJson() async {
     }
   }
 
-  print('Pre-processing complete. JSON files generated in `assets/json`.');
+  // --- 4. Update pubspec.yaml ---
+  try {
+    final pubspecFile = File('../pubspec.yaml');
+    String pubspecContent = await pubspecFile.readAsString();
+    final sortedPaths = assetPaths.toList()..sort();
+    String newAssetsBlock = '  assets:\n' + sortedPaths.map((p) => '    - $p').join('\n');
+    final assetsRegex = RegExp(r'^  assets:(\n(    - .*))+', multiLine: true);
+    if (pubspecContent.contains(assetsRegex)) {
+      pubspecContent = pubspecContent.replaceFirst(assetsRegex, newAssetsBlock);
+    } else {
+      // If assets section not found, find flutter: and insert after it.
+      final flutterRegex = RegExp(r'^flutter:', multiLine: true);
+      pubspecContent = pubspecContent.replaceFirst(flutterRegex, 'flutter:\n$newAssetsBlock');
+    }
+    await pubspecFile.writeAsString(pubspecContent);
+    print('Successfully updated pubspec.yaml with all asset paths.');
+  } catch (e) {
+    print('Error updating pubspec.yaml: $e');
+  }
+
+  print('Pre-processing complete.');
 }
 
 void copyAppDef() async {

@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/services.dart' show rootBundle;
-import 'database_builder.dart';
+import 'data_initializer.dart';
 
 /// A wrapper for the data returned by the fetch service.
 /// Contains the list of parsed lines and flags to indicate if the data
@@ -171,8 +171,9 @@ class ChapterFetchService {
   /// Helper function to fetch a single chapter's JSON and parse it into ParsedLine objects.
   Future<List<ParsedLine>> _fetchAndParseChapter(
       String collectionId, String bookId, int chapter) async {
+    final path = 'assets/json/$collectionId/$bookId/$chapter.json';
+    print('Attempting to load asset: $path'); // Debugging line
     try {
-      final path = 'assets/json/$collectionId/$bookId/$chapter.json';
       final jsonString = await rootBundle.loadString(path);
       final List<dynamic> jsonData = json.decode(jsonString);
 

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
-import '../logic/database_builder.dart';
+import '../logic/data_initializer.dart';
 import 'dart:core';
 
 import '../hive/user_columns_db.dart';
