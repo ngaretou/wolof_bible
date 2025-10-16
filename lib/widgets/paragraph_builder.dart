@@ -160,55 +160,71 @@ class _ParagraphBuilderState extends State<ParagraphBuilder> {
     bool poetry = false;
     bool header = false;
 
-    for (var line in widget.paragraph) {
+    bool isIntro =
+        widget.paragraph.isNotEmpty && widget.paragraph.first.chapter == '0';
+
+    if (isIntro) {
+      final line = widget.paragraph.first;
+      // Per requirement, leave a switch for future styling.
+      // For now, all intro lines are treated the same.
       switch (line.verseStyle) {
-        case 'v':
-          if (widget.textDirection == ui.TextDirection.ltr) {
-            styledParagraphFragments.add(verseNumberLTR(line.verse));
-          } else {
-            styledParagraphFragments.add(verseNumberRTL(line.verse));
-          }
-          styledParagraphFragments.addAll(processLine(line));
-          header = false;
-          break;
-        case 'm':
-          styledParagraphFragments.addAll(processLine(line));
-          header = false;
-          break;
-        case 's':
-        case 's1':
-        case 's2':
-          styledParagraphFragments.add(s(line.verseText, fontScaling: 1.2));
-          header = true;
-          break;
-        case 'mt1':
-          styledParagraphFragments.add(s(line.verseText, fontScaling: 1.5));
-          header = true;
-          break;
-        case 'mr':
-          styledParagraphFragments
-              .add(s(line.verseText, fontScaling: .9, italics: true));
-          header = true;
-          break;
-        case 'ms':
-        case 'ms1':
-        case 'ms2':
-          styledParagraphFragments.add(s(line.verseText, fontScaling: 1));
-          header = true;
-          break;
-        case 'q':
-        case 'q1':
-        case 'q2':
-          styledParagraphFragments.addAll(processLine(line));
-          poetry = true;
-          break;
-        case 'd':
-        case 'r':
-          styledParagraphFragments
-              .addAll(processLine(line, paraStyle: italicStyle));
-          break;
+        // TODO: Add specific styling for intro elements like headings ('is') vs paragraphs ('ip')
         default:
+          // The user wants each intro line to be an indented paragraph.
+          // The indentation is added automatically for non-poetry paragraphs later.
           styledParagraphFragments.addAll(processLine(line));
+      }
+    } else {
+      for (var line in widget.paragraph) {
+        switch (line.verseStyle) {
+          case 'v':
+            if (widget.textDirection == ui.TextDirection.ltr) {
+              styledParagraphFragments.add(verseNumberLTR(line.verse));
+            } else {
+              styledParagraphFragments.add(verseNumberRTL(line.verse));
+            }
+            styledParagraphFragments.addAll(processLine(line));
+            header = false;
+            break;
+          case 'm':
+            styledParagraphFragments.addAll(processLine(line));
+            header = false;
+            break;
+          case 's':
+          case 's1':
+          case 's2':
+            styledParagraphFragments.add(s(line.verseText, fontScaling: 1.2));
+            header = true;
+            break;
+          case 'mt1':
+            styledParagraphFragments.add(s(line.verseText, fontScaling: 1.5));
+            header = true;
+            break;
+          case 'mr':
+            styledParagraphFragments
+                .add(s(line.verseText, fontScaling: .9, italics: true));
+            header = true;
+            break;
+          case 'ms':
+          case 'ms1':
+          case 'ms2':
+            styledParagraphFragments.add(s(line.verseText, fontScaling: 1));
+            header = true;
+            break;
+          case 'q':
+          case 'q1':
+          case 'q2':
+            styledParagraphFragments.addAll(processLine(line));
+            poetry = true;
+            break;
+          case 'd':
+          case 'r':
+            styledParagraphFragments
+                .addAll(processLine(line, paraStyle: italicStyle));
+            break;
+          default:
+            styledParagraphFragments.addAll(processLine(line));
+        }
       }
     }
 

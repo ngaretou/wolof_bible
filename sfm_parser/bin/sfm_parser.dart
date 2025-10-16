@@ -103,7 +103,11 @@ void sfmToJson() async {
         // chapters.removeAt(0);
 
         for (var chapterContent in chapters) {
-          final match = RegExp(r'(^\d+)(\s|$)').firstMatch(chapterContent);
+          // beginning of line
+          // one or more whitespaces
+          // whitespace or end of line
+          final match = RegExp(r'(^\s?\d+)(\s|$)').firstMatch(chapterContent);
+
           int chapterNumber = 0;
           if (match != null) {
             // there is a number, so a chapter
@@ -261,7 +265,7 @@ void sfmToJson() async {
 }
 
 void copyAppDef() async {
-  print('testParser: Copying .appDef file to assets/json/appDef.appDef');
+  print('Copying .appDef file to assets/json/appDef.appDef');
 
   final projectDir = Directory('project');
   File? sourceFile;
