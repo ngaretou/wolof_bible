@@ -171,6 +171,33 @@ class ChapterFetchService {
   /// Helper function to fetch a single chapter's JSON and parse it into ParsedLine objects.
   Future<List<ParsedLine>> _fetchAndParseChapter(
       String collectionId, String bookId, int chapter) async {
+    final List<ParsedLine> lines = [];
+
+    // If we are fetching chapter 1, also fetch the introduction (chapter 0).
+    if (chapter == 1) {
+      final introPath = 'assets/json/$collectionId/$bookId/0.json';
+      try {
+        final introJsonString = await rootBundle.loadString(introPath);
+        final List<dynamic> introJsonData = json.decode(introJsonString);
+
+        final introLines = introJsonData.map((lineJson) {
+          return ParsedLine(
+            collectionid: collectionId,
+            book: bookId,
+            chapter: '0', // Use '0' to identify intro lines
+            verse: '0', // Use '0' to identify intro lines
+            verseFragment: '', // Not in our current JSON structure
+            audioMarker: '', // Not in our current JSON structure
+            verseText: lineJson['text'] ?? '',
+            verseStyle: lineJson['style'] ?? '',
+          );
+        }).toList();
+        lines.addAll(introLines);
+      } catch (e) {
+        // It's okay if an intro file doesn't exist.
+      }
+    }
+
     final path = 'assets/json/$collectionId/$bookId/$chapter.json';
     
     try {
@@ -178,7 +205,7 @@ class ChapterFetchService {
       final List<dynamic> jsonData = json.decode(jsonString);
 
       // Map the JSON objects to ParsedLine objects
-      return jsonData.map((lineJson) {
+      final chapterLines = jsonData.map((lineJson) {
         return ParsedLine(
           collectionid: collectionId,
           book: bookId,
@@ -190,6 +217,8 @@ class ChapterFetchService {
           verseStyle: lineJson['style'] ?? '',
         );
       }).toList();
+      lines.addAll(chapterLines);
+      return lines;
     } catch (e) {
       print('Error fetching or parsing chapter $collectionId/$bookId/$chapter: $e');
       return [];

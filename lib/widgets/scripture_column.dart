@@ -43,6 +43,14 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
   void dummy(ParsedLine ref) {}
 
   late ItemScrollController itemScrollController;
+  late ScrollGroup _scrollGroup;
+
+  @override
+  void dispose() {
+    _scrollGroup.removeListener(_onScrollGroupChanged);
+    super.dispose();
+  }
+
   ItemPositionsListener itemPositionsListener = ItemPositionsListener.create();
   late ScrollablePositionedList scrollablePositionedList;
 
@@ -89,6 +97,7 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
   bool _isLoading = false;
   bool _isFetchingNext = false;
   bool _isFetchingPrevious = false;
+  bool _isScrollGroupListenerInitialized = false;
 
   Future<void> loadTOC() async {
     try {
@@ -101,7 +110,27 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // We use didChangeDependencies because it is called after initState and
+    // it's the correct place to access inherited widgets like Provider.
+    // We only want to do this once, so we use a flag.
+    if (!_isScrollGroupListenerInitialized) {
+      _scrollGroup = Provider.of<ScrollGroup>(context, listen: false);
+      _scrollGroup.addListener(_onScrollGroupChanged);
+      _isScrollGroupListenerInitialized = true;
+    }
+  }
+
+  @override
   void initState() {
+    // Set the initial collection and populate the book list for the UI.
+    currentCollection.value = widget.bibleReference.collectionID;
+    currentCollectionBooks = widget.collections
+        .firstWhere((c) => c.id == currentCollection.value,
+            orElse: () => widget.collections.first)
+        .books;
+
     loadTOC();
     partOfScrollGroup = widget.bibleReference.partOfScrollGroup;
     baseFontSize = 20;
@@ -151,6 +180,12 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
     }
 
     if (topVerse != null) {
+      // If the top verse is part of an introduction, do not update the UI.
+      // This keeps the reference at Chapter 1, Verse 1.
+      if (topVerse.chapter == '0') {
+        return;
+      }
+
       final refString =
           '${topVerse.book} ${topVerse.chapter}:${topVerse.verse}';
       // When the top verse changes, update the UI and notify other columns.
@@ -176,6 +211,8 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
         // notify the other columns of the new scroll position.
         Key? activeColumnKey = context.read<ScrollGroup>().getActiveColumnKey;
         if (partOfScrollGroup && activeColumnKey == widget.key) {
+          // debugPrint(
+          //     '[ScriptureColumn ${widget.key}] I am the leader. Setting group ref.');
           BibleReference ref = BibleReference(
               key: widget.bibleReference.key,
               partOfScrollGroup: partOfScrollGroup,
@@ -295,25 +332,11 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
       required String chapter,
       required String verse,
       bool isInitState = false}) async {
-    // If the collection is changing, update it and load the new TOC first.
-    if (collection != null && currentCollection.value != collection) {
-      currentCollection.value = collection;
-      await loadTOC();
-    }
-
-    // Sanitize the target reference based on context.
+    print('scrollToReference ${currentCollection.value}');
+    bool collectionChanged = false;
     var targetBook = bookID;
     var targetChapter = chapter;
     var targetVerse = verse;
-
-    if (currentBook.value != targetBook) {
-      // Book is changing, so always navigate to chapter 1, verse 1 of the new book.
-      targetChapter = '1';
-      targetVerse = '1';
-    } else if (currentChapter.value != targetChapter) {
-      // Chapter is changing within the same book, so just reset the verse.
-      targetVerse = '1';
-    }
 
     // Function to check if a reference is in the collection
     Future<bool> checkIfRefIsInCollection(
@@ -342,56 +365,42 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
           (line) => line.book == bk && line.chapter == ch && line.verse == vs);
     }
 
-    Future<void> refNotInCollection() async {
-      void goToBeginning() {
-        //our column has a ref but something is wrong - go to first ref in collection
-        currentBook.value = currentCollectionBooks[0].id;
+    // Begins here:
+    // If the collection is changing, we handle that as the primary case.
+    collectionChanged =
+        collection != null && currentCollection.value != collection;
+    if (collectionChanged) {
+      currentCollection.value = collection;
+      await loadTOC();
 
-        currentChapter.value = '1';
-        currentVerse.value = '1';
-        scrollToReference(
-            bookID: currentBook.value,
-            chapter: currentChapter.value,
-            verse: currentVerse.value);
-      }
-      //if our column has a ref, try to stay at it -
-      //this is when a NT does not have an OT book but you're trying to scroll to it
+      // Immediately update the list of books available for the new collection.
+      currentCollectionBooks = widget.collections
+          .firstWhere((element) => element.id == currentCollection.value)
+          .books;
 
-      List<BibleReference> userColumns =
-          Provider.of<UserPrefs>(context, listen: false).userColumns;
-
-      BibleReference? savedBibleRefForThisColumn = userColumns
-          .firstWhere((element) => element.key == widget.bibleReference.key);
-
-      /*We're here b/c we're trying to scroll to a ref not in the collection
-          If there is an existing ref for this column, let's try to scroll to it*/
-      try {
-        //Just to be on the safe side check to make sure that ref does in fact exist.
-        bool refIsInCollection = await checkIfRefIsInCollection(
-            savedBibleRefForThisColumn.bookID,
-            savedBibleRefForThisColumn.chapter,
-            savedBibleRefForThisColumn.verse);
-        //If it does exist, then go ahead and navigate
-        if (refIsInCollection) {
-          currentBook.value = savedBibleRefForThisColumn.bookID;
-          currentChapter.value = savedBibleRefForThisColumn.chapter;
-          currentVerse.value = savedBibleRefForThisColumn.verse;
-          scrollToReference(
-              bookID: currentBook.value,
-              chapter: currentChapter.value,
-              verse: currentVerse.value);
+      // Now that we have the new TOC, check if the old book is valid.
+      if (!toc.containsKey(bookID)) {
+        // If not, reset the target to the first book of the new collection.
+        if (toc.keys.isNotEmpty) {
+          targetBook = toc.keys.first;
+          targetChapter = '1';
+          targetVerse = '1';
         }
-      } catch (e) {
-        debugPrint(e.toString());
-        //This is we've tried to navigate to a ref, it doesn't exist,
-        //and we checked for an existing ref, it also doesn't exist:
-        goToBeginning();
       }
+      // If the old book *is* valid in the new collection, we let it pass through,
+      // respecting the original chapter/verse.
+    } else if (currentBook.value != targetBook) {
+      // This handles book changes within the same collection.
+      targetChapter = '1';
+      targetVerse = '1';
+    } else if (currentChapter.value != targetChapter) {
+      // This handles chapter changes within the same book.
+      targetVerse = '1';
     }
 
     bool verseIsInMemory =
         checkIfRefIsInMemory(targetBook, targetChapter, targetVerse);
-    if (!verseIsInMemory) {
+    if (!verseIsInMemory || collectionChanged) {
       // Set loading state and clear old data to show skeletonizer
       setState(() {
         _isLoading = true;
@@ -400,22 +409,17 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
         currentParagraph = [];
       });
 
-      FetchResult fetchResult = await ChapterFetchService().getInitialChunk(
+      final fetchResult = await ChapterFetchService().getInitialChunk(
           collectionId: currentCollection.value,
           bookId: targetBook,
           chapter: int.parse(targetChapter));
-      versesInMemory = fetchResult.lines;
 
-      //Books in current collection
-      currentCollectionBooks = widget.collections
-          .where((element) => element.id == currentCollection.value)
-          .toList()[0]
-          .books;
+      if (!mounted) return;
 
-      versesByParagraph = _linesToParagraphs(versesInMemory);
+      final newParagraphs = _linesToParagraphs(fetchResult.lines);
 
       // Find the paragraph to scroll to *after* loading.
-      final targetParagraphIndex = versesByParagraph.indexWhere(
+      final targetParagraphIndex = newParagraphs.indexWhere(
         (p) => p.any((l) =>
             l.book == targetBook &&
             l.chapter == targetChapter &&
@@ -423,6 +427,8 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
       );
 
       setState(() {
+        versesInMemory = fetchResult.lines;
+        versesByParagraph = newParagraphs;
         _isLoading = false;
       });
 
@@ -448,13 +454,12 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
 
       if (scrollCollectionRef != null && partOfScrollGroup) {
         //Check to see if the scrollCollectionRef is in the collection
-        // checkIfRefIsInCollection sets the currentRef valuenotifiers if found
+        // check If Ref Is In Collection sets the currentRef valuenotifiers if found
         bool refIsInCollection = await checkIfRefIsInCollection(
             scrollCollectionRef.bookID,
             scrollCollectionRef.chapter,
             scrollCollectionRef.verse);
 
-        // print(            'navigateToParagraph in collection change is $navigateToParagraph');
         if (refIsInCollection) {
           currentBook.value = scrollCollectionRef.bookID;
           currentChapter.value = scrollCollectionRef.chapter;
@@ -464,7 +469,9 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
               chapter: currentChapter.value,
               verse: currentVerse.value);
         } else {
-          refNotInCollection();
+          // do nothing
+          // formerly:
+          // refNotInCollection();
         }
       }
     } else {
@@ -483,36 +490,6 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
       }
     }
 
-    // if (isInitState || navigateToParagraph > versesByParagraph.length) {
-    //   //If going from a short NT only collection to full Bible, at this point the scrollablePositionedList
-    //   //hasn't rebuilt and so a scroll will fail. Set a ref here to scroll in the post frame callback
-    //   delayedScrollIndex = navigateToParagraph;
-    // } else {
-    //   // // print('set ActiveColumnKey1');
-    //   Provider.of<ScrollGroup>(context, listen: false).setActiveColumnKey =
-    //       widget.key;
-    //   // Navigate to the paragraph. This is the collection change section.
-    //   itemScrollController.scrollTo(
-    //     index: navigateToParagraph,
-    //     duration: const Duration(milliseconds: 200),
-    //   );
-    // }
-    //  if (isInitState || navigateToParagraph > versesByParagraph.length) {
-    //If going from a short NT only collection to full Bible, at this point the scrollablePositionedList
-    //hasn't rebuilt and so a scroll will fail. Set a ref here to scroll in the post frame callback
-    // delayedScrollIndex = navigateToParagraph;
-
-    // } else {
-    // // print('set ActiveColumnKey1');
-    // Provider.of<ScrollGroup>(context, listen: false).setActiveColumnKey =
-    //     widget.key;
-    // Navigate to the paragraph. This is the collection change section.
-    // itemScrollController.scrollTo(
-    //   index: navigateToParagraph,
-    //   duration: const Duration(milliseconds: 200),
-    // );
-    // }
-
     // Update the ValueNotifiers to reflect the final navigation state.
     currentBook.value = targetBook;
     currentChapter.value = targetChapter;
@@ -527,6 +504,16 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
     List<ParsedLine> currentParagraph = [];
 
     for (var i = 0; i < lines.length; i++) {
+      // If it's an intro line, create a new paragraph for it.
+      if (lines[i].chapter == '0') {
+        if (currentParagraph.isNotEmpty) {
+          paragraphs.add(currentParagraph);
+        }
+        paragraphs.add([lines[i]]);
+        currentParagraph = [];
+        continue;
+      }
+
       //If it is a new paragraph marker, add the existing verses to the big list, and start over with a new paragraph
       if (lines[i].verseStyle.contains(RegExp(
           r'[p,po,pr,cls,pmo,pm,pmc,pmr,pi\d,mi,nb,pc,ph\d,b,mt\d,mte\d,ms\d,mr,s\d*,sr,sp,sd\d,q,q1,q2,qr,qc,qa,qm\d,qd,lh,li\d,lf,lim\d]'))) {
@@ -587,7 +574,8 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
           columnIndex: widget.myColumnIndex);
 
       if (mounted) {
-        Provider.of<UserPrefs>(context, listen: false).saveScrollGroupState(ref);
+        Provider.of<UserPrefs>(context, listen: false)
+            .saveScrollGroupState(ref);
       }
     } catch (e, s) {
       debugPrint('Error in setUpComboBoxesChVs: $e');
@@ -763,9 +751,26 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
     }
   }
 
+  void _onScrollGroupChanged() {
+    final scrollGroupRef = _scrollGroup.getScrollGroupRef;
+    final activeColumnKey = _scrollGroup.getActiveColumnKey;
+
+    if (partOfScrollGroup &&
+        scrollGroupRef != null &&
+        activeColumnKey != widget.key) {
+      if (currentBook.value != scrollGroupRef.bookID ||
+          currentChapter.value != scrollGroupRef.chapter ||
+          currentVerse.value != scrollGroupRef.verse) {
+        scrollToReference(
+            bookID: scrollGroupRef.bookID,
+            chapter: scrollGroupRef.chapter,
+            verse: scrollGroupRef.verse);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    Key? activeColumnKey = context.read<ScrollGroup>().getActiveColumnKey;
     ScrollGroup scrollGroup = Provider.of<ScrollGroup>(context, listen: false);
     // // print(
     //     'scripture column build: columnIndex: ${widget.bibleReference.columnIndex}; collection: ${widget.bibleReference.collectionID}; key: ${widget.key}');
@@ -788,21 +793,6 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
 
       //This is what triggers the scrolling in other columns
       if (!mounted) return;
-      BibleReference? scrollGroupRef =
-          context.read<ScrollGroup>().getScrollGroupRef;
-
-      if (partOfScrollGroup &&
-          scrollGroupRef != null &&
-          activeColumnKey != widget.key) {
-        if (currentBook.value != scrollGroupRef.bookID ||
-            currentChapter.value != scrollGroupRef.chapter ||
-            currentVerse.value != scrollGroupRef.verse) {
-          scrollToReference(
-              bookID: scrollGroupRef.bookID,
-              chapter: scrollGroupRef.chapter,
-              verse: scrollGroupRef.verse);
-        }
-      }
     });
 
     // int numberOfColumns =
@@ -837,9 +827,6 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
       alignment = Alignment.centerRight;
       // comboBoxFontSize = 18;
     }
-
-    //value notifier that triggers update when scrollgroup ref changes
-    context.watch<ScrollGroup>().getScrollGroupRef;
 
     TextOverflow textOverflow = TextOverflow.ellipsis;
 
@@ -1141,14 +1128,18 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
                       ),
                     ),
                   ),
-                  child: Listener(
-                    onPointerDown: (_) {
-                      // When the user interacts with this column, make it the active one
-                      // for the purpose of leading a scroll group.
-                      if (partOfScrollGroup) {
-                        Provider.of<ScrollGroup>(context, listen: false)
-                            .setActiveColumnKey = widget.key;
+                  child: NotificationListener<ScrollNotification>(
+                    onNotification: (notification) {
+                      // When a user starts a drag/scroll gesture on this column,
+                      // designate it as the leader of the scroll group.
+                      if (notification is ScrollStartNotification &&
+                          notification.dragDetails != null) {
+                        if (partOfScrollGroup) {
+                          Provider.of<ScrollGroup>(context, listen: false)
+                              .setActiveColumnKey = widget.key;
+                        }
                       }
+                      return true; // Allow notification to continue bubbling up
                     },
                     child: ContextMenuRegion(
                       contextMenu: GenericContextMenu(

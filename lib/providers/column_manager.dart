@@ -41,8 +41,8 @@ class ScrollGroup with ChangeNotifier {
   set setScrollGroupRef(BibleReference ref) {
     void setScrollGroup() {
       scrollGroupBibleReference = ref;
-      // // print('setScrollGroupRef in provider');
-      // // print('${ref.bookID} ${ref.chapter} ${ref.verse}');
+      debugPrint(
+          '[ScrollGroup] Notifying listeners. New ref: ${ref.bookID} ${ref.chapter}:${ref.verse}');
       notifyListeners();
     }
 
@@ -64,7 +64,7 @@ class ScrollGroup with ChangeNotifier {
   }
 
   set setActiveColumnKey(Key? key) {
-    // // print('set active col key to $key');
+    print('set active col key to $key');
     if (activeColumnKey != key) {
       activeColumnKey = key;
     }
