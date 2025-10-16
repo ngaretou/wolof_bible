@@ -172,7 +172,7 @@ class ChapterFetchService {
   Future<List<ParsedLine>> _fetchAndParseChapter(
       String collectionId, String bookId, int chapter) async {
     final path = 'assets/json/$collectionId/$bookId/$chapter.json';
-    print('Attempting to load asset: $path'); // Debugging line
+    
     try {
       final jsonString = await rootBundle.loadString(path);
       final List<dynamic> jsonData = json.decode(jsonString);

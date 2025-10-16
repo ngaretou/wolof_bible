@@ -93,9 +93,9 @@ class _BibleViewState extends State<BibleView> {
           key: key,
           partOfScrollGroup: true,
           collectionID: "C01",
-          bookID: null,
-          chapter: null,
-          verse: null,
+          bookID: 'MAT',
+          chapter: '1',
+          verse: '1',
           columnIndex: position);
 
       userColumns.add(newDefaultRef);

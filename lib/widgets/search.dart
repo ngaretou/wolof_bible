@@ -2,7 +2,7 @@ import 'dart:ui' as ui;
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter/material.dart' as material;
 import 'package:provider/provider.dart';
-import 'package:diacritic/diacritic.dart';
+// import 'package:diacritic/diacritic.dart';
 
 import '../logic/data_initializer.dart';
 import '../logic/verse_composer.dart';
@@ -48,7 +48,7 @@ class _SearchWidgetState extends State<SearchWidget> {
   void searchFunction(String searchRequest) {
     List<ParsedLine> results = [];
 
-    String normalizedSearchRequest = removeDiacritics(searchRequest);
+    // String normalizedSearchRequest = removeDiacritics(searchRequest);
     //strict search
     // results = verses
     //     .where((element) =>

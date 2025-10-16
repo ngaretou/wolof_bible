@@ -4,7 +4,6 @@ import 'package:xml/xml.dart';
 import 'stopwords.dart';
 import 'package:snowball_stemmer/snowball_stemmer.dart';
 
-
 // Note: This script is intended to be run from the root of the `sfm_parser` directory.
 
 void sfmToJson() async {
@@ -33,10 +32,17 @@ void sfmToJson() async {
   final document = XmlDocument.parse(await appDefFile.readAsString());
 
   // --- 2. Prepare variables and asset path tracking ---
-  final defaultLang = document.getElement('app-definition')!.getElement('translation-mappings')?.getAttribute('default-lang') ?? 'en';
+  final defaultLang =
+      document
+          .getElement('app-definition')!
+          .getElement('translation-mappings')
+          ?.getAttribute('default-lang') ??
+      'en';
   String appDefFilename = appDefFile.path.split('/').last;
   int dotIndex = appDefFilename.lastIndexOf('.');
-  String appDefName = (dotIndex != -1) ? appDefFilename.substring(0, dotIndex) : appDefFilename;
+  String appDefName = (dotIndex != -1)
+      ? appDefFilename.substring(0, dotIndex)
+      : appDefFilename;
   final String dataFolderName = '${appDefName}_data';
   print('Using data folder: $dataFolderName');
 
@@ -54,11 +60,23 @@ void sfmToJson() async {
   for (final collection in collections) {
     final collectionId = collection.getAttribute('id');
     final books = collection.findAllElements('book');
-    final lang = collection.getElement('writing-system')?.getAttribute('code') ?? defaultLang;
-    print('Processing collection: $collectionId (${books.length} books) with language: $lang');
+    final lang =
+        collection.getElement('writing-system')?.getAttribute('code') ??
+        defaultLang;
+    print(
+      'Processing collection: $collectionId (${books.length} books) with language: $lang',
+    );
 
-    final stemmer = (lang == 'en') ? SnowballStemmer(Algorithm.english) : (lang == 'fr') ? SnowballStemmer(Algorithm.french) : null;
-    final stopWords = (lang == 'en') ? enStopWords : (lang == 'fr') ? frStopWords : <String>{};
+    final stemmer = (lang == 'en')
+        ? SnowballStemmer(Algorithm.english)
+        : (lang == 'fr')
+        ? SnowballStemmer(Algorithm.french)
+        : null;
+    final stopWords = (lang == 'en')
+        ? enStopWords
+        : (lang == 'fr')
+        ? frStopWords
+        : <String>{};
 
     final Map<String, dynamic> collectionToc = {};
     final Map<String, List<List<dynamic>>> invertedIndex = {};
@@ -70,21 +88,28 @@ void sfmToJson() async {
 
       if (bookId == null || bookFilename == null || bookName == null) continue;
 
-      final Map<String, dynamic> bookToc = {'name': bookName, 'chapters': <String, String>{}};
-      final sfmFilePath = 'project/$dataFolderName/books/$collectionId/$bookFilename';
+      final Map<String, dynamic> bookToc = {
+        'name': bookName,
+        'chapters': <String, String>{},
+      };
+      final sfmFilePath =
+          'project/$dataFolderName/books/$collectionId/$bookFilename';
       final sfmFile = File(sfmFilePath);
 
       if (await sfmFile.exists()) {
         print('  - Processing SFM file for book: $bookId');
         String bookText = await sfmFile.readAsString();
         final chapters = bookText.split(r'\c ');
-        chapters.removeAt(0);
+        // chapters.removeAt(0);
 
         for (var chapterContent in chapters) {
-          final match = RegExp(r'(\d+)(\s|$)').firstMatch(chapterContent);
-          if (match == null) continue;
+          final match = RegExp(r'(^\d+)(\s|$)').firstMatch(chapterContent);
+          int chapterNumber = 0;
+          if (match != null) {
+            // there is a number, so a chapter
+            chapterNumber = int.parse(match.group(1)!);
+          }
 
-          final chapterNumber = int.parse(match.group(1)!);
           final lines = chapterContent.split('\n');
           lines.removeAt(0);
 
@@ -98,11 +123,17 @@ void sfmToJson() async {
 
           for (var line in lines) {
             if (line.trim().isEmpty) continue;
+
             final lineMatch = RegExp(r'\\(\w+)\s*(.*)').firstMatch(line);
             if (lineMatch == null) continue;
 
             final style = lineMatch.group(1)!;
             String text = lineMatch.group(2)!;
+
+            // cleanup for intros
+            if (style.contains('mt')) continue;
+            if (style.contains('toc')) continue;
+            if (style.contains('h')) continue;
 
             if (style == 'v') {
               final verseMatch = RegExp(r'([\w-]+)\s+(.*)').firstMatch(text);
@@ -111,18 +142,35 @@ void sfmToJson() async {
                 lastVerseLabel = currentVerseNumber;
                 text = verseMatch.group(2)!;
               }
+            } else {
+              currentVerseNumber = '';
             }
 
-            chapterData.add({'style': style, 'text': text});
+            chapterData.add({
+              'style': style,
+              'verse': currentVerseNumber,
+              'text': text,
+            });
 
-            if (text.isNotEmpty && !{'mt1', 'h', 'toc1', 'toc2', 'toc3'}.contains(style)) {
-              final tokens = text.toLowerCase().split(RegExp(r'[^\p{L}\p{N}]+', unicode: true));
+            if (text.isNotEmpty &&
+                !{'mt1', 'h', 'toc1', 'toc2', 'toc3'}.contains(style)) {
+              final tokens = text.toLowerCase().split(
+                RegExp(r'[^\p{L}\p{N}]+', unicode: true),
+              );
               for (var token in tokens) {
                 if (token.isEmpty || stopWords.contains(token)) continue;
                 final processedToken = stemmer?.stem(token) ?? token;
                 final location = [bookId, chapterNumber, currentVerseNumber];
-                final locations = invertedIndex.putIfAbsent(processedToken, () => []);
-                if (locations.every((l) => l[0] != location[0] || l[1] != location[1] || l[2] != location[2])) {
+                final locations = invertedIndex.putIfAbsent(
+                  processedToken,
+                  () => [],
+                );
+                if (locations.every(
+                  (l) =>
+                      l[0] != location[0] ||
+                      l[1] != location[1] ||
+                      l[2] != location[2],
+                )) {
                   locations.add(location);
                 }
               }
@@ -138,7 +186,9 @@ void sfmToJson() async {
             if (!await outputDir.exists()) {
               await outputDir.create(recursive: true);
             }
-            assetPaths.add('assets/json/$collectionId/$bookId/'); // Add path to set
+            assetPaths.add(
+              'assets/json/$collectionId/$bookId/',
+            ); // Add path to set
             final outputFile = File('${outputDir.path}/$chapterNumber.json');
             await outputFile.writeAsString(json.encode(chapterData));
           }
@@ -160,7 +210,8 @@ void sfmToJson() async {
       invertedIndex.forEach((token, locations) {
         if (token.isNotEmpty) {
           final firstLetter = token[0];
-          partitionedIndex.putIfAbsent(firstLetter, () => {})[token] = locations;
+          partitionedIndex.putIfAbsent(firstLetter, () => {})[token] =
+              locations;
         }
       });
 
@@ -175,7 +226,9 @@ void sfmToJson() async {
         final indexFile = File('${indexDir.path}/$letter.json');
         await indexFile.writeAsString(json.encode(indexData));
       }
-      print('Generated partitioned index for $collectionId in ../assets/json/$collectionId/index/');
+      print(
+        'Generated partitioned index for $collectionId in ../assets/json/$collectionId/index/',
+      );
     }
   }
 
@@ -184,14 +237,19 @@ void sfmToJson() async {
     final pubspecFile = File('../pubspec.yaml');
     String pubspecContent = await pubspecFile.readAsString();
     final sortedPaths = assetPaths.toList()..sort();
-    String newAssetsBlock = '  assets:\n' + sortedPaths.map((p) => '    - $p').join('\n');
+    String newAssetsBlock =
+        '  assets:\n${sortedPaths.map((p) => '    - $p').join('\n')}';
+    // String newAssetsBlock = '  assets:\n' + sortedPaths.map((p) => '    - $p').join('\n');
     final assetsRegex = RegExp(r'^  assets:(\n(    - .*))+', multiLine: true);
     if (pubspecContent.contains(assetsRegex)) {
       pubspecContent = pubspecContent.replaceFirst(assetsRegex, newAssetsBlock);
     } else {
       // If assets section not found, find flutter: and insert after it.
       final flutterRegex = RegExp(r'^flutter:', multiLine: true);
-      pubspecContent = pubspecContent.replaceFirst(flutterRegex, 'flutter:\n$newAssetsBlock');
+      pubspecContent = pubspecContent.replaceFirst(
+        flutterRegex,
+        'flutter:\n$newAssetsBlock',
+      );
     }
     await pubspecFile.writeAsString(pubspecContent);
     print('Successfully updated pubspec.yaml with all asset paths.');

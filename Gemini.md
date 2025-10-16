@@ -25,7 +25,7 @@ We created a comprehensive Dart script in the `sfm_parser/` directory to pre-pro
 
 4.  **Dynamic Asset Declaration:** To solve issues with Flutter finding the generated assets, the parser script now automatically updates the main `pubspec.yaml` file, explicitly adding a directory entry for every folder it creates. This is the most reliable method for ensuring assets are bundled.
 
-## Phase 2: App-Side Services (In Progress)
+## Phase 2: App-Side Services (Completed)
 
 With the data pre-processed, we are now building the services within the Flutter app to consume it.
 
@@ -42,8 +42,32 @@ With the data pre-processed, we are now building the services within the Flutter
 3.  **`TextProcessor` (`lib/logic/text_processor.dart`):**
     -   A utility created to ensure that search queries in the app are processed with the exact same language rules (stemming, stop-words) that were used to create the search index.
 
-## Current Status & Next Steps
+## Phase 3: UI and Navigation Refactor (In Progress)
 
--   **Last Action:** We implemented the logic for the `sfm_parser` script to automatically update the `pubspec.yaml` file. This is intended to be the definitive fix for the "Asset does not exist" error.
--   **Immediate Next Step:** The user needs to run the `sfm_parser` script one more time. After it completes, they must perform a **full stop and restart** of the Flutter application to ensure the newly declared assets in `pubspec.yaml` are correctly bundled by the build tools.
--   **Next Major Goal:** Once the asset loading is confirmed to be working, the next step will be to integrate the new `ChapterFetchService` and `SearchService` into the app's UI widgets to replace the old data handling logic.
+We are currently undertaking a major refactoring of the main Bible view (`lib/widgets/scripture_column.dart`) to improve navigation precision and user experience.
+
+### Goal: Verse-Level Precision in a Paragraph Layout
+
+The primary objective is to overcome a major limitation of the previous version: the inability to scroll to or identify a specific verse located in the middle of a paragraph. We aim to achieve this while preserving the high-quality, paragraph-based typography.
+
+### Implemented Solution: The `TextPainter` Approach
+
+We have successfully implemented the "identification" part of this solution.
+
+1.  **`ParagraphBuilder` Refactor:** The `ParagraphBuilder` widget has been heavily modified. It now uses Flutter's `TextPainter` engine to perform a layout calculation in the background. This allows it to determine the exact `(x, y)` pixel offset of every verse within its rendered paragraph. This layout data is then passed up to the `ScriptureColumn` via a callback.
+
+2.  **`ScriptureColumn` Refactor:** The `ScriptureColumn` widget now listens for scroll events using an `ItemPositionsListener`. On each scroll, it:
+    *   Receives the layout data from the visible `ParagraphBuilder` children.
+    *   Caches this data.
+    *   Compares the current scroll offset with the cached verse-offset data to accurately determine which verse is at the very top of the viewport.
+
+### Current Status & Next Steps
+
+-   **Last Session's Accomplishments:** We successfully debugged and fixed the verse identification logic.
+    - We resolved a crash in `ParagraphBuilder` caused by `TextPainter` being unable to handle `WidgetSpan`s from footnotes. The fix involved creating a separate, simplified `TextSpan` for layout calculations.
+    - We fixed an issue where scroll offsets (a relative value) were being incorrectly compared to verse offsets (a pixel value). The fix involved using a `LayoutBuilder` to get the viewport's pixel height to ensure all calculations are done in pixels.
+    - The user has confirmed that the app now accurately and consistently prints the reference of the top-most visible verse to the debug console as they scroll (e.g., `Top verse: GEN 1:3`).
+
+-   **Immediate Next Step (Upon Resuming):** The verse *identification* feature is now complete and verified. The next step is to use this information to update the UI in real-time. We will take the top verse reference string (e.g., "GEN 1:3") that is being printed to the console and use it to update the app's state (i.e., the book, chapter, and verse dropdowns). This will provide immediate visual feedback to the user as they scroll.
+
+-   **Next Major Goal:** After implementing the real-time UI update, we will tackle the final piece of the navigation puzzle: scrolling *to* a specific verse within a paragraph when a user selects it from the dropdowns.
