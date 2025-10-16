@@ -11,6 +11,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/services.dart';
 import 'package:context_menus/context_menus.dart';
+import 'package:collection/collection.dart';
 
 import '../logic/data_initializer.dart';
 import '../logic/verse_composer.dart';
@@ -332,7 +333,7 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
       required String chapter,
       required String verse,
       bool isInitState = false}) async {
-    print('scrollToReference ${currentCollection.value}');
+    // print('scrollToReference ${currentCollection.value}');
     bool collectionChanged = false;
     var targetBook = bookID;
     var targetChapter = chapter;
@@ -484,9 +485,41 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
       );
 
       if (targetParagraphIndex != -1) {
-        // This brings the correct paragraph into view. A more precise scroll
-        // to the exact verse within the paragraph is a complex future enhancement.
-        itemScrollController.jumpTo(index: targetParagraphIndex);
+        final List<VerseOffset>? paragraphLayout =
+            _paragraphLayouts[targetParagraphIndex];
+        if (paragraphLayout != null) {
+          final VerseOffset? targetVerseOffset =
+              paragraphLayout.firstWhereOrNull(
+            (vo) =>
+                vo.book == targetBook &&
+                vo.chapter == targetChapter &&
+                vo.verse == targetVerse,
+          );
+
+          if (targetVerseOffset != null) {
+            final double alignment =
+                targetVerseOffset.offset.dy / _viewportHeight;
+            print("---");
+            print(currentCollection.value);
+            print(targetVerseOffset.offset.dy);
+            print(_viewportHeight);
+            print(alignment);
+            print("---");
+
+            itemScrollController.scrollTo(
+              index: targetParagraphIndex,
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+              alignment: -alignment,
+            );
+          } else {
+            // Fallback to scrolling to the top of the paragraph if verse offset not found
+            itemScrollController.jumpTo(index: targetParagraphIndex);
+          }
+        } else {
+          // Fallback to scrolling to the top of the paragraph if layout data not available
+          itemScrollController.jumpTo(index: targetParagraphIndex);
+        }
       }
     }
 
