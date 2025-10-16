@@ -4,6 +4,21 @@ import 'dart:core';
 import '../logic/data_initializer.dart';
 import '../logic/verse_composer.dart';
 
+// Data class to hold the calculated layout information for a verse.
+class VerseOffset {
+  final String book;
+  final String chapter;
+  final String verse;
+  final Offset offset; // Offset within the ParagraphBuilder widget.
+
+  VerseOffset({
+    required this.book,
+    required this.chapter,
+    required this.verse,
+    required this.offset,
+  });
+}
+
 class ParagraphBuilder extends StatefulWidget {
   final List<ParsedLine> paragraph;
   final String fontName;
@@ -11,6 +26,7 @@ class ParagraphBuilder extends StatefulWidget {
   final double fontSize;
   final List<ParsedLine> rangeOfVersesToCopy;
   final Function addVerseToCopyRange;
+  final Function(List<VerseOffset>)? onLayoutCalculated;
 
   const ParagraphBuilder(
       {super.key,
@@ -19,26 +35,39 @@ class ParagraphBuilder extends StatefulWidget {
       required this.textDirection,
       required this.fontSize,
       required this.rangeOfVersesToCopy,
-      required this.addVerseToCopyRange});
+      required this.addVerseToCopyRange,
+      this.onLayoutCalculated});
 
   @override
   State<ParagraphBuilder> createState() => _ParagraphBuilderState();
 }
 
 class _ParagraphBuilderState extends State<ParagraphBuilder> {
+  TextSpan? _cachedTextSpanWithWidgets;
+  TextSpan? _cachedTextSpanForLayout;
+  Map<int, ParsedLine> _characterIndexToVerseMap = {};
+
   @override
-  Widget build(BuildContext context) {
-    // // print('paragraph builder build method');
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // This is the correct lifecycle method to access inherited widgets like Theme.
+    _prepareSpans();
+  }
+
+  @override
+  void didUpdateWidget(ParagraphBuilder oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Re-prepare spans if the paragraph data or styling props change.
+    if (widget.paragraph != oldWidget.paragraph ||
+        widget.fontSize != oldWidget.fontSize ||
+        widget.rangeOfVersesToCopy != oldWidget.rangeOfVersesToCopy) {
+      _prepareSpans();
+    }
+  }
+
+  void _prepareSpans() {
     bool ltrText = widget.textDirection == ui.TextDirection.ltr;
-    TextAlign paraAlignment = ltrText ? TextAlign.left : TextAlign.right;
-
-    bool header = false;
-    bool poetry = false;
-
-    List<InlineSpan> styledParagraphFragments = [];
-
     Color accentTextColor = FluentTheme.of(context).accentColor;
-
     double fontSize = ltrText ? widget.fontSize : widget.fontSize + 7;
 
     TextStyle mainTextStyle = TextStyle(
@@ -46,19 +75,20 @@ class _ParagraphBuilderState extends State<ParagraphBuilder> {
       fontSize: fontSize,
       color: DefaultTextStyle.of(context).style.color,
     );
-
     TextStyle underlineStyle =
         mainTextStyle.copyWith(decoration: TextDecoration.underline);
-
     TextStyle italicStyle = mainTextStyle.copyWith(fontStyle: FontStyle.italic);
 
-    //AS verseNumber - the WidgetSpan doesn't work for RTL, gets confused somehow.
-    //This is a ready replacement that doesn't look bad.
+    List<InlineSpan> styledParagraphFragments = [];
+    StringBuffer plainTextBuffer = StringBuffer();
+    Map<int, ParsedLine> characterIndexToVerseMap = {};
+
     TextSpan verseNumberRTL(String verseNumber) {
+      final text = ' $verseNumber ';
+      plainTextBuffer.write(text);
       return TextSpan(
-        text: ' $verseNumber ',
+        text: text,
         style: mainTextStyle.copyWith(
-          // height: 5,
           textBaseline: TextBaseline.ideographic,
           fontSize: fontSize / 2,
           color: accentTextColor,
@@ -67,63 +97,57 @@ class _ParagraphBuilderState extends State<ParagraphBuilder> {
       );
     }
 
-    //Normal LTR text versenumber with transform for elevation
-    WidgetSpan verseNumberLTR(String verseNumber) {
-      return WidgetSpan(
-        child: Transform.translate(
-          offset: const Offset(0.0, -6.0),
-          child: Text(
-            ' $verseNumber ',
-            style: mainTextStyle.copyWith(
-                fontSize: fontSize / 2,
-                color: accentTextColor,
-                decoration: TextDecoration.none),
-            textDirection: widget.textDirection,
-          ),
-        ),
-      );
+    TextSpan verseNumberLTR(String verseNumber) {
+      final text = ' $verseNumber ';
+      plainTextBuffer.write(text);
+      return TextSpan(
+          text: text,
+          style: TextStyle(
+            fontFeatures: const [ui.FontFeature.superscripts()],
+            // fontFamily: widget.fontName, // the incoming font doesn't support superscript it seems
+            fontSize: fontSize,
+            color: accentTextColor,
+          )
+
+          // style: mainTextStyle.copyWith(
+          //   fontFeatures: const [ui.FontFeature.superscripts()],
+          //   fontSize: fontSize / 2,
+          //   color: accentTextColor,
+          // ),
+          );
     }
 
-//\v 50 Adoña nag ragal Suleymaan, daldi dem jàpp ca béjjén ya ca cati °\w sarxalukaay|sarxalukaay b-:\w* ba, ngir rawale bakkanam\f + \fr 1.50 \ft Jàpp ca sarxalukaay ba ca kër Yàlla ga, nit daan na ko def, di ko sàkkoo rawale bakkanam. Seetal ci \bk Mucc ga\bk* 21.14.\f*.
-//1Ki 1.50 - see paired usfm inside \f...\f* ndeysaan
-
-    List<InlineSpan> normalVerseFragment(ParsedLine line,
-        {TextStyle? paraStyle}) {
-      late TextStyle computedTextStyle;
-
-      //Check to see if this text belongs to the range of verses to copy
-      bool? textSpanUnderline = widget.rangeOfVersesToCopy.any(
+    List<InlineSpan> processLine(ParsedLine line, {TextStyle? paraStyle}) {
+      bool textSpanUnderline = widget.rangeOfVersesToCopy.any(
           (ParsedLine element) =>
               element.book == line.book &&
               element.chapter == line.chapter &&
               element.verse == line.verse);
 
-      //TO DO this is where the fading highlight animation will go on nav
-
-      //Compute the style
-      if (textSpanUnderline) {
-        computedTextStyle = underlineStyle;
-      } else if (paraStyle != null) {
-        computedTextStyle = paraStyle;
-      } else {
-        computedTextStyle = mainTextStyle;
-      }
+      TextStyle computedTextStyle =
+          textSpanUnderline ? underlineStyle : (paraStyle ?? mainTextStyle);
 
       void tileOnTap() {
         widget.addVerseToCopyRange(line);
-        setState(() {});
       }
 
-      return verseComposer(
-              line: line,
-              computedTextStyle: computedTextStyle,
-              includeFootnotes: true,
-              context: context,
-              tileOnTap: tileOnTap)
-          .versesAsSpans;
+      if (line.verse.isNotEmpty && line.verse != "0") {
+        characterIndexToVerseMap[plainTextBuffer.length] = line;
+      }
+
+      final composed = verseComposer(
+          line: line,
+          computedTextStyle: computedTextStyle,
+          includeFootnotes: true,
+          context: context,
+          tileOnTap: tileOnTap);
+
+      plainTextBuffer.write(composed.versesAsString);
+      return composed.versesAsSpans;
     }
 
     TextSpan s(String paragraphFragment, {num? fontScaling, bool? italics}) {
+      plainTextBuffer.write(paragraphFragment);
       return TextSpan(
         text: paragraphFragment,
         style: mainTextStyle.copyWith(
@@ -133,8 +157,10 @@ class _ParagraphBuilderState extends State<ParagraphBuilder> {
       );
     }
 
+    bool poetry = false;
+    bool header = false;
+
     for (var line in widget.paragraph) {
-      //These are for paragraph styles
       switch (line.verseStyle) {
         case 'v':
           if (widget.textDirection == ui.TextDirection.ltr) {
@@ -142,27 +168,17 @@ class _ParagraphBuilderState extends State<ParagraphBuilder> {
           } else {
             styledParagraphFragments.add(verseNumberRTL(line.verse));
           }
-
-          styledParagraphFragments.addAll(normalVerseFragment(line));
+          styledParagraphFragments.addAll(processLine(line));
           header = false;
           break;
-        /*Continuation (margin) paragraph.
-        No first line indent.
-        Followed immediately by a space and paragraph text, or by a new line and a verse marker.*/
         case 'm':
-          styledParagraphFragments.addAll(normalVerseFragment(line));
+          styledParagraphFragments.addAll(processLine(line));
           header = false;
           break;
         case 's':
-          styledParagraphFragments.add(s(line.verseText, fontScaling: 1.2));
-          header = true;
-          break;
         case 's1':
-          styledParagraphFragments.add(s(line.verseText, fontScaling: 1.2));
-          header = true;
-          break;
         case 's2':
-          styledParagraphFragments.add(s(line.verseText, fontScaling: 1.1));
+          styledParagraphFragments.add(s(line.verseText, fontScaling: 1.2));
           header = true;
           break;
         case 'mt1':
@@ -183,43 +199,118 @@ class _ParagraphBuilderState extends State<ParagraphBuilder> {
         case 'q':
         case 'q1':
         case 'q2':
-          styledParagraphFragments.addAll(normalVerseFragment(line));
+          styledParagraphFragments.addAll(processLine(line));
           poetry = true;
           break;
         case 'd':
         case 'r':
           styledParagraphFragments
-              .addAll(normalVerseFragment(line, paraStyle: italicStyle));
-          // styledParagraphFragments.add(s(line.verseText, fontScaling: .7));
+              .addAll(processLine(line, paraStyle: italicStyle));
           break;
         default:
-          styledParagraphFragments.addAll(normalVerseFragment(line));
+          styledParagraphFragments.addAll(processLine(line));
       }
     }
 
-    //indentation hack for paragraphs
-    if (styledParagraphFragments.length > 1 && !poetry) {
+    bool indentAdded = false;
+    if (styledParagraphFragments.length > 1 && !poetry && !header) {
+      const indent = '    ';
       styledParagraphFragments.insert(
-          0,
-          TextSpan(
-            text: '    ',
-            style: DefaultTextStyle.of(context)
-                .style
-                .copyWith(decoration: TextDecoration.none),
-          ));
+          0, TextSpan(text: indent, style: mainTextStyle));
+      indentAdded = true;
     }
 
-    return Padding(
-      padding: poetry
-          ? const EdgeInsets.only(left: 20, bottom: 0.0)
-          : const EdgeInsets.only(top: 8.0, left: 12, right: 12),
-      child: RichText(
-        text: TextSpan(
-          children: styledParagraphFragments,
-        ),
-        textAlign: header ? TextAlign.center : paraAlignment,
-        textDirection: widget.textDirection,
-      ),
+    // If indentation was added, we need to shift all character indices
+    // to match the new positions in the final TextSpan.
+    Map<int, ParsedLine> finalCharacterIndexToVerseMap = {};
+    if (indentAdded) {
+      characterIndexToVerseMap.forEach((key, value) {
+        finalCharacterIndexToVerseMap[key + 4] = value; // 4 is indent length
+      });
+    } else {
+      finalCharacterIndexToVerseMap = characterIndexToVerseMap;
+    }
+
+    List<InlineSpan> layoutSpans = [];
+    for (final span in styledParagraphFragments) {
+      if (span is WidgetSpan) {
+        // The WidgetSpan is the footnote. Replace it with a simple TextSpan for layout.
+        // The footnote is just a '*'
+        layoutSpans.add(TextSpan(
+            text: '*',
+            style: mainTextStyle.copyWith(
+              color: accentTextColor,
+            )));
+      } else {
+        layoutSpans.add(span);
+      }
+    }
+
+    setState(() {
+      _cachedTextSpanWithWidgets = TextSpan(children: styledParagraphFragments);
+      _cachedTextSpanForLayout = TextSpan(children: layoutSpans);
+      _characterIndexToVerseMap = finalCharacterIndexToVerseMap;
+    });
+  }
+
+  void _calculateAndReportLayout(BoxConstraints constraints) {
+    if (_cachedTextSpanForLayout == null) return;
+
+    final textPainter = TextPainter(
+      text: _cachedTextSpanForLayout,
+      textDirection: widget.textDirection,
+      textScaler: MediaQuery.textScalerOf(context),
+    )..layout(minWidth: 0, maxWidth: constraints.maxWidth);
+
+    final List<VerseOffset> offsets = [];
+    _characterIndexToVerseMap.forEach((charIndex, line) {
+      // Make sure the character index is valid.
+      if (charIndex < textPainter.text!.toPlainText().length) {
+        final offset = textPainter.getOffsetForCaret(
+            TextPosition(offset: charIndex), Rect.zero);
+        offsets.add(VerseOffset(
+          book: line.book,
+          chapter: line.chapter,
+          verse: line.verse,
+          offset: offset,
+        ));
+      }
+    });
+
+    widget.onLayoutCalculated?.call(offsets);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_cachedTextSpanWithWidgets == null || widget.paragraph.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    bool ltrText = widget.textDirection == ui.TextDirection.ltr;
+    TextAlign paraAlignment = ltrText ? TextAlign.left : TextAlign.right;
+    bool header = widget.paragraph.first.verseStyle.contains(RegExp(r'[s,m]'));
+    bool poetry = widget.paragraph.first.verseStyle.contains(RegExp(r'q'));
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Use a post-frame callback to ensure layout is complete before calculating.
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            _calculateAndReportLayout(constraints);
+          }
+        });
+
+        return Padding(
+          padding: poetry
+              ? const EdgeInsets.only(left: 20, bottom: 0.0)
+              : const EdgeInsets.only(top: 8.0, left: 12, right: 12),
+          child: RichText(
+            text: _cachedTextSpanWithWidgets!,
+            textAlign: header ? TextAlign.center : paraAlignment,
+            textDirection: widget.textDirection,
+          ),
+        );
+      },
     );
   }
 }

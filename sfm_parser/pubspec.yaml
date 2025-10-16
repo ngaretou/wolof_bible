@@ -10,6 +10,7 @@ dependencies:
   path: ^1.9.0
   xml: ^6.6.1
   snowball_stemmer: ^0.1.0
+  skeletonizer: ^2.1.0+1
 
 dev_dependencies:
   lints: ^6.0.0

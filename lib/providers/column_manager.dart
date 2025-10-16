@@ -65,10 +65,8 @@ class ScrollGroup with ChangeNotifier {
 
   set setActiveColumnKey(Key? key) {
     // // print('set active col key to $key');
-    activeColumnKey = key;
-    Timer(const Duration(milliseconds: 1500), () {
-      // // print('returning active key to null');
-      activeColumnKey = null;
-    });
+    if (activeColumnKey != key) {
+      activeColumnKey = key;
+    }
   }
 }

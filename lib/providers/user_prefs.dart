@@ -10,18 +10,18 @@ class BibleReference {
   Key key;
   bool partOfScrollGroup;
   String collectionID;
-  String? bookID;
-  String? chapter;
-  String? verse;
+  String bookID;
+  String chapter;
+  String verse;
   int columnIndex;
 
   BibleReference(
       {required this.key,
       required this.partOfScrollGroup,
       required this.collectionID,
-      this.bookID,
-      this.chapter,
-      this.verse,
+      required this.bookID,
+      required this.chapter,
+      required this.verse,
       required this.columnIndex});
 }
 
@@ -77,9 +77,9 @@ class UserPrefs with ChangeNotifier {
               partOfScrollGroup:
                   main.userColumnsBox.getAt(i)!.partOfScrollGroup,
               collectionID: main.userColumnsBox.getAt(i)!.collectionID,
-              bookID: main.userColumnsBox.getAt(i)!.bookID,
-              chapter: main.userColumnsBox.getAt(i)!.chapter,
-              verse: main.userColumnsBox.getAt(i)!.verse,
+              bookID: main.userColumnsBox.getAt(i)!.bookID ?? 'MAT',
+              chapter: main.userColumnsBox.getAt(i)!.chapter ?? '1',
+              verse: main.userColumnsBox.getAt(i)!.verse ?? '1',
               columnIndex: main.userColumnsBox.getAt(i)!.columnIndex);
           userColumns.add(ref);
         }
@@ -91,7 +91,6 @@ class UserPrefs with ChangeNotifier {
         for (var i = 0; i < userColumns.length; i++) {
           saveScrollGroupState(userColumns[i]);
         }
-        
 
         //Get them in the right order
         userColumns.sort(((a, b) => a.columnIndex.compareTo(b.columnIndex)));
@@ -137,9 +136,9 @@ class UserPrefs with ChangeNotifier {
               // columnIndex: index,
               partOfScrollGroup: partOfScrollGroup,
               collectionID: currentCollection,
-              bookID: null,
-              chapter: null,
-              verse: null,
+              bookID: 'MAT',
+              chapter: '1',
+              verse: '1',
               columnIndex: index));
     } else {
       //If it is more than one collection, each column initially will just take the next collection down.
@@ -151,9 +150,9 @@ class UserPrefs with ChangeNotifier {
             key: UniqueKey(),
             partOfScrollGroup: partOfScrollGroup,
             collectionID: "C0${(index + 1).toString()}",
-            bookID: null,
-            chapter: null,
-            verse: null,
+            bookID: 'MAT',
+            chapter: '1',
+            verse: '1',
             columnIndex: index),
       );
     }
@@ -178,7 +177,6 @@ class UserPrefs with ChangeNotifier {
   }
 
   void saveScrollGroupState(BibleReference ref) {
-    
     UserColumnsDB colDB = UserColumnsDB()
       ..key = ref.key.toString()
       ..partOfScrollGroup = ref.partOfScrollGroup
