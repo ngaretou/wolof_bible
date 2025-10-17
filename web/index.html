@@ -32,10 +32,6 @@
     <title>wolof_bible</title>
     <link rel="manifest" href="manifest.json" />
 
-    <script>
-      // The value below is injected by flutter build, do not touch.
-      const serviceWorkerVersion = null;
-    </script>
     <!-- stop native right click in favor of the app's  -->
     <script>
       document.addEventListener("contextmenu", function (e) {
@@ -43,12 +39,8 @@
       });
     </script>
 
-    <!-- This script adds the flutter initialization JS code -->
-    <script src="flutter.js" defer=""></script>
+    <script src="flutter_bootstrap.js" async></script>
 
-    <meta
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-      name="viewport" />
     <style id="splash-screen-style">
       html {
         height: 100%;
@@ -143,21 +135,6 @@
         alt="" />
     </picture>
 
-    <script>
-      window.addEventListener("load", function (ev) {
-        // Download main.dart.js
-        _flutter.loader.loadEntrypoint({
-          serviceWorker: {
-            serviceWorkerVersion: serviceWorkerVersion,
-          },
-          onEntrypointLoaded: function (engineInitializer) {
-            engineInitializer.initializeEngine().then(function (appRunner) {
-              appRunner.runApp();
-            });
-          },
-        });
-      });
-    </script>
     <!-- Capture PWA install prompt event -->
     <script>
       let deferredPrompt;

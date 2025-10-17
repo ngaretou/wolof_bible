@@ -418,6 +418,13 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
                         });
                   }),
 
+            _LinkPaneItemAction(
+              icon: const Icon(FluentIcons.open_in_new_window),
+              title: const Text('kaddugyalla.com'),
+              link: 'http://kaddugyalla.com',
+              body: const SizedBox.shrink(),
+            ),
+
             //More apps
             _LinkPaneItemAction(
               icon: const Icon(FluentIcons.app_icon_default),
@@ -427,47 +434,47 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
             ),
             //Contact
 
-            _LinkPaneItemAction(
-              icon: const Icon(FluentIcons.mail),
-              title: const Text('Bind nu'),
-              link:
-                  'http://currah.download/pages/wolof/bible/contact/index.html',
-              body: const SizedBox.shrink(),
-            ),
+            // _LinkPaneItemAction(
+            //   icon: const Icon(FluentIcons.mail),
+            //   title: const Text('Bind nu'),
+            //   link:
+            //       'http://currah.download/pages/wolof/bible/contact/index.html',
+            //   body: const SizedBox.shrink(),
+            // ),
             //Listen
-            _LinkPaneItemAction(
-              icon: const Icon(FluentIcons.play),
-              // FluentIcons.m_s_n_videos_solid
-              // FluentIcons.play_solid
-              // FluentIcons.read_out_loud
-              title: const Text('Dégglul Kàddu gi'),
-              link:
-                  'http://currah.download/pages/wolof/bible/html/deglu_kaddu_gi.html',
-              body: const SizedBox.shrink(),
-            ),
+            // _LinkPaneItemAction(
+            //   icon: const Icon(FluentIcons.play),
+            //   // FluentIcons.m_s_n_videos_solid
+            //   // FluentIcons.play_solid
+            //   // FluentIcons.read_out_loud
+            //   title: const Text('Dégglul Kàddu gi'),
+            //   link:
+            //       'http://currah.download/pages/wolof/bible/html/deglu_kaddu_gi.html',
+            //   body: const SizedBox.shrink(),
+            // ),
             //Download
-            _LinkPaneItemAction(
-              icon: const Icon(FluentIcons.cloud_download),
-              title: const Text('Yebal téerey Kàddu gi'),
-              link:
-                  'http://currah.download/pages/wolof/bible/html/biblewolof.html',
-              body: const SizedBox.shrink(),
-            ),
+            // _LinkPaneItemAction(
+            //   icon: const Icon(FluentIcons.cloud_download),
+            //   title: const Text('Yebal téerey Kàddu gi'),
+            //   link:
+            //       'http://currah.download/pages/wolof/bible/html/biblewolof.html',
+            //   body: const SizedBox.shrink(),
+            // ),
             //More
 
-            _LinkPaneItemAction(
-              icon: const Icon(FluentIcons.developer_tools),
-              title: const Text('Téere baati wolof'),
-              link: 'http://currah.download/pages/dictionnairewolof/',
-              body: const SizedBox.shrink(),
-            ),
+            // _LinkPaneItemAction(
+            //   icon: const Icon(FluentIcons.developer_tools),
+            //   title: const Text('Téere baati wolof'),
+            //   link: 'http://currah.download/pages/dictionnairewolof/',
+            //   body: const SizedBox.shrink(),
+            // ),
 
-            _LinkPaneItemAction(
-              icon: const Icon(FluentIcons.toolbox),
-              title: const Text('Jumtukaay wolofal'),
-              link: 'http://currah.download/pages/ajamisenegal/index.html',
-              body: const SizedBox.shrink(),
-            ),
+            // _LinkPaneItemAction(
+            //   icon: const Icon(FluentIcons.toolbox),
+            //   title: const Text('Jumtukaay wolofal'),
+            //   link: 'http://currah.download/pages/ajamisenegal/index.html',
+            //   body: const SizedBox.shrink(),
+            // ),
           ];
 
           //Normal pane items we always use

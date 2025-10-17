@@ -50,7 +50,8 @@ void sfmToJson() async {
   final assetPaths = <String>{
     'assets/images/',
     'assets/project/',
-    'assets/project/about/',
+    'assets/project/data/',
+    'assets/project/data/about/',
     'assets/translations.json',
   };
 
@@ -158,6 +159,7 @@ void sfmToJson() async {
             });
 
             if (text.isNotEmpty &&
+                chapterNumber != 0 &&
                 !{'mt1', 'h', 'toc1', 'toc2', 'toc3'}.contains(style)) {
               final tokens = text.toLowerCase().split(
                 RegExp(r'[^\p{L}\p{N}]+', unicode: true),
@@ -186,7 +188,7 @@ void sfmToJson() async {
             bookToc['chapters']![chapterNumber.toString()] = lastVerseLabel;
           }
 
-          if (chapterData.isNotEmpty) {
+          if (chapterData.isNotEmpty && chapterNumber != 0) {
             final outputDir = Directory('../assets/json/$collectionId/$bookId');
             if (!await outputDir.exists()) {
               await outputDir.create(recursive: true);
@@ -268,7 +270,6 @@ void sfmToJson() async {
 void copyAppDef() async {
   print('Copying .appDef file to assets/json/appDef.appDef');
 
-
   final projectDir = Directory('project');
   File? sourceFile;
 
@@ -303,11 +304,13 @@ void copyAppDef() async {
 }
 
 Future<void> copyAboutFolder() async {
-  final sourceDir = Directory('project/about');
-  final destinationDir = Directory('../assets/project/about');
+  final sourceDir = Directory('project/usfm_bible_data/about');
+  final destinationDir = Directory('../assets/project/data/about');
 
   if (!await sourceDir.exists()) {
-    print('Source directory project/about not found. Skipping copy.');
+    print(
+      'Source directory project/usfm_bible_data/about not found. Skipping copy.',
+    );
     return;
   }
 
@@ -364,7 +367,7 @@ void testingsplit() {
 void main(List<String> arguments) async {
   await deleteExistingJsonFiles();
   copyAppDef();
-  await copyAboutFolder(); // Add call here
+  await copyAboutFolder();
   sfmToJson();
   // testingsplit();
 }
