@@ -474,6 +474,7 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
     if (refIsInCollection) {
       // Begins here:
       // If the collection is changing, we handle that as the primary case.
+
       collectionChanged =
           (currentCollection.value != collection || isInitState);
       if (collectionChanged) {
@@ -497,12 +498,18 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
         // If the old book *is* valid in the new collection, we let it pass through,
         // respecting the original chapter/verse.
       } else if (currentBook.value != targetBook) {
-        // This handles book changes within the same collection.
-        targetChapter = '1';
-        targetVerse = '1';
+        // We can have user directly navigating using the controls in this column 
+        // - treat that separately from searching, opening for first time. 
+        if (thisColumnNavigation) {
+          // This handles book changes within the same collection.  
+          targetChapter = '1';
+          targetVerse = '1';
+        }
       } else if (currentChapter.value != targetChapter) {
         // This handles chapter changes within the same book.
-        targetVerse = '1';
+        if (thisColumnNavigation) {
+          targetVerse = '1';
+        }
       }
 
       bool verseIsInMemory =

@@ -95,7 +95,7 @@ class About extends StatelessWidget {
       //Get the main about page html
 
       String aboutPageHtml =
-          await assetBundle.loadString("assets/project/data/about/about.txt"); 
+          await assetBundle.loadString("assets/project/data/about/about.txt");
 
       //Now for each of the copyright texts we have, check to see if the appbuilder wants that text in the about page
       for (var k in copyrights.keys) {
@@ -106,7 +106,7 @@ class About extends StatelessWidget {
         //If present, replace variable with copyright text
         if (match != null) {
           String composedCopyrightStatement =
-              '<br><hr style="margin-top:0em"><h2>${collections.where((element) => element.id == k).first.name}</h2><br>${copyrights[k]}<br>';
+              '<br><hr style="margin-top: 0px; margin-bottom: 10px;"><h2>${collections.where((element) => element.id == k).first.name}</h2><br>${copyrights[k]}<br>';
 
           aboutPageHtml = aboutPageHtml.replaceAll(
               RegExp('%copyright-all:$k%'), composedCopyrightStatement);
@@ -130,7 +130,22 @@ class About extends StatelessWidget {
       aboutPageHtml =
           aboutPageHtml.replaceAll(RegExp('%copyright-all:C0\\d%'), '');
 
-      return aboutPageHtml;
+//       String styleBlock = '''<style>
+//   body h2 {
+//     margin-top: 0;
+//     color: blue;
+//   }
+// </style>
+// ''';
+      // return styleBlock + aboutPageHtml;
+
+      String appCopyright = '''
+<br>
+<hr style="margin-top: 0px; margin-bottom: 20px;">
+Kàddug Yàlla+ app code © 2025 Foundational LLC.
+<br> 
+''';
+      return aboutPageHtml + appCopyright;
     }
 
     Future<String> htmlToRender = getHtml();
