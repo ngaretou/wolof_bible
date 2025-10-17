@@ -45,6 +45,7 @@ class Collection {
   final List<Book> books;
   final List<Font> fonts;
   final String textDirection;
+  final String language;
 
   Collection({
     required this.id,
@@ -53,6 +54,7 @@ class Collection {
     required this.fonts,
     required this.books,
     required this.textDirection,
+    required this.language,
   });
 }
 
@@ -343,6 +345,12 @@ Future<List<Collection>> collectionsFromXML(
   //get the document into a usable iterable
   final document = XmlDocument.parse(xmlFileString);
 
+  final defaultLang = document
+          .getElement('app-definition')!
+          .getElement('translation-mappings')
+          ?.getAttribute('default-lang') ??
+      'en';
+
   //Get the font information
   String fontWeight = "";
   String fontStyle = "";
@@ -425,6 +433,9 @@ Future<List<Collection>> collectionsFromXML(
                     .getAttribute('family'))
             .toList(),
         books: books,
+        language:
+            xmlCollection.getElement('writing-system')?.getAttribute('code') ??
+                defaultLang,
         textDirection: xmlCollection
             .getElement('styles-info')!
             .getElement('text-direction')!

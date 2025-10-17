@@ -42,24 +42,33 @@ With the data pre-processed, we are now building the services within the Flutter
 3.  **`TextProcessor` (`lib/logic/text_processor.dart`):**
     -   A utility created to ensure that search queries in the app are processed with the exact same language rules (stemming, stop-words) that were used to create the search index.
 
-## Phase 3: UI and Navigation Refactor  (Completed)
+## Phase 3: UI and Navigation Refactor (Completed)
 
 We have completed a major refactoring of the main Bible view (`lib/widgets/scripture_column.dart`) to improve navigation precision and user experience.
 
-### Verse-Level Precision in a Paragraph Layout  (Completed)
+### Verse-Level Precision in a Paragraph Layout (Completed)
 
-We now have the app able to scroll very precisely to a given verse and also to report to the UI the precise verse that is at the top of the screen. 
+The app can now scroll very precisely to a given verse and also report to the UI the precise verse that is at the top of the screen. This was achieved using Flutter's `TextPainter` engine to calculate the exact pixel offset of every verse within its rendered paragraph.
 
-### Implemented Solution: The `TextPainter` Approach
+### Final Fix (Scrolling)
+Resolved a race condition that occurred when scrolling to a verse immediately after changing Bible collections. The fix implements a two-step scroll: an initial coarse jump to the target paragraph to get it into view, followed by a fine-grained adjustment to the precise verse offset once the `ParagraphBuilder`'s layout data becomes available. This ensures scrolling is reliable across the entire app.
 
-We have successfully implemented the "identification" part of this solution.
+## Phase 4: Search Implementation (Completed)
 
-1.  **`ParagraphBuilder` Refactor:** The `ParagraphBuilder` widget has been heavily modified. It now uses Flutter's `TextPainter` engine to perform a layout calculation in the background. This allows it to determine the exact `(x, y)` pixel offset of every verse within its rendered paragraph. This layout data is then passed up to the `ScriptureColumn` via a callback.
+We have integrated the powerful, index-based `SearchService` into the main application UI.
 
-2.  **`ScriptureColumn` Refactor:** The `ScriptureColumn` widget now listens for scroll events using an `ItemPositionsListener`. On each scroll, it:
-    *   Receives the layout data from the visible `ParagraphBuilder` children.
-    *   Caches this data.
-    *   Compares the current scroll offset with the cached verse-offset data to accurately determine which verse is at the very top of the viewport.
+### Key Accomplishments:
 
-### Current Status & Next Steps
+1.  **`SearchService` Refactor:** The service was updated to return a `Stream<SearchResult>` instead of a `Future`, allowing the UI to display results incrementally as they are found and processed. This makes the search feel much more responsive.
 
+2.  **Data Model Correction:** Identified and fixed a bug in the data loading logic where the `Collection` class was missing a `language` property. This property is critical for the `SearchService` to apply the correct text processing rules (e.g., stemming). The data model and XML parsing logic in `data_initializer.dart` have been updated to include this.
+
+3.  **UI (`SearchWidget`) Overhaul:**
+    - The widget was completely refactored to use a modern, reactive `StreamBuilder` pattern.
+    - Added the `rxdart` package to transform the stream of individual results into a stream of lists (`Stream<List<SearchResult>>`), which is the idiomatic way to feed a `StreamBuilder` that builds a list.
+    - The `verseComposer` utility is now used to clean and format the raw search result text before it's displayed, removing any leftover USFM markers.
+
+4.  **Bug Fix (Stale State):** Fixed a subtle but critical bug where old search results would persist if a new search yielded no results. This was traced to `StreamBuilder`'s default behavior of retaining old data. The fix was to assign a `UniqueKey` to the `StreamBuilder` on each new search, forcing it to completely reset its state and correctly display the "No results found" message.
+
+### Current Status
+The search functionality is now complete and robust. The user is restarting the app to verify the latest fix.
