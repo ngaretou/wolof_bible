@@ -30,7 +30,7 @@ class _BibleViewState extends State<BibleView> {
 
   @override
   void initState() {
-    // print('bibleview initstate');
+    print('bibleview initstate');
     userColumns = Provider.of<UserPrefs>(context, listen: false).userColumns;
 
     numberOfColumns = userColumns.length;

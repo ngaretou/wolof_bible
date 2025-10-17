@@ -1,3 +1,10 @@
+// : [#1165f], partOfScrollGroup: true, collectionID: C02, bookID: JHN, chapter: 1, verse: 31, columnIndex: 1)
+// flutter: scrollToReference C01
+// flutter: BibleReference(key: [#907ad], partOfScrollGroup: true, collectionID: C01, bookID: JHN, chapter: 1, verse: 32, columnIndex: 0)
+// flutter: scrollToReference C04
+// flutter: BibleReference(key: [#48092], 
+
+
 //  //Here is where the choice of book, ch, vs comes, and is a scrollTo with the same collection
 
 //       //Find index of the paragraph that has the desired verse

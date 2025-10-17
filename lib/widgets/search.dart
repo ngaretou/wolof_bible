@@ -1,13 +1,20 @@
+import 'dart:async';
 import 'dart:ui' as ui;
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter/material.dart' as material;
 import 'package:provider/provider.dart';
 // import 'package:diacritic/diacritic.dart';
 
+import 'dart:ui' as ui;
+import 'package:fluent_ui/fluent_ui.dart';
+import 'package:flutter/material.dart' as material;
+import 'package:provider/provider.dart';
+
 import '../logic/data_initializer.dart';
 import '../logic/verse_composer.dart';
 import '../providers/user_prefs.dart';
 import '../providers/column_manager.dart';
+import '../logic/search_service.dart';
 
 class SearchWidget extends StatefulWidget {
   final Function closeSearch;
@@ -21,54 +28,79 @@ class SearchWidget extends StatefulWidget {
 }
 
 class _SearchWidgetState extends State<SearchWidget> {
-  final searchController = TextEditingController();
-  final expanderKey = GlobalKey<ExpanderState>();
+  final _searchController = TextEditingController();
+  final _expanderKey = GlobalKey<ExpanderState>();
+  final _searchService = SearchService();
 
-  List<String> collectionsToSearch = [];
-  List<Checkbox> checkBoxes = [];
-  List<ParsedLine> searchResults = [];
+  List<String> _collectionsToSearch = [];
+  final List<SearchResult> _foundResults = [];
+  StreamSubscription? _searchSubscription;
+  bool _isSearching = false;
+  bool _searchPerformed = false;
 
   @override
   void initState() {
-    collectionsToSearch =
-        List.generate(collections.length, (i) => collections[i].id);
+    _collectionsToSearch = [collections.first.id]; // just collection 1
+    // _collectionsToSearch = List.generate(collections.length, (i) => collections[i].id); // add all collections
 
-    searchController.addListener(() {
-      if (searchController.text.length == 1 && mounted) setState(() {});
+    _searchController.addListener(() {
+      if (_searchController.text.length == 1 && mounted) setState(() {});
     });
     super.initState();
   }
 
   @override
   void dispose() {
-    searchController.dispose();
+    _searchController.dispose();
+    _searchSubscription?.cancel();
     super.dispose();
   }
 
   void searchFunction(String searchRequest) {
-    List<ParsedLine> results = [];
+    if (searchRequest.trim().isEmpty) {
+      return;
+    }
 
-    // String normalizedSearchRequest = removeDiacritics(searchRequest);
-    //strict search
-    // results = verses
-    //     .where((element) =>
-    //         collectionsToSearch.any((id) => id == element.collectionid) &&
-    //         element.verseText.contains(searchRequest) &&
-    //         element.verseStyle == 'v')
-    //     .toList();
-
-    //fuzzy search
-    // results = verses
-    //     .where((element) =>
-    //         collectionsToSearch.any((id) => id == element.collectionid) &&
-    //         removeDiacritics(element.verseText)
-    //             .contains(normalizedSearchRequest) &&
-    //         element.verseStyle == 'v')
-    //     .toList();
+    // Cancel any previous search subscription
+    _searchSubscription?.cancel();
 
     setState(() {
-      searchResults = results;
+      _foundResults.clear();
+      _isSearching = true;
+      _searchPerformed = true;
     });
+
+    // Create the map of collection IDs to language codes
+    final collectionLanguages = {
+      for (var id in _collectionsToSearch)
+        id: collections.firstWhere((c) => c.id == id).language,
+    };
+
+    _searchSubscription = _searchService
+        .search(
+      collectionIds: _collectionsToSearch,
+      query: searchRequest,
+      collectionLanguages: collectionLanguages,
+    )
+        .listen(
+      (result) {
+        setState(() {
+          _foundResults.add(result);
+        });
+      },
+      onDone: () {
+        setState(() {
+          _isSearching = false;
+        });
+      },
+      onError: (error) {
+        setState(() {
+          _isSearching = false;
+          // Optionally, handle the error in the UI
+          print('Search error: $error');
+        });
+      },
+    );
   }
 
   @override
@@ -78,17 +110,16 @@ class _SearchWidgetState extends State<SearchWidget> {
           fontSize: 16,
         );
 
-    checkBoxes = List.generate(collections.length, (i) {
+    final checkBoxes = List.generate(collections.length, (i) {
       return Checkbox(
-        checked: collectionsToSearch.contains(collections[i].id),
+        checked: _collectionsToSearch.contains(collections[i].id),
         onChanged: (bool? value) {
           setState(() {
-            // // print('setting ${collectionsToSearch[i]} to $value');
-            if (collectionsToSearch.contains(collections[i].id)) {
-              collectionsToSearch
+            if (_collectionsToSearch.contains(collections[i].id)) {
+              _collectionsToSearch
                   .removeWhere((element) => element == collections[i].id);
             } else {
-              collectionsToSearch.add(collections[i].id);
+              _collectionsToSearch.add(collections[i].id);
             }
           });
         },
@@ -124,28 +155,23 @@ class _SearchWidgetState extends State<SearchWidget> {
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Row(
-                            // direction: Axis.horizontal,
-                            // crossAxisAlignment: CrossAxisAlignment.start,
-                            // alignment: WrapAlignment.start,
-                            // spacing: 5,
-                            // runSpacing: 8,
                             children: [
                               Expanded(
                                 child: TextFormBox(
                                   style: searchControlsStyle,
                                   onEditingComplete: () => searchFunction(
-                                      searchController.value.text),
+                                      _searchController.value.text),
                                   maxLines: 1,
-                                  controller: searchController,
+                                  controller: _searchController,
                                   suffixMode: OverlayVisibilityMode.always,
                                   expands: false,
-                                  suffix: searchController.text.isEmpty
+                                  suffix: _searchController.text.isEmpty
                                       ? null
                                       : IconButton(
                                           icon: const Icon(
                                               material.Icons.backspace),
                                           onPressed: () {
-                                            searchController.clear();
+                                            _searchController.clear();
                                           },
                                         ),
                                   placeholder: Provider.of<UserPrefs>(context,
@@ -164,9 +190,7 @@ class _SearchWidgetState extends State<SearchWidget> {
                           ),
                           const SizedBox(height: 8),
                           Expander(
-                            key: expanderKey,
-                            //change the default icon here from down/up arrow:
-                            // icon: Icon(FluentIcons.settings),
+                            key: _expanderKey,
                             leading: Button(
                               child: Text(
                                   Provider.of<UserPrefs>(context, listen: false)
@@ -174,11 +198,9 @@ class _SearchWidgetState extends State<SearchWidget> {
                                       .search,
                                   style: searchControlsStyle),
                               onPressed: () =>
-                                  searchFunction(searchController.value.text),
+                                  searchFunction(_searchController.value.text),
                             ),
                             header: const Text(''),
-                            // headerHeight: 15,
-
                             content: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: checkBoxes,
@@ -197,26 +219,34 @@ class _SearchWidgetState extends State<SearchWidget> {
                 ),
               ),
             ),
-            searchResults.isEmpty
-                ? const SizedBox(
-                    height: 200,
-                    child: Center(child: Icon(FluentIcons.search, size: 40)))
-                : Flexible(
-                    child: ListView.builder(
-                        itemCount: searchResults.length,
-                        itemBuilder: (ctx, i) => SearchResultTile(
-                              line: searchResults[i],
-                            )),
+            Expanded(
+              child: () {
+                if (_isSearching && _foundResults.isEmpty) {
+                  return const Center(child: ProgressRing());
+                }
+                if (!_searchPerformed) {
+                  return const Center(child: Icon(FluentIcons.search, size: 40));
+                }
+                if (_foundResults.isEmpty && !_isSearching) {
+                  return const Center(child: Text('No results found.'));
+                }
+                return ListView.builder(
+                  itemCount: _foundResults.length,
+                  itemBuilder: (ctx, i) => SearchResultTile(
+                    result: _foundResults[i],
                   ),
+                );
+              }(),
+            ),
           ],
         ));
   }
 }
 
 class SearchResultTile extends StatefulWidget {
-  final ParsedLine line;
+  final SearchResult result;
 
-  const SearchResultTile({super.key, required this.line});
+  const SearchResultTile({super.key, required this.result});
 
   @override
   State<SearchResultTile> createState() => _SearchResultTileState();
@@ -225,62 +255,30 @@ class SearchResultTile extends StatefulWidget {
 class _SearchResultTileState extends State<SearchResultTile> {
   Color? cardColor;
 
-  void searchNavigator(ParsedLine line) {
-    // print(line.verseText);
-  }
-
   @override
   Widget build(BuildContext context) {
-    String currentCollectionName = collections
-        .where((element) => element.id == widget.line.collectionid)
-        .first
-        .name;
+    final Collection thisCollection =
+        collections.firstWhere((c) => c.id == widget.result.collection);
+    final Book thisBook =
+        thisCollection.books.firstWhere((b) => b.id == widget.result.book);
 
-    List<Book> currentCollectionBooks = collections
-        .where((element) => element.id == widget.line.collectionid)
-        .toList()[0]
-        .books;
+    final String resultsFont = thisCollection.fonts.first.fontFamily;
+    final ui.TextDirection textDirection = thisCollection.textDirection == 'LTR'
+        ? ui.TextDirection.ltr
+        : ui.TextDirection.rtl;
+    final TextAlign textAlign =
+        thisCollection.textDirection == 'LTR' ? TextAlign.left : TextAlign.right;
 
-    String bookName = currentCollectionBooks
-        .where((element) => element.id == widget.line.book)
-        .first
-        .name;
-
-    Collection thisCollection = collections
-        .firstWhere((element) => element.id == widget.line.collectionid);
-
-    String resultsFont = thisCollection.fonts.first.fontFamily;
-
-    TextStyle computedTextStyle = TextStyle(
+    final TextStyle textStyle = TextStyle(
       fontFamily: resultsFont,
       fontSize: 20,
       color: DefaultTextStyle.of(context).style.color,
     );
+    final TextStyle refStyle = DefaultTextStyle.of(context)
+        .style
+        .copyWith(fontFamily: resultsFont, fontStyle: FontStyle.italic);
 
-    late ui.TextDirection textDirection;
-    // late AlignmentGeometry alignment;
-    late TextAlign textAlign;
-
-    if (thisCollection.textDirection == 'LTR') {
-      textDirection = ui.TextDirection.ltr;
-      textAlign = TextAlign.left;
-      // alignment = Alignment.centerLeft;
-      // comboBoxFontSize = DefaultTextStyle.of(context).style.fontSize;
-    } else {
-      textDirection = ui.TextDirection.rtl;
-      textAlign = TextAlign.right;
-      // alignment = Alignment.centerRight;
-      // comboBoxFontSize = 18;
-    }
-
-    List<InlineSpan> styledParagraphFragments = verseComposer(
-            line: widget.line,
-            computedTextStyle: computedTextStyle,
-            includeFootnotes: false,
-            context: context)
-        .versesAsSpans;
-
-    String chVsSeparator =
+    final String chVsSeparator =
         textDirection == ui.TextDirection.rtl ? '\u{200F}.' : '.';
 
     return Padding(
@@ -304,10 +302,10 @@ class _SearchResultTileState extends State<SearchResultTile> {
             BibleReference ref = BibleReference(
                 key: UniqueKey(),
                 partOfScrollGroup: true,
-                collectionID: widget.line.collectionid,
-                bookID: widget.line.book,
-                chapter: widget.line.chapter,
-                verse: widget.line.verse,
+                collectionID: widget.result.collection,
+                bookID: widget.result.book,
+                chapter: widget.result.chapter,
+                verse: widget.result.verse,
                 columnIndex:
                     1); //This is dummy data as we dont care about the columnIndex here, just the ref
 
@@ -315,51 +313,35 @@ class _SearchResultTileState extends State<SearchResultTile> {
                 ref;
           },
           child: Card(
-            // elevation: 1,
             backgroundColor: cardColor,
+            padding: const EdgeInsets.all(12.0),
             child: Column(
               crossAxisAlignment: textAlign == TextAlign.left
                   ? CrossAxisAlignment.start
                   : CrossAxisAlignment.end,
               children: [
-                RichText(
-                  text: TextSpan(
-                    children: styledParagraphFragments,
-                  ),
+                Text(
+                  widget.result.text,
+                  style: textStyle,
                   textAlign: textAlign,
                 ),
-                // Text(
-                //   widget.line.verseText,
-                //   style: DefaultTextStyle.of(context)
-                //       .style
-                //       .copyWith(fontFamily: 'font1'),
-                // ),
                 const SizedBox(height: 10),
                 const Divider(),
                 Wrap(
-                    // crossAxisAlignment: WrapCrossAlignment.end,
+                    alignment: WrapAlignment.end,
                     textDirection: textDirection,
                     children: [
                       Text(
-                        '$bookName ${widget.line.chapter}$chVsSeparator${widget.line.verse}  |  ',
-                        style: DefaultTextStyle.of(context).style.copyWith(
-                            fontFamily: resultsFont,
-                            fontStyle: FontStyle.italic),
+                        '${thisBook.name} ${widget.result.chapter}$chVsSeparator${widget.result.verse}  |  ',
+                        style: refStyle,
                         textDirection: textDirection,
                         textAlign: textAlign,
                       ),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            currentCollectionName,
-                            style: DefaultTextStyle.of(context).style.copyWith(
-                                fontFamily: resultsFont,
-                                fontStyle: FontStyle.italic),
-                            textDirection: textDirection,
-                            textAlign: textAlign,
-                          ),
-                        ],
+                      Text(
+                        thisCollection.name,
+                        style: refStyle,
+                        textDirection: textDirection,
+                        textAlign: textAlign,
                       ),
                     ]),
               ],

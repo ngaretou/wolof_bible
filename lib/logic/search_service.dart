@@ -48,12 +48,12 @@ class SearchService {
   final Map<String, Map<String, dynamic>> _indexShardCache = {};
   final Map<String, List<dynamic>> _chapterCache = {};
 
-  Future<List<SearchResult>> search({
+  Stream<SearchResult> search({
     required List<String> collectionIds,
     required String query,
     required Map<String, String> collectionLanguages,
-  }) async {
-    if (query.trim().isEmpty) return [];
+  }) async* {
+    if (query.trim().isEmpty) return;
 
     Set<_VerseLocation>? finalLocations;
 
@@ -70,10 +70,12 @@ class SearchService {
       for (final term in processedQuery) {
         final firstLetter = term[0];
         final indexShard = await _getIndexShard(collectionId, firstLetter);
-        
+
         if (indexShard.containsKey(term)) {
-          final locationsForTerm = (indexShard[term] as List<dynamic>).map((loc) {
-            return _VerseLocation(collectionId, loc[0], loc[1], loc[2].toString());
+          final locationsForTerm =
+              (indexShard[term] as List<dynamic>).map((loc) {
+            return _VerseLocation(
+                collectionId, loc[0], loc[1], loc[2].toString());
           }).toSet();
 
           if (collectionResults == null) {
@@ -99,10 +101,10 @@ class SearchService {
     }
 
     if (finalLocations == null || finalLocations.isEmpty) {
-      return [];
+      return;
     }
 
-    return _hydrateResults(finalLocations.toList());
+    yield* _hydrateResults(finalLocations.toList());
   }
 
   Future<Map<String, dynamic>> _getIndexShard(
@@ -122,9 +124,7 @@ class SearchService {
     }
   }
 
-  Future<List<SearchResult>> _hydrateResults(
-      List<_VerseLocation> locations) async {
-    final results = <SearchResult>[];
+  Stream<SearchResult> _hydrateResults(List<_VerseLocation> locations) async* {
     final Map<String, List<_VerseLocation>> groupedByChapter = {};
 
     // Group locations by chapter to fetch each chapter file only once
@@ -159,19 +159,18 @@ class SearchService {
           );
 
           if (verseLine != null) {
-            results.add(SearchResult(
+            yield SearchResult(
               text: verseLine['text'] ?? '',
               collection: loc.collectionId,
               book: loc.bookId,
               chapter: loc.chapter.toString(),
               verse: loc.verse,
-            ));
+            );
           }
         }
       } catch (e) {
         print('Error hydrating results for $chapterPath: $e');
       }
     }
-    return results;
   }
 }

@@ -94,6 +94,7 @@ void main() async {
           }
         }
       } catch (e) {
+        debugPrint('Error moving hive files into documents directory');
         debugPrint(e.toString());
       }
     }
@@ -310,7 +311,10 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
     // String response = await asyncGetProjectName(context);
     // appTitle = response;
     UserPrefs userPrefs = Provider.of<UserPrefs>(context, listen: false);
-    final collections = await collectionsFromXML(context, updateProgress);
+    if (collections.isEmpty) {
+      collections = await collectionsFromXML(context, updateProgress);
+    }
+
     await userPrefs.loadUserPrefs(collections);
 
     return collections;

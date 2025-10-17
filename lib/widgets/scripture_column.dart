@@ -55,7 +55,6 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
   ItemPositionsListener itemPositionsListener = ItemPositionsListener.create();
   late ScrollablePositionedList scrollablePositionedList;
 
-  int? delayedScrollIndex;
   bool wideWindow = false;
   late double wideWindowPadding;
   late bool partOfScrollGroup;
@@ -93,6 +92,12 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
   final Map<int, List<VerseOffset>> _paragraphLayouts = {};
   String _topVerseRef = '';
   double _viewportHeight = 0.0;
+  ({
+    String book,
+    String chapter,
+    String verse,
+    int paragraphIndex
+  })? _pendingScrollRefinement;
 
   // State flags for loading indicators
   bool _isLoading = false;
@@ -106,6 +111,7 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
       final jsonString = await rootBundle.loadString(path);
       toc = json.decode(jsonString);
     } catch (e) {
+      debugPrint('TOC not found or failed to parse');
       debugPrint(e.toString()); // TOC not found or failed to parse
     }
   }
@@ -146,14 +152,15 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
         bookID: widget.bibleReference.bookID,
         chapter: widget.bibleReference.chapter,
         verse: widget.bibleReference.verse,
+        thisColumnNavigation: false,
         isInitState: true);
 
     super.initState();
   }
 
-  void _updateTopVerse() {
-    final positions = itemPositionsListener.itemPositions.value;
-    if (positions.isEmpty || !mounted) return;
+  void _updateTopVerse(Iterable<ItemPosition> positions) {
+    // final positions = itemPositionsListener.itemPositions.value;
+    // if (positions.isEmpty || !mounted) return;
 
     // Find the paragraph at the top of the viewport.
     final topParagraphPosition = positions.reduce(
@@ -231,10 +238,9 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
   }
 
   void _handleScroll() {
-    _updateTopVerse();
-
     final positions = itemPositionsListener.itemPositions.value;
     if (positions.isEmpty || !mounted) return;
+    _updateTopVerse(positions);
 
     final lastVisibleIndex =
         positions.map((p) => p.index).reduce((max, p) => p > max ? p : max);
@@ -325,13 +331,106 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
     }
   }
 
+  void _attemptScrollRefinement(int readyParagraphIndex) {
+    // Check if the paragraph that just finished layout is the one we're waiting for.
+    if (_pendingScrollRefinement != null &&
+        _pendingScrollRefinement!.paragraphIndex == readyParagraphIndex) {
+      // debugPrint(
+      //     "Layout is now ready for pending scroll. Refining position...");
+      // The layout data is now in _paragraphLayouts, so calling _scrollWithAdjustment again will work.
+      _scrollWithAdjustment(
+        targetBook: _pendingScrollRefinement!.book,
+        targetChapter: _pendingScrollRefinement!.chapter,
+        targetVerse: _pendingScrollRefinement!.verse,
+        thisColumnNavigation: false,
+        jump: true, // Use jump for refinement to be instant.
+      );
+      // The pending request is cleared inside the successful path of _scrollWithAdjustment.
+    }
+  }
+
+  void _scrollWithAdjustment(
+      {required String targetBook,
+      required String targetChapter,
+      required String targetVerse,
+      required bool thisColumnNavigation,
+      bool jump = false}) {
+    final targetParagraphIndex = versesByParagraph.indexWhere(
+      (p) => p.any((l) =>
+          l.book == targetBook &&
+          l.chapter == targetChapter &&
+          l.verse == targetVerse),
+    );
+
+    if (targetParagraphIndex == -1) return;
+
+    final List<VerseOffset>? paragraphLayout =
+        _paragraphLayouts[targetParagraphIndex];
+
+    if (paragraphLayout != null && paragraphLayout.isNotEmpty) {
+      // Layout data is ready, scroll precisely.
+      _pendingScrollRefinement = null; // Clear any pending request for this.
+      final VerseOffset? targetVerseOffset = paragraphLayout.firstWhereOrNull(
+        (vo) =>
+            vo.book == targetBook &&
+            vo.chapter == targetChapter &&
+            vo.verse == targetVerse,
+      );
+
+      if (targetVerseOffset != null) {
+        final double alignment = targetVerseOffset.offset.dy / _viewportHeight;
+        if (jump) {
+          itemScrollController.jumpTo(
+              index: targetParagraphIndex, alignment: -alignment);
+        } else {
+          itemScrollController.scrollTo(
+              index: targetParagraphIndex,
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+              alignment: -alignment);
+        }
+      } else {
+        // Verse not found in layout, just jump to paragraph.
+        itemScrollController.jumpTo(index: targetParagraphIndex);
+      }
+    } else {
+      // Layout data is NOT ready.
+      // 1. Set a pending scroll request.
+      _pendingScrollRefinement = (
+        book: targetBook,
+        chapter: targetChapter,
+        verse: targetVerse,
+        paragraphIndex: targetParagraphIndex
+      );
+      // 2. Jump to the paragraph to ensure it gets built and laid out.
+      itemScrollController.jumpTo(index: targetParagraphIndex, alignment: 0);
+      // debugPrint(
+      //     'Layout not ready for $targetBook $targetChapter:$targetVerse. Jumping to paragraph and waiting for layout.');
+    }
+    if (partOfScrollGroup && thisColumnNavigation) {
+      Provider.of<ScrollGroup>(context, listen: false).setActiveColumnKey =
+          widget.key;
+      final ref = BibleReference(
+          key: widget.key!,
+          partOfScrollGroup: partOfScrollGroup,
+          collectionID: currentCollection.value,
+          bookID: targetBook,
+          chapter: targetChapter,
+          verse: targetVerse,
+          columnIndex: widget.myColumnIndex);
+
+      Provider.of<ScrollGroup>(context, listen: false).setScrollGroupRef = ref;
+    }
+  }
+
   //Function called on first open
   //and also from combobox selectors to go to a Bible reference
   Future<void> scrollToReference(
-      {String? collection,
+      {required String collection,
       required String bookID,
       required String chapter,
       required String verse,
+      required bool thisColumnNavigation,
       bool isInitState = false}) async {
     // print('scrollToReference ${currentCollection.value}');
     bool collectionChanged = false;
@@ -353,7 +452,7 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
       if (chapters == null || !chapters.containsKey(ch)) return false;
 
       // check verse
-      if (int.parse(vs) < int.parse(chapters[vs])) {
+      if (int.parse(vs) < int.parse(chapters[ch])) {
         return true;
       } else {
         return false;
@@ -366,170 +465,105 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
           (line) => line.book == bk && line.chapter == ch && line.verse == vs);
     }
 
-    // Begins here:
-    // If the collection is changing, we handle that as the primary case.
-    collectionChanged =
-        collection != null && currentCollection.value != collection;
-    if (collectionChanged) {
-      currentCollection.value = collection;
+    if (toc.isEmpty) {
       await loadTOC();
-
-      // Immediately update the list of books available for the new collection.
-      currentCollectionBooks = widget.collections
-          .firstWhere((element) => element.id == currentCollection.value)
-          .books;
-
-      // Now that we have the new TOC, check if the old book is valid.
-      if (!toc.containsKey(bookID)) {
-        // If not, reset the target to the first book of the new collection.
-        if (toc.keys.isNotEmpty) {
-          targetBook = toc.keys.first;
-          targetChapter = '1';
-          targetVerse = '1';
-        }
-      }
-      // If the old book *is* valid in the new collection, we let it pass through,
-      // respecting the original chapter/verse.
-    } else if (currentBook.value != targetBook) {
-      // This handles book changes within the same collection.
-      targetChapter = '1';
-      targetVerse = '1';
-    } else if (currentChapter.value != targetChapter) {
-      // This handles chapter changes within the same book.
-      targetVerse = '1';
     }
+    bool refIsInCollection =
+        await checkIfRefIsInCollection(targetBook, targetChapter, targetVerse);
+    // if it is get the data and navigate to it
+    if (refIsInCollection) {
+      // Begins here:
+      // If the collection is changing, we handle that as the primary case.
+      collectionChanged =
+          (currentCollection.value != collection || isInitState);
+      if (collectionChanged) {
+        currentCollection.value = collection;
+        await loadTOC();
 
-    bool verseIsInMemory =
-        checkIfRefIsInMemory(targetBook, targetChapter, targetVerse);
-    if (!verseIsInMemory || collectionChanged) {
-      // Set loading state and clear old data to show skeletonizer
-      setState(() {
-        _isLoading = true;
+        // Immediately update the list of books available for the new collection.
+        currentCollectionBooks = widget.collections
+            .firstWhere((element) => element.id == currentCollection.value)
+            .books;
+
+        // Now that we have the new TOC, check if the old book is valid.
+        if (!toc.containsKey(bookID)) {
+          // If not, reset the target to the first book of the new collection.
+          if (toc.keys.isNotEmpty) {
+            targetBook = toc.keys.first;
+            targetChapter = '1';
+            targetVerse = '1';
+          }
+        }
+        // If the old book *is* valid in the new collection, we let it pass through,
+        // respecting the original chapter/verse.
+      } else if (currentBook.value != targetBook) {
+        // This handles book changes within the same collection.
+        targetChapter = '1';
+        targetVerse = '1';
+      } else if (currentChapter.value != targetChapter) {
+        // This handles chapter changes within the same book.
+        targetVerse = '1';
+      }
+
+      bool verseIsInMemory =
+          checkIfRefIsInMemory(targetBook, targetChapter, targetVerse);
+      if (!verseIsInMemory || collectionChanged) {
+        // Set loading state and clear old data to show skeletonizer
+        setState(() {
+          _isLoading = true;
+        });
+
+        // check if the reference we're trying to go to is in the collection
+
+        // hit reset
         versesInMemory = [];
         versesByParagraph = [];
         currentParagraph = [];
-      });
+        // get the initial chunk of data
+        final fetchResult = await ChapterFetchService().getInitialChunk(
+            collectionId: currentCollection.value,
+            bookId: targetBook,
+            chapter: int.parse(targetChapter));
 
-      final fetchResult = await ChapterFetchService().getInitialChunk(
-          collectionId: currentCollection.value,
-          bookId: targetBook,
-          chapter: int.parse(targetChapter));
+        if (!mounted) return;
 
-      if (!mounted) return;
+        final newParagraphs = _linesToParagraphs(fetchResult.lines);
 
-      final newParagraphs = _linesToParagraphs(fetchResult.lines);
+        // finish up and return to the UI
+        setState(() {
+          versesInMemory = fetchResult.lines;
+          versesByParagraph = newParagraphs;
+          _isLoading = false;
+        });
+        // Scroll to the target paragraph after the list has been built.
 
-      // Find the paragraph to scroll to *after* loading.
-      final targetParagraphIndex = newParagraphs.indexWhere(
-        (p) => p.any((l) =>
-            l.book == targetBook &&
-            l.chapter == targetChapter &&
-            l.verse == targetVerse),
-      );
-
-      setState(() {
-        versesInMemory = fetchResult.lines;
-        versesByParagraph = newParagraphs;
-        _isLoading = false;
-      });
-
-      // Scroll to the target paragraph after the list has been built.
-      if (targetParagraphIndex != -1) {
+        // if (targetParagraphIndex != -1) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
-            itemScrollController.jumpTo(index: targetParagraphIndex);
+            _scrollWithAdjustment(
+                targetBook: targetBook,
+                targetChapter: targetChapter,
+                targetVerse: targetVerse,
+                thisColumnNavigation: thisColumnNavigation,
+                jump: true);
           }
         });
+        // }
+      } else {
+        _scrollWithAdjustment(
+            targetBook: targetBook,
+            targetChapter: targetChapter,
+            targetVerse: targetVerse,
+            thisColumnNavigation: thisColumnNavigation);
       }
-
-      //Verses in order;
-      //Now figure out where we're going
-      if (!mounted) return;
-      BibleReference? scrollCollectionRef =
-          Provider.of<ScrollGroup>(context, listen: false).getScrollGroupRef;
-
-      //Now we have three different cases -
-      //if there is a scroll ref and this column is part of the group, scroll to it;
-      //if bk, ch, vs all not null go to that indicated passage;
-      //go to first ref in collection if neither of those are true
-
-      if (scrollCollectionRef != null && partOfScrollGroup) {
-        //Check to see if the scrollCollectionRef is in the collection
-        // check If Ref Is In Collection sets the currentRef valuenotifiers if found
-        bool refIsInCollection = await checkIfRefIsInCollection(
-            scrollCollectionRef.bookID,
-            scrollCollectionRef.chapter,
-            scrollCollectionRef.verse);
-
-        if (refIsInCollection) {
-          currentBook.value = scrollCollectionRef.bookID;
-          currentChapter.value = scrollCollectionRef.chapter;
-          currentVerse.value = scrollCollectionRef.verse;
-          scrollToReference(
-              bookID: currentBook.value,
-              chapter: currentChapter.value,
-              verse: currentVerse.value);
-        } else {
-          // do nothing
-          // formerly:
-          // refNotInCollection();
-        }
-      }
+      // Update the ValueNotifiers to reflect the final navigation state.
+      currentBook.value = targetBook;
+      currentChapter.value = targetChapter;
+      currentVerse.value = targetVerse;
+      setUpComboBoxesChVs();
     } else {
-      // Verse is in memory, so find the paragraph it's in and scroll to that.
-      final targetParagraphIndex = versesByParagraph.indexWhere(
-        (p) => p.any((l) =>
-            l.book == targetBook &&
-            l.chapter == targetChapter &&
-            l.verse == targetVerse),
-      );
-
-      if (targetParagraphIndex != -1) {
-        final List<VerseOffset>? paragraphLayout =
-            _paragraphLayouts[targetParagraphIndex];
-        if (paragraphLayout != null) {
-          final VerseOffset? targetVerseOffset =
-              paragraphLayout.firstWhereOrNull(
-            (vo) =>
-                vo.book == targetBook &&
-                vo.chapter == targetChapter &&
-                vo.verse == targetVerse,
-          );
-
-          if (targetVerseOffset != null) {
-            final double alignment =
-                targetVerseOffset.offset.dy / _viewportHeight;
-            print("---");
-            print(currentCollection.value);
-            print(targetVerseOffset.offset.dy);
-            print(_viewportHeight);
-            print(alignment);
-            print("---");
-
-            itemScrollController.scrollTo(
-              index: targetParagraphIndex,
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeInOut,
-              alignment: -alignment,
-            );
-          } else {
-            // Fallback to scrolling to the top of the paragraph if verse offset not found
-            itemScrollController.jumpTo(index: targetParagraphIndex);
-          }
-        } else {
-          // Fallback to scrolling to the top of the paragraph if layout data not available
-          itemScrollController.jumpTo(index: targetParagraphIndex);
-        }
-      }
+      // if not, don't do anything, just stay there
     }
-
-    // Update the ValueNotifiers to reflect the final navigation state.
-    currentBook.value = targetBook;
-    currentChapter.value = targetChapter;
-    currentVerse.value = targetVerse;
-
-    setUpComboBoxesChVs();
-    //Above is collection change, which resets the whole column.
   }
 
   List<List<ParsedLine>> _linesToParagraphs(List<ParsedLine> lines) {
@@ -609,6 +643,7 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
       if (mounted) {
         Provider.of<UserPrefs>(context, listen: false)
             .saveScrollGroupState(ref);
+        // print(ref.toString());
       }
     } catch (e, s) {
       debugPrint('Error in setUpComboBoxesChVs: $e');
@@ -795,50 +830,19 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
           currentChapter.value != scrollGroupRef.chapter ||
           currentVerse.value != scrollGroupRef.verse) {
         scrollToReference(
+            collection: currentCollection.value,
             bookID: scrollGroupRef.bookID,
             chapter: scrollGroupRef.chapter,
-            verse: scrollGroupRef.verse);
+            verse: scrollGroupRef.verse,
+            thisColumnNavigation: false);
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    ScrollGroup scrollGroup = Provider.of<ScrollGroup>(context, listen: false);
     // // print(
     //     'scripture column build: columnIndex: ${widget.bibleReference.columnIndex}; collection: ${widget.bibleReference.collectionID}; key: ${widget.key}');
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      //if switching from an NT only collection with few paragraphs to a longer full Bible collection
-      //it will fail if it tries to scroll before the scrollablePositionedList is rebuilt.
-      //Set above, this delayedScrollIndex scrolls after build to the index in such a situation
-
-      if (delayedScrollIndex != null) {
-        scrollGroup.setActiveColumnKey = widget.key;
-        try {
-          itemScrollController.jumpTo(index: delayedScrollIndex!);
-        } catch (e) {
-          // print('$e at scripcol postframecallback');
-        }
-
-        delayedScrollIndex = null;
-      }
-
-      //This is what triggers the scrolling in other columns
-      if (!mounted) return;
-    });
-
-    // int numberOfColumns =
-    //     Provider.of<UserPrefs>(context, listen: false).userColumns.length;
-
-    // double windowWidth = MediaQuery.of(context).size.width;
-
-    // if (windowWidth > 1024 && numberOfColumns == 1) {
-    //   wideWindow = true;
-    //   wideWindowPadding = windowWidth / 5;
-    // } else {
-    //   wideWindow = false;
-    // }
 
     //Couple of things to get to pass in to the Paragraph Builder
 
@@ -929,11 +933,14 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
                                           .toList(),
                                       value: val,
                                       onChanged: (value) {
-                                        scrollToReference(
-                                            collection: value,
-                                            bookID: currentBook.value,
-                                            chapter: currentChapter.value,
-                                            verse: currentVerse.value);
+                                        value != null
+                                            ? scrollToReference(
+                                                collection: value,
+                                                bookID: currentBook.value,
+                                                chapter: currentChapter.value,
+                                                verse: currentVerse.value,
+                                                thisColumnNavigation: true)
+                                            : null;
                                       },
                                     );
                                   }),
@@ -980,7 +987,8 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
                                                   currentCollection.value,
                                               bookID: value,
                                               chapter: currentChapter.value,
-                                              verse: currentVerse.value);
+                                              verse: currentVerse.value,
+                                              thisColumnNavigation: true);
                                         }
                                       },
                                     );
@@ -1018,7 +1026,8 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
                                                     currentCollection.value,
                                                 bookID: currentBook.value,
                                                 chapter: value,
-                                                verse: currentVerse.value);
+                                                verse: currentVerse.value,
+                                                thisColumnNavigation: true);
                                           }
                                         },
                                       );
@@ -1061,7 +1070,8 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
                                                     currentCollection.value,
                                                 bookID: currentBook.value,
                                                 chapter: currentChapter.value,
-                                                verse: value);
+                                                verse: value,
+                                                thisColumnNavigation: true);
                                           }
                                         },
                                       );
@@ -1136,173 +1146,189 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
 
           // The scripture container
           Expanded(
-            child: NotificationListener(
-              onNotification: (ScrollNotification notification) {
-                // We now use the ItemPositionsListener for scroll detection,
-                // so this listener is less critical, but we can keep it for now.
-                return true;
-              },
-              child: Padding(
-                padding: wideWindow
-                    ? EdgeInsets.only(
-                        left: wideWindowPadding,
-                        right: wideWindowPadding,
-                        top: 0,
-                        bottom: 0)
-                    : const EdgeInsets.only(
-                        left: 2.5, right: 2.5, top: 0, bottom: 0),
-                child: Container(
-                  decoration: const BoxDecoration(
-                    //This is the border between each scripture column and its neighbor to the right
-                    border: Border(
-                      right: BorderSide(
-                        width: 1.0,
-                        color: Color.fromARGB(85, 126, 126, 126),
-                      ),
+            child: Padding(
+              padding: wideWindow
+                  ? EdgeInsets.only(
+                      left: wideWindowPadding,
+                      right: wideWindowPadding,
+                      top: 0,
+                      bottom: 0)
+                  : const EdgeInsets.only(
+                      left: 2.5, right: 2.5, top: 0, bottom: 0),
+              child: Container(
+                decoration: const BoxDecoration(
+                  //This is the border between each scripture column and its neighbor to the right
+                  border: Border(
+                    right: BorderSide(
+                      width: 1.0,
+                      color: Color.fromARGB(85, 126, 126, 126),
                     ),
                   ),
-                  child: NotificationListener<ScrollNotification>(
-                    onNotification: (notification) {
-                      // When a user starts a drag/scroll gesture on this column,
-                      // designate it as the leader of the scroll group.
-                      if (notification is ScrollStartNotification &&
-                          notification.dragDetails != null) {
-                        if (partOfScrollGroup) {
-                          Provider.of<ScrollGroup>(context, listen: false)
-                              .setActiveColumnKey = widget.key;
-                        }
+                ),
+                child: NotificationListener<ScrollNotification>(
+                  onNotification: (notification) {
+                    // When a user starts a drag/scroll gesture on this column,
+                    // designate it as the leader of the scroll group.
+                    if (notification is ScrollStartNotification &&
+                        notification.dragDetails != null) {
+                      if (partOfScrollGroup) {
+                        Provider.of<ScrollGroup>(context, listen: false)
+                            .setActiveColumnKey = widget.key;
                       }
-                      return true; // Allow notification to continue bubbling up
-                    },
-                    child: ContextMenuRegion(
-                      contextMenu: GenericContextMenu(
-                        buttonConfigs: [
-                          ContextMenuButtonConfig(
-                            Provider.of<UserPrefs>(context, listen: false)
-                                .currentTranslation
-                                .copy,
-                            icon: const Icon(FluentIcons.copy),
-                            onPressed: () {
-                              String? text = textToShareOrCopy();
+                    }
+                    return true; // Allow notification to continue bubbling up
+                  },
+                  child: ContextMenuRegion(
+                    contextMenu: GenericContextMenu(
+                      buttonConfigs: [
+                        ContextMenuButtonConfig(
+                          Provider.of<UserPrefs>(context, listen: false)
+                              .currentTranslation
+                              .copy,
+                          icon: const Icon(FluentIcons.copy),
+                          onPressed: () {
+                            String? text = textToShareOrCopy();
 
-                              if (text != null) {
-                                Clipboard.setData(ClipboardData(text: text));
-                              }
-                            },
-                          ),
-                          ContextMenuButtonConfig(
-                            Provider.of<UserPrefs>(context, listen: false)
-                                .currentTranslation
-                                .share,
-                            icon: const Icon(FluentIcons.share),
-                            onPressed: () async {
-                              String? text = textToShareOrCopy();
+                            if (text != null) {
+                              Clipboard.setData(ClipboardData(text: text));
+                            }
+                          },
+                        ),
+                        ContextMenuButtonConfig(
+                          Provider.of<UserPrefs>(context, listen: false)
+                              .currentTranslation
+                              .share,
+                          icon: const Icon(FluentIcons.share),
+                          onPressed: () async {
+                            String? text = textToShareOrCopy();
 
-                              if (text != null) {
-                                //if it's not the web app, share using the device share function
+                            if (text != null) {
+                              //if it's not the web app, share using the device share function
 
-                                if (!kIsWeb) {
-                                  SharePlus.instance
-                                      .share(ShareParams(text: text));
+                              if (!kIsWeb) {
+                                SharePlus.instance
+                                    .share(ShareParams(text: text));
+                              } else {
+                                //If it's the web app version best way to share is probably email, so put the text to share in an email
+                                final String url =
+                                    "mailto:?subject=&body=$text";
+
+                                if (await canLaunchUrl(Uri.parse(url))) {
+                                  await launchUrl(Uri.parse(url));
                                 } else {
-                                  //If it's the web app version best way to share is probably email, so put the text to share in an email
-                                  final String url =
-                                      "mailto:?subject=&body=$text";
-
-                                  if (await canLaunchUrl(Uri.parse(url))) {
-                                    await launchUrl(Uri.parse(url));
-                                  } else {
-                                    throw 'Could not launch $url';
-                                  }
+                                  throw 'Could not launch $url';
                                 }
                               }
-                            },
-                          )
-                        ],
-                      ),
-                      child: Skeletonizer(
-                        enabled: _isLoading,
-                        child: LayoutBuilder(builder: (context, constraints) {
-                          _viewportHeight = constraints.maxHeight;
-                          return scrollablePositionedList =
-                              ScrollablePositionedList.builder(
-                                  //this is the space between the right of the column and the text for the scrollbar
-                                  padding: const EdgeInsets.only(right: 10),
-                                  initialAlignment: 1,
-                                  itemScrollController: itemScrollController,
-                                  itemPositionsListener: itemPositionsListener,
-                                  itemCount: _isLoading
-                                      ? 10
-                                      : versesByParagraph.length +
-                                          (_isFetchingPrevious ? 1 : 0) +
-                                          (_isFetchingNext ? 1 : 0),
-                                  shrinkWrap: false,
-                                  physics: const ClampingScrollPhysics(),
-                                  itemBuilder: (ctx, i) {
-                                    if (_isLoading) {
-                                      return ParagraphBuilder(
-                                        paragraph: [
-                                          ParsedLine(
-                                              collectionid: '',
-                                              book: '',
-                                              chapter: '',
-                                              verse: '',
-                                              verseFragment: '',
-                                              audioMarker: '',
-                                              verseText: '...',
-                                              verseStyle: 'p')
-                                        ],
-                                        fontName: 'Saran',
-                                        textDirection: ui.TextDirection.ltr,
-                                        fontSize: 20,
-                                        rangeOfVersesToCopy: const [],
-                                        addVerseToCopyRange: dummy,
-                                      );
-                                    }
-                                    if (_isFetchingPrevious && i == 0) {
-                                      return const Skeletonizer(
-                                        child: Card(
-                                          child: SizedBox(
-                                            height: 100,
-                                            child: Center(
-                                              child: Text('Loading...'),
-                                            ),
-                                          ),
-                                        ),
-                                      );
-                                    }
-
-                                    final paraIndex =
-                                        _isFetchingPrevious ? i - 1 : i;
-
-                                    if (_isFetchingNext &&
-                                        paraIndex == versesByParagraph.length) {
-                                      return const Skeletonizer(
-                                        child: Card(
-                                          child: SizedBox(
-                                            height: 100,
-                                            child: Center(
-                                              child: Text('Loading...'),
-                                            ),
-                                          ),
-                                        ),
-                                      );
-                                    }
-
+                            }
+                          },
+                        )
+                      ],
+                    ),
+                    child: Skeletonizer(
+                      enabled: _isLoading,
+                      child: LayoutBuilder(builder: (context, constraints) {
+                        _viewportHeight = constraints.maxHeight;
+                        return scrollablePositionedList =
+                            ScrollablePositionedList.builder(
+                                //this is the space between the right of the column and the text for the scrollbar
+                                padding: const EdgeInsets.only(right: 10),
+                                initialAlignment: 1,
+                                itemScrollController: itemScrollController,
+                                itemPositionsListener: itemPositionsListener,
+                                itemCount: _isLoading
+                                    ? 4
+                                    : versesByParagraph.length +
+                                        (_isFetchingPrevious ? 1 : 0) +
+                                        (_isFetchingNext ? 1 : 0),
+                                shrinkWrap: false,
+                                physics: const ClampingScrollPhysics(),
+                                itemBuilder: (ctx, i) {
+                                  if (_isLoading) {
                                     return ParagraphBuilder(
-                                      paragraph: versesByParagraph[paraIndex],
-                                      fontSize: baseFontSize,
-                                      fontName: fontName,
-                                      textDirection: textDirection,
-                                      rangeOfVersesToCopy: rangeOfVersesToCopy,
-                                      addVerseToCopyRange: addVerseToCopyRange,
-                                      onLayoutCalculated: (offsets) {
-                                        _paragraphLayouts[paraIndex] = offsets;
-                                      },
+                                      paragraph: [
+                                        ParsedLine(
+                                            collectionid: '',
+                                            book: '',
+                                            chapter: '',
+                                            verse: '',
+                                            verseFragment: '',
+                                            audioMarker: '',
+                                            verseText:
+                                                '     Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc auctor nec diam sed egestas. Vestibulum volutpat mollis massa at faucibus. Proin eros urna, pellentesque sit amet mattis id, sollicitudin blandit tortor. Mauris vel ipsum id ipsum auctor lacinia sed at neque. Pellentesque ut malesuada dui, eget blandit est. Fusce lacinia sit amet magna eget viverra. Donec eu orci pharetra, molestie augue non, fermentum enim. Suspendisse mollis tempus sem sit amet pretium. Morbi tempor, ante finibus euismod maximus, massa justo tempus magna, eget commodo nulla turpis vel orci. Duis consequat pellentesque magna finibus malesuada. Nunc porttitor iaculis odio, id congue purus scelerisque vitae. Integer at orci et dolor placerat condimentum quis in odio. Donec ornare rhoncus dignissim. Donec nec est sit amet nisl iaculis fringilla id id diam.',
+                                            verseStyle: 'p')
+                                      ],
+                                      addDivider: false,
+                                      fontName: 'Charis',
+                                      textDirection: ui.TextDirection.ltr,
+                                      fontSize: 20,
+                                      rangeOfVersesToCopy: const [],
+                                      addVerseToCopyRange: dummy,
                                     );
-                                  });
-                        }),
-                      ),
+                                  }
+                                  if (_isFetchingPrevious && i == 0) {
+                                    return const Skeletonizer(
+                                      child: Card(
+                                        child: SizedBox(
+                                          height: 100,
+                                          child: Center(
+                                            child: Text('Loading...'),
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  }
+
+                                  final paraIndex =
+                                      _isFetchingPrevious ? i - 1 : i;
+
+                                  if (_isFetchingNext &&
+                                      paraIndex == versesByParagraph.length) {
+                                    return const Skeletonizer(
+                                      child: Card(
+                                        child: SizedBox(
+                                          height: 100,
+                                          child: Center(
+                                            child: Text('Loading...'),
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  }
+
+                                  bool addDivider = false;
+                                  try {
+                                    if (i != 0 &&
+                                        versesByParagraph[i].isNotEmpty &&
+                                        versesByParagraph[i].first.chapter ==
+                                            '0' &&
+                                        versesByParagraph[i - 1]
+                                                .first
+                                                .chapter !=
+                                            '0') {
+                                      addDivider = true;
+                                    }
+                                  } catch (e) {
+                                    debugPrint(
+                                        'Error ascertaining whether it\'s the first of an intro');
+
+                                    debugPrint(e.toString());
+                                  }
+
+                                  return ParagraphBuilder(
+                                    paragraph: versesByParagraph[paraIndex],
+                                    addDivider: addDivider,
+                                    fontSize: baseFontSize,
+                                    fontName: fontName,
+                                    textDirection: textDirection,
+                                    rangeOfVersesToCopy: rangeOfVersesToCopy,
+                                    addVerseToCopyRange: addVerseToCopyRange,
+                                    onLayoutCalculated: (offsets) {
+                                      _paragraphLayouts[paraIndex] = offsets;
+                                      _attemptScrollRefinement(paraIndex);
+                                    },
+                                  );
+                                });
+                      }),
                     ),
                   ),
                 ),
