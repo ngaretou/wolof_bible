@@ -267,7 +267,7 @@ void sfmToJson() async {
 
 void copyAppDef() async {
   print('Copying .appDef file to assets/json/appDef.appDef');
-  
+
 
   final projectDir = Directory('project');
   File? sourceFile;
@@ -300,6 +300,35 @@ void copyAppDef() async {
   } catch (e) {
     print('An error occurred during file copy: $e');
   }
+}
+
+Future<void> copyAboutFolder() async {
+  final sourceDir = Directory('project/about');
+  final destinationDir = Directory('../assets/project/about');
+
+  if (!await sourceDir.exists()) {
+    print('Source directory project/about not found. Skipping copy.');
+    return;
+  }
+
+  print('Copying contents from project/about to ../assets/project/about...');
+
+  if (!await destinationDir.exists()) {
+    await destinationDir.create(recursive: true);
+  }
+
+  await for (final entity in sourceDir.list(recursive: true)) {
+    final relativePath = entity.path.substring(sourceDir.path.length);
+    final newPath = '${destinationDir.path}$relativePath';
+
+    if (entity is File) {
+      await Directory(File(newPath).parent.path).create(recursive: true);
+      await entity.copy(newPath);
+    } else if (entity is Directory) {
+      await Directory(newPath).create(recursive: true);
+    }
+  }
+  print('Successfully copied about folder.');
 }
 
 Future<void> deleteExistingJsonFiles() async {
@@ -335,6 +364,7 @@ void testingsplit() {
 void main(List<String> arguments) async {
   await deleteExistingJsonFiles();
   copyAppDef();
+  await copyAboutFolder(); // Add call here
   sfmToJson();
   // testingsplit();
 }
