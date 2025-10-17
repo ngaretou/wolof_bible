@@ -1,20 +1,16 @@
 import 'dart:async';
 import 'dart:ui' as ui;
-import 'package:fluent_ui/fluent_ui.dart';
-import 'package:flutter/material.dart' as material;
-import 'package:provider/provider.dart';
-// import 'package:diacritic/diacritic.dart';
 
-import 'dart:ui' as ui;
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter/material.dart' as material;
 import 'package:provider/provider.dart';
+import 'package:rxdart/rxdart.dart';
 
 import '../logic/data_initializer.dart';
-import '../logic/verse_composer.dart';
-import '../providers/user_prefs.dart';
-import '../providers/column_manager.dart';
 import '../logic/search_service.dart';
+import '../logic/verse_composer.dart';
+import '../providers/column_manager.dart';
+import '../providers/user_prefs.dart';
 
 class SearchWidget extends StatefulWidget {
   final Function closeSearch;
@@ -33,42 +29,28 @@ class _SearchWidgetState extends State<SearchWidget> {
   final _searchService = SearchService();
 
   List<String> _collectionsToSearch = [];
-  final List<SearchResult> _foundResults = [];
-  StreamSubscription? _searchSubscription;
-  bool _isSearching = false;
-  bool _searchPerformed = false;
+  Stream<List<SearchResult>>? _resultsStream;
+  Key _streamBuilderKey = UniqueKey();
 
   @override
   void initState() {
     _collectionsToSearch = [collections.first.id]; // just collection 1
-    // _collectionsToSearch = List.generate(collections.length, (i) => collections[i].id); // add all collections
-
-    _searchController.addListener(() {
-      if (_searchController.text.length == 1 && mounted) setState(() {});
-    });
     super.initState();
   }
 
   @override
   void dispose() {
     _searchController.dispose();
-    _searchSubscription?.cancel();
     super.dispose();
   }
 
   void searchFunction(String searchRequest) {
     if (searchRequest.trim().isEmpty) {
+      setState(() {
+        _resultsStream = null;
+      });
       return;
     }
-
-    // Cancel any previous search subscription
-    _searchSubscription?.cancel();
-
-    setState(() {
-      _foundResults.clear();
-      _isSearching = true;
-      _searchPerformed = true;
-    });
 
     // Create the map of collection IDs to language codes
     final collectionLanguages = {
@@ -76,31 +58,16 @@ class _SearchWidgetState extends State<SearchWidget> {
         id: collections.firstWhere((c) => c.id == id).language,
     };
 
-    _searchSubscription = _searchService
-        .search(
-      collectionIds: _collectionsToSearch,
-      query: searchRequest,
-      collectionLanguages: collectionLanguages,
-    )
-        .listen(
-      (result) {
-        setState(() {
-          _foundResults.add(result);
-        });
-      },
-      onDone: () {
-        setState(() {
-          _isSearching = false;
-        });
-      },
-      onError: (error) {
-        setState(() {
-          _isSearching = false;
-          // Optionally, handle the error in the UI
-          print('Search error: $error');
-        });
-      },
-    );
+    setState(() {
+      _streamBuilderKey = UniqueKey();
+      _resultsStream = _searchService
+          .search(
+        collectionIds: _collectionsToSearch,
+        query: searchRequest,
+        collectionLanguages: collectionLanguages,
+      )
+          .scan<List<SearchResult>>((acc, value, _) => acc..add(value), []);
+    });
   }
 
   @override
@@ -159,8 +126,8 @@ class _SearchWidgetState extends State<SearchWidget> {
                               Expanded(
                                 child: TextFormBox(
                                   style: searchControlsStyle,
-                                  onEditingComplete: () => searchFunction(
-                                      _searchController.value.text),
+                                  onEditingComplete: () =>
+                                      searchFunction(_searchController.value.text),
                                   maxLines: 1,
                                   controller: _searchController,
                                   suffixMode: OverlayVisibilityMode.always,
@@ -221,20 +188,47 @@ class _SearchWidgetState extends State<SearchWidget> {
             ),
             Expanded(
               child: () {
-                if (_isSearching && _foundResults.isEmpty) {
-                  return const Center(child: ProgressRing());
+                if (_resultsStream == null) {
+                  return const Center(
+                      child: Icon(FluentIcons.search, size: 40));
                 }
-                if (!_searchPerformed) {
-                  return const Center(child: Icon(FluentIcons.search, size: 40));
-                }
-                if (_foundResults.isEmpty && !_isSearching) {
-                  return const Center(child: Text('No results found.'));
-                }
-                return ListView.builder(
-                  itemCount: _foundResults.length,
-                  itemBuilder: (ctx, i) => SearchResultTile(
-                    result: _foundResults[i],
-                  ),
+
+                return StreamBuilder<List<SearchResult>>(
+                  key: _streamBuilderKey,
+                  stream: _resultsStream,
+                  builder: (context, snapshot) {
+                    if (snapshot.hasError) {
+                      return Center(
+                          child: Text('Error: ${snapshot.error}'));
+                    }
+
+                    switch (snapshot.connectionState) {
+                      case ConnectionState.none:
+                      case ConnectionState.waiting:
+                        return const Center(child: ProgressRing());
+                      case ConnectionState.active:
+                      case ConnectionState.done:
+                        final results = snapshot.data ?? [];
+                        if (results.isEmpty) {
+                          return const Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(FluentIcons.sad, size: 40),
+                                SizedBox(height: 10),
+                                Text('No results found.'),
+                              ],
+                            ),
+                          );
+                        }
+                        return ListView.builder(
+                          itemCount: results.length,
+                          itemBuilder: (ctx, i) => SearchResultTile(
+                            result: results[i],
+                          ),
+                        );
+                    }
+                  },
                 );
               }(),
             ),
@@ -281,6 +275,24 @@ class _SearchResultTileState extends State<SearchResultTile> {
     final String chVsSeparator =
         textDirection == ui.TextDirection.rtl ? '\u{200F}.' : '.';
 
+    // Create a dummy ParsedLine to use the existing verseComposer
+    final dummyLine = ParsedLine(
+      collectionid: widget.result.collection,
+      book: widget.result.book,
+      chapter: widget.result.chapter,
+      verse: widget.result.verse,
+      verseText: widget.result.text,
+      verseFragment: '',
+      audioMarker: '',
+      verseStyle: 'v',
+    );
+
+    final composedVerse = verseComposer(
+      line: dummyLine,
+      includeFootnotes: false,
+      context: context,
+    );
+
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: MouseRegion(
@@ -321,7 +333,7 @@ class _SearchResultTileState extends State<SearchResultTile> {
                   : CrossAxisAlignment.end,
               children: [
                 Text(
-                  widget.result.text,
+                  composedVerse.versesAsString, // Use the cleaned text
                   style: textStyle,
                   textAlign: textAlign,
                 ),

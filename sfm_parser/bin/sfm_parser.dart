@@ -50,6 +50,7 @@ void sfmToJson() async {
   final assetPaths = <String>{
     'assets/images/',
     'assets/project/',
+    'assets/project/about/',
     'assets/translations.json',
   };
 
@@ -266,6 +267,7 @@ void sfmToJson() async {
 
 void copyAppDef() async {
   print('Copying .appDef file to assets/json/appDef.appDef');
+  
 
   final projectDir = Directory('project');
   File? sourceFile;

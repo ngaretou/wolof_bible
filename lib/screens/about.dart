@@ -34,7 +34,7 @@ class About extends StatelessWidget {
       Map<String, String> results = {};
 
       //get the appDef xml from outside the flutter project
-      String appDefLocation = 'assets/project/appDef.appDef';
+      String appDefLocation = 'assets/json/appDef.appDef';
       String xmlFileString = await assetBundle.loadString(appDefLocation);
       //get the document into a usable iterable
       final document = XmlDocument.parse(xmlFileString);
@@ -62,7 +62,7 @@ class About extends StatelessWidget {
 
     Future<void> getVariables() async {
       //get the appDef xml from outside the flutter project
-      String appDefLocation = 'assets/project/appDef.appDef';
+      String appDefLocation = 'assets/json/appDef.appDef';
       String xmlFileString = await assetBundle.loadString(appDefLocation);
       //get the document into a usable iterable
       final document = XmlDocument.parse(xmlFileString);
@@ -95,7 +95,7 @@ class About extends StatelessWidget {
       //Get the main about page html
 
       String aboutPageHtml =
-          await assetBundle.loadString("assets/project/data/about/about.txt");
+          await assetBundle.loadString("assets/project/data/about/about.txt"); 
 
       //Now for each of the copyright texts we have, check to see if the appbuilder wants that text in the about page
       for (var k in copyrights.keys) {
