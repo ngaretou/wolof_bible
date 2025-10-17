@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart' as material;
 import 'package:provider/provider.dart';
 import 'package:fluent_ui/fluent_ui.dart';
-
+// import 'package:flutter/foundation.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -20,6 +20,8 @@ class About extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // const isRunningWithWasm = bool.fromEnvironment('dart.tool.dart2wasm');
+
     // // print('about page build');
     // appDef info
     String appName = '';
@@ -201,6 +203,14 @@ Kàddug Yàlla+ app code © 2025 Foundational LLC.
         ],
       ),
       htmlToDisplay(),
+      // Wrap(
+      //   alignment: WrapAlignment.end,
+      //   children: [
+      //     Text('wasm info'),
+      //     if (kIsWasm) Text('wasm'),
+      //     if (isRunningWithWasm) Text('isRunningWithWasm'),
+      //   ],
+      // ),
       Button(
           onPressed: () {
             //Here we're transforming the saved theme to the Material theme just by grabbing

@@ -126,8 +126,8 @@ class _SearchWidgetState extends State<SearchWidget> {
                               Expanded(
                                 child: TextFormBox(
                                   style: searchControlsStyle,
-                                  onEditingComplete: () =>
-                                      searchFunction(_searchController.value.text),
+                                  onEditingComplete: () => searchFunction(
+                                      _searchController.value.text),
                                   maxLines: 1,
                                   controller: _searchController,
                                   suffixMode: OverlayVisibilityMode.always,
@@ -198,8 +198,7 @@ class _SearchWidgetState extends State<SearchWidget> {
                   stream: _resultsStream,
                   builder: (context, snapshot) {
                     if (snapshot.hasError) {
-                      return Center(
-                          child: Text('Error: ${snapshot.error}'));
+                      return Center(child: Text('Error: ${snapshot.error}'));
                     }
 
                     switch (snapshot.connectionState) {
@@ -260,8 +259,9 @@ class _SearchResultTileState extends State<SearchResultTile> {
     final ui.TextDirection textDirection = thisCollection.textDirection == 'LTR'
         ? ui.TextDirection.ltr
         : ui.TextDirection.rtl;
-    final TextAlign textAlign =
-        thisCollection.textDirection == 'LTR' ? TextAlign.left : TextAlign.right;
+    final TextAlign textAlign = thisCollection.textDirection == 'LTR'
+        ? TextAlign.left
+        : TextAlign.right;
 
     final TextStyle textStyle = TextStyle(
       fontFamily: resultsFont,
@@ -321,8 +321,11 @@ class _SearchResultTileState extends State<SearchResultTile> {
                 columnIndex:
                     1); //This is dummy data as we dont care about the columnIndex here, just the ref
 
-            Provider.of<ScrollGroup>(context, listen: false).setScrollGroupRef =
-                ref;
+            final scrollGroup =
+                Provider.of<ScrollGroup>(context, listen: false);
+            // to get all columns to follow, the search fn becomes the leader
+            scrollGroup.setActiveColumnKey = UniqueKey();
+            scrollGroup.setScrollGroupRef = ref;
           },
           child: Card(
             backgroundColor: cardColor,

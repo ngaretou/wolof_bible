@@ -355,6 +355,11 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
       required String targetVerse,
       required bool thisColumnNavigation,
       bool jump = false}) {
+    bool navMethod = jump;
+    // if (kIsWeb) {
+    //   navMethod = true;
+    // }
+
     final targetParagraphIndex = versesByParagraph.indexWhere(
       (p) => p.any((l) =>
           l.book == targetBook &&
@@ -379,7 +384,7 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
 
       if (targetVerseOffset != null) {
         final double alignment = targetVerseOffset.offset.dy / _viewportHeight;
-        if (jump) {
+        if (navMethod) {
           itemScrollController.jumpTo(
               index: targetParagraphIndex, alignment: -alignment);
         } else {
@@ -433,11 +438,13 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
       required bool thisColumnNavigation,
       bool isInitState = false}) async {
     // print('scrollToReference ${currentCollection.value}');
+
     bool collectionChanged = false;
     var targetBook = bookID;
     var targetChapter = chapter;
     var targetVerse = verse;
-
+    // print(
+    //     '$targetBook $targetChapter:$targetVerse    thisColumnNavigation ? $thisColumnNavigation');
     // Function to check if a reference is in the collection
     Future<bool> checkIfRefIsInCollection(
         String bk, String ch, String vs) async {
@@ -498,10 +505,10 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
         // If the old book *is* valid in the new collection, we let it pass through,
         // respecting the original chapter/verse.
       } else if (currentBook.value != targetBook) {
-        // We can have user directly navigating using the controls in this column 
-        // - treat that separately from searching, opening for first time. 
+        // We can have user directly navigating using the controls in this column
+        // - treat that separately from searching, opening for first time.
         if (thisColumnNavigation) {
-          // This handles book changes within the same collection.  
+          // This handles book changes within the same collection.
           targetChapter = '1';
           targetVerse = '1';
         }
@@ -1172,18 +1179,41 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
                     ),
                   ),
                 ),
-                child: NotificationListener<ScrollNotification>(
-                  onNotification: (notification) {
-                    // When a user starts a drag/scroll gesture on this column,
-                    // designate it as the leader of the scroll group.
-                    if (notification is ScrollStartNotification &&
-                        notification.dragDetails != null) {
-                      if (partOfScrollGroup) {
-                        Provider.of<ScrollGroup>(context, listen: false)
-                            .setActiveColumnKey = widget.key;
-                      }
+                // child: NotificationListener<ScrollNotification>(
+                //   onNotification: (notification) {
+                //     // print(notification);
+                //     // When a user starts a drag/scroll gesture on this column,
+                //     // designate it as the leader of the scroll group.
+
+                //     if (notification is ScrollStartNotification && dragd) {
+                //       if (partOfScrollGroup) {
+                //         print(
+                //             'setting myself as active key in column ${widget.myColumnIndex}| $notification');
+                //         Provider.of<ScrollGroup>(context, listen: false)
+                //             .setActiveColumnKey = widget.key;
+                //       }
+                //     }
+                //     return true; // Allow notification to continue bubbling up
+                //   },
+                child: Listener(
+                  onPointerDown: (details) {
+                    // on touch screen and scrollbar
+
+                    if (partOfScrollGroup) {
+                      // print(
+                      //     'setting myself as active key in column ${widget.myColumnIndex}| ${details.toString()}');
+                      Provider.of<ScrollGroup>(context, listen: false)
+                          .setActiveColumnKey = widget.key;
                     }
-                    return true; // Allow notification to continue bubbling up
+                  },
+                  onPointerSignal: (event) {
+                    // two finger scroll macos
+                    if (partOfScrollGroup) {
+                      // print(
+                      //     'setting myself as active key in column ${widget.myColumnIndex}');
+                      Provider.of<ScrollGroup>(context, listen: false)
+                          .setActiveColumnKey = widget.key;
+                    }
                   },
                   child: ContextMenuRegion(
                     contextMenu: GenericContextMenu(

@@ -363,6 +363,7 @@ flutter:
     - assets/json/C05/TIT/
     - assets/json/C05/index/
     - assets/project/
+    - assets/project/data/
     - assets/project/data/about/
     - assets/translations.json
 

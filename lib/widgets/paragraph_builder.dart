@@ -95,38 +95,75 @@ class _ParagraphBuilderState extends State<ParagraphBuilder> {
     Map<int, ParsedLine> characterIndexToVerseMap = {};
 
     TextSpan verseNumberRTL(String verseNumber) {
-      final text = ' $verseNumber ';
+      final text = ' ${toSuperscript(verseNumber)} ';
+
       plainTextBuffer.write(text);
       return TextSpan(
         text: text,
         style: mainTextStyle.copyWith(
-          textBaseline: TextBaseline.ideographic,
-          fontSize: fontSize / 2,
+          // textBaseline: TextBaseline.ideographic,
+          fontSize: fontSize,
           color: accentTextColor,
           decoration: TextDecoration.none,
         ),
       );
     }
 
+    // Couple of different tries for the verse numbers !
+
     TextSpan verseNumberLTR(String verseNumber) {
-      final text = ' $verseNumber ';
+      final text = ' ${toSuperscript(verseNumber)} ';
       plainTextBuffer.write(text);
       return TextSpan(
-          text: text,
-          style: TextStyle(
-            fontFeatures: const [ui.FontFeature.superscripts()],
-            // fontFamily: widget.fontName, // the incoming font doesn't support superscript it seems
-            fontSize: fontSize,
-            color: accentTextColor,
-          )
+        text: text,
+        style: mainTextStyle.copyWith(
+          // textBaseline: TextBaseline.ideographic,
+          fontSize: fontSize,
+          color: accentTextColor,
+          decoration: TextDecoration.none,
+        ),
 
-          // style: mainTextStyle.copyWith(
-          //   fontFeatures: const [ui.FontFeature.superscripts()],
-          //   fontSize: fontSize / 2,
-          //   color: accentTextColor,
-          // ),
-          );
+        // style: mainTextStyle.copyWith(
+        //   fontFeatures: const [ui.FontFeature.superscripts()],
+        //   fontSize: fontSize / 2,
+        //   color: accentTextColor,
+        // ),
+      );
     }
+    // WidgetSpan verseNumberLTR(String verseNumber) {
+    //   final text = ' $verseNumber ';
+    //   plainTextBuffer.write(text);
+    //   return WidgetSpan(
+    //     child: Baseline(
+    //       baseline: 00,
+    //       baselineType: TextBaseline.alphabetic,
+    //       child: Text(
+    //         ' $verseNumber ',
+    //         style: mainTextStyle.copyWith(
+    //             fontSize: fontSize / 2,
+    //             color: accentTextColor,
+    //             decoration: TextDecoration.none),
+    //         textDirection: widget.textDirection,
+    //       ),
+    //     ),
+    //   );
+    // }
+
+    // WidgetSpan verseNumberLTR(String verseNumber) {
+    //   return WidgetSpan(
+    //     child: Transform.translate(
+    //       offset: const Offset(0.0, -6.0),
+    //       child: Text(
+    //         ' $verseNumber ',
+    //         style: mainTextStyle.copyWith(
+    //             fontSize: fontSize / 2,
+    //             color: accentTextColor,
+    //             decoration: TextDecoration.none),
+    //         textDirection: widget.textDirection,
+    //       ),
+    //     ),
+    //   );
+    // }
 
     List<InlineSpan> processLine(ParsedLine line, {TextStyle? paraStyle}) {
       bool textSpanUnderline = widget.rangeOfVersesToCopy.any(
@@ -374,3 +411,23 @@ class _ParagraphBuilderState extends State<ParagraphBuilder> {
     );
   }
 }
+
+// Superscript mapping using Unicode. Extend as needed.
+const _sup = {
+  '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴', '5': '⁵', '6': '⁶',
+  '7': '⁷', '8': '⁸', '9': '⁹',
+  '+': '⁺', '-': '⁻', '=': '⁼', '(': '⁽', ')': '⁾',
+  // common letters used as exponents
+  'a': 'ᵃ', 'b': 'ᵇ', 'c': 'ᶜ', 'd': 'ᵈ', 'e': 'ᵉ', 'f': 'ᶠ', 'g': 'ᵍ',
+  'h': 'ʰ', 'i': 'ⁱ', 'j': 'ʲ',
+  'k': 'ᵏ', 'l': 'ˡ', 'm': 'ᵐ', 'n': 'ⁿ', 'o': 'ᵒ', 'p': 'ᵖ', 'r': 'ʳ',
+  's': 'ˢ', 't': 'ᵗ', 'u': 'ᵘ',
+  'v': 'ᵛ', 'w': 'ʷ', 'x': 'ˣ', 'y': 'ʸ', 'z': 'ᶻ',
+  'A': 'ᴬ', 'B': 'ᴮ', 'D': 'ᴰ', 'E': 'ᴱ', 'G': 'ᴳ', 'H': 'ᴴ', 'I': 'ᴵ',
+  'J': 'ᴶ', 'K': 'ᴷ', 'L': 'ᴸ',
+  'M': 'ᴹ', 'N': 'ᴺ', 'O': 'ᴼ', 'P': 'ᴾ', 'R': 'ᴿ', 'T': 'ᵀ', 'U': 'ᵁ',
+  'V': 'ⱽ', 'W': 'ᵂ',
+};
+
+String toSuperscript(String input) =>
+    input.split('').map((c) => _sup[c] ?? c).join();
