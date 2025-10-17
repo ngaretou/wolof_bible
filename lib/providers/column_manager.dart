@@ -9,7 +9,7 @@ class ColumnManager with ChangeNotifier {
 
   void addColumn() {
     readyToAddColumn = true;
-    // // print('addColumn in provider');
+    print('addColumn in provider');
     notifyListeners();
     Timer(const Duration(seconds: 1), () => readyToAddColumn = false);
   }

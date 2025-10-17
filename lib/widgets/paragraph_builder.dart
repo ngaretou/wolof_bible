@@ -21,6 +21,7 @@ class VerseOffset {
 
 class ParagraphBuilder extends StatefulWidget {
   final List<ParsedLine> paragraph;
+  final bool addDivider;
   final String fontName;
   final ui.TextDirection textDirection;
   final double fontSize;
@@ -31,6 +32,7 @@ class ParagraphBuilder extends StatefulWidget {
   const ParagraphBuilder(
       {super.key,
       required this.paragraph,
+      required this.addDivider,
       required this.fontName,
       required this.textDirection,
       required this.fontSize,
@@ -46,11 +48,16 @@ class _ParagraphBuilderState extends State<ParagraphBuilder> {
   TextSpan? _cachedTextSpanWithWidgets;
   TextSpan? _cachedTextSpanForLayout;
   Map<int, ParsedLine> _characterIndexToVerseMap = {};
+  bool isIntro = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     // This is the correct lifecycle method to access inherited widgets like Theme.
+
+    isIntro =
+        widget.paragraph.isNotEmpty && widget.paragraph.first.chapter == '0';
+
     _prepareSpans();
   }
 
@@ -78,6 +85,10 @@ class _ParagraphBuilderState extends State<ParagraphBuilder> {
     TextStyle underlineStyle =
         mainTextStyle.copyWith(decoration: TextDecoration.underline);
     TextStyle italicStyle = mainTextStyle.copyWith(fontStyle: FontStyle.italic);
+
+    TextStyle introStyle = mainTextStyle.copyWith(
+        fontStyle: FontStyle.italic,
+        color: FluentTheme.of(context).accentColor);
 
     List<InlineSpan> styledParagraphFragments = [];
     StringBuffer plainTextBuffer = StringBuffer();
@@ -160,19 +171,24 @@ class _ParagraphBuilderState extends State<ParagraphBuilder> {
     bool poetry = false;
     bool header = false;
 
-    bool isIntro =
-        widget.paragraph.isNotEmpty && widget.paragraph.first.chapter == '0';
-
     if (isIntro) {
-      final line = widget.paragraph.first;
-      // Per requirement, leave a switch for future styling.
-      // For now, all intro lines are treated the same.
-      switch (line.verseStyle) {
-        // TODO: Add specific styling for intro elements like headings ('is') vs paragraphs ('ip')
-        default:
-          // The user wants each intro line to be an indented paragraph.
-          // The indentation is added automatically for non-poetry paragraphs later.
-          styledParagraphFragments.addAll(processLine(line));
+      try {
+        final line = widget.paragraph.first;
+        // Per requirement, leave a switch for future styling.
+        // For now, all intro lines are treated the same.
+        switch (line.verseStyle) {
+          //
+
+          default:
+            // The user wants each intro line to be an indented paragraph.
+            // The indentation is added automatically for non-poetry paragraphs later.
+
+            styledParagraphFragments
+                .addAll(processLine(line, paraStyle: introStyle));
+        }
+      } catch (e) {
+        debugPrint('Error adding intro');
+        debugPrint(e.toString());
       }
     } else {
       for (var line in widget.paragraph) {
@@ -184,11 +200,11 @@ class _ParagraphBuilderState extends State<ParagraphBuilder> {
               styledParagraphFragments.add(verseNumberRTL(line.verse));
             }
             styledParagraphFragments.addAll(processLine(line));
-            header = false;
+
             break;
           case 'm':
             styledParagraphFragments.addAll(processLine(line));
-            header = false;
+
             break;
           case 's':
           case 's1':
@@ -304,8 +320,14 @@ class _ParagraphBuilderState extends State<ParagraphBuilder> {
 
     bool ltrText = widget.textDirection == ui.TextDirection.ltr;
     TextAlign paraAlignment = ltrText ? TextAlign.left : TextAlign.right;
-    bool header = widget.paragraph.first.verseStyle.contains(RegExp(r'[s,m]'));
-    bool poetry = widget.paragraph.first.verseStyle.contains(RegExp(r'q'));
+    bool header = widget.paragraph.first.verseStyle.contains(RegExp(r'(s|mt)'));
+    final ParsedLine currentFirstVerse = widget.paragraph.first;
+    bool isPoetry = currentFirstVerse.verseStyle.contains(RegExp(r'q'));
+
+    var padding = EdgeInsets.only(top: 8.0, left: 12, right: 12);
+    if (isPoetry) {
+      padding = const EdgeInsets.only(left: 32, bottom: 0.0);
+    }
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -316,16 +338,38 @@ class _ParagraphBuilderState extends State<ParagraphBuilder> {
           }
         });
 
-        return Padding(
-          padding: poetry
-              ? const EdgeInsets.only(left: 20, bottom: 0.0)
-              : const EdgeInsets.only(top: 8.0, left: 12, right: 12),
+        Widget para = Padding(
+          padding: padding,
           child: RichText(
             text: _cachedTextSpanWithWidgets!,
             textAlign: header ? TextAlign.center : paraAlignment,
             textDirection: widget.textDirection,
           ),
         );
+
+        if (widget.addDivider) {
+          return Padding(
+            padding: const EdgeInsets.only(top: 48),
+            child: Container(
+                padding: const EdgeInsets.only(top: 36),
+                decoration: BoxDecoration(
+                  border: Border(
+                    top: BorderSide(
+                      color: FluentTheme.of(context)
+                          .accentColor, // Change to your desired color
+                      width: 2.0, // Thickness of the border
+                    ),
+                  ),
+                ),
+
+                // padding: EdgeInsets.all(20),
+                // height: 1,
+                // color: FluentTheme.of(context).cardColor,
+                child: para),
+          );
+        } else {
+          return para;
+        }
       },
     );
   }

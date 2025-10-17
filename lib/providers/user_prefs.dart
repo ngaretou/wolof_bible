@@ -23,6 +23,19 @@ class BibleReference {
       required this.chapter,
       required this.verse,
       required this.columnIndex});
+
+  @override
+  String toString() {
+    return 'BibleReference('
+        'key: $key, '
+        'partOfScrollGroup: $partOfScrollGroup, '
+        'collectionID: $collectionID, '
+        'bookID: $bookID, '
+        'chapter: $chapter, '
+        'verse: $verse, '
+        'columnIndex: $columnIndex'
+        ')';
+  }
 }
 
 class UserPrefList {
@@ -57,54 +70,56 @@ class UserPrefs with ChangeNotifier {
   }
 
   Future<void> loadUserPrefs(List<Collection> collections) async {
-    //Check if the user has an existing session. If not, set up the initial session.
-    if (main.userColumnsBox.isEmpty) {
-      initializePrefs(collections);
-    } else {
-      try {
-        // print('loading usercolumns from userColumnsBox');
-
-        for (var i = 0; i < main.userColumnsBox.length; i++) {
-          Key newKeyForSession = UniqueKey();
-
-          BibleReference ref = BibleReference(
-              // key: UniqueKey(), //Here is where the unique key comes from after reloading.
-              // ScriptureColumns (List<Widget>) HAS to have a key so we can locate it later.
-              // The old key stored in the db is as String, but no way to convert String back to Key.
-              //For that reason fdtrtffgrdesfredswredsawe make a new key for this session above, then save it as we populate our in-memory copy of usercolumns
-              //And we also delete the old copy of the column info in the db and replace it with a new one
-              key: newKeyForSession,
-              partOfScrollGroup:
-                  main.userColumnsBox.getAt(i)!.partOfScrollGroup,
-              collectionID: main.userColumnsBox.getAt(i)!.collectionID,
-              bookID: main.userColumnsBox.getAt(i)!.bookID ?? 'MAT',
-              chapter: main.userColumnsBox.getAt(i)!.chapter ?? '1',
-              verse: main.userColumnsBox.getAt(i)!.verse ?? '1',
-              columnIndex: main.userColumnsBox.getAt(i)!.columnIndex);
-          userColumns.add(ref);
-        }
-        //clear the box
-        await main.userColumnsBox.clear();
-
-        // repopulate with the new values - really just the key is new
-        //but with the String/key problem have to do the whole thing
-        for (var i = 0; i < userColumns.length; i++) {
-          saveScrollGroupState(userColumns[i]);
-        }
-
-        //Get them in the right order
-        userColumns.sort(((a, b) => a.columnIndex.compareTo(b.columnIndex)));
-        //Now potentially you have some columnIndexes out of order which will probably not hurt the program but just for my peace of mind let's reset the column indexes
-        for (var i = 0; i < userColumns.length; i++) {
-          userColumns[i].columnIndex = i;
-        }
-
-        _userPrefList = UserPrefList(userColumns: userColumns);
-      } catch (e) {
-        // safety valve in case seomething goes wrong - reset db and start over
-        debugPrint('Error in loading user prefs, reinitializing columns...');
-        await main.userColumnsBox.clear();
+    if (userColumns.isEmpty) {
+      //Check if the user has an existing session. If not, set up the initial session.
+      if (main.userColumnsBox.isEmpty) {
         initializePrefs(collections);
+      } else {
+        try {
+          print('loading usercolumns from userColumnsBox');
+
+          for (var i = 0; i < main.userColumnsBox.length; i++) {
+            Key newKeyForSession = UniqueKey();
+
+            BibleReference ref = BibleReference(
+                // key: UniqueKey(), //Here is where the unique key comes from after reloading.
+                // ScriptureColumns (List<Widget>) HAS to have a key so we can locate it later.
+                // The old key stored in the db is as String, but no way to convert String back to Key.
+                //For that reason we make a new key for this session above, then save it as we populate our in-memory copy of usercolumns
+                //And we also delete the old copy of the column info in the db and replace it with a new one
+                key: newKeyForSession,
+                partOfScrollGroup:
+                    main.userColumnsBox.getAt(i)!.partOfScrollGroup,
+                collectionID: main.userColumnsBox.getAt(i)!.collectionID,
+                bookID: main.userColumnsBox.getAt(i)!.bookID ?? 'MAT',
+                chapter: main.userColumnsBox.getAt(i)!.chapter ?? '1',
+                verse: main.userColumnsBox.getAt(i)!.verse ?? '1',
+                columnIndex: main.userColumnsBox.getAt(i)!.columnIndex);
+            userColumns.add(ref);
+          }
+          //clear the box
+          await main.userColumnsBox.clear();
+
+          // repopulate with the new values - really just the key is new
+          //but with the String/key problem have to do the whole thing
+          for (var i = 0; i < userColumns.length; i++) {
+            saveScrollGroupState(userColumns[i]);
+          }
+
+          //Get them in the right order
+          userColumns.sort(((a, b) => a.columnIndex.compareTo(b.columnIndex)));
+          //Now potentially you have some columnIndexes out of order which will probably not hurt the program but just for my peace of mind let's reset the column indexes
+          for (var i = 0; i < userColumns.length; i++) {
+            userColumns[i].columnIndex = i;
+          }
+
+          _userPrefList = UserPrefList(userColumns: userColumns);
+        } catch (e) {
+          // safety valve in case seomething goes wrong - reset db and start over
+          debugPrint('Error in loading user prefs, reinitializing columns...');
+          await main.userColumnsBox.clear();
+          initializePrefs(collections);
+        }
       }
     }
   }

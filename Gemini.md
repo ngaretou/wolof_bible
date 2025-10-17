@@ -42,13 +42,13 @@ With the data pre-processed, we are now building the services within the Flutter
 3.  **`TextProcessor` (`lib/logic/text_processor.dart`):**
     -   A utility created to ensure that search queries in the app are processed with the exact same language rules (stemming, stop-words) that were used to create the search index.
 
-## Phase 3: UI and Navigation Refactor (In Progress)
+## Phase 3: UI and Navigation Refactor  (Completed)
 
-We are currently undertaking a major refactoring of the main Bible view (`lib/widgets/scripture_column.dart`) to improve navigation precision and user experience.
+We have completed a major refactoring of the main Bible view (`lib/widgets/scripture_column.dart`) to improve navigation precision and user experience.
 
-### Goal: Verse-Level Precision in a Paragraph Layout
+### Verse-Level Precision in a Paragraph Layout  (Completed)
 
-The primary objective is to overcome a major limitation of the previous version: the inability to scroll to or identify a specific verse located in the middle of a paragraph. We aim to achieve this while preserving the high-quality, paragraph-based typography.
+We now have the app able to scroll very precisely to a given verse and also to report to the UI the precise verse that is at the top of the screen. 
 
 ### Implemented Solution: The `TextPainter` Approach
 
@@ -63,11 +63,3 @@ We have successfully implemented the "identification" part of this solution.
 
 ### Current Status & Next Steps
 
--   **Last Session's Accomplishments:** We successfully debugged and fixed the verse identification logic.
-    - We resolved a crash in `ParagraphBuilder` caused by `TextPainter` being unable to handle `WidgetSpan`s from footnotes. The fix involved creating a separate, simplified `TextSpan` for layout calculations.
-    - We fixed an issue where scroll offsets (a relative value) were being incorrectly compared to verse offsets (a pixel value). The fix involved using a `LayoutBuilder` to get the viewport's pixel height to ensure all calculations are done in pixels.
-    - The user has confirmed that the app now accurately and consistently prints the reference of the top-most visible verse to the debug console as they scroll (e.g., `Top verse: GEN 1:3`).
-
--   **Immediate Next Step (Upon Resuming):** The verse *identification* feature is now complete and verified. The next step is to use this information to update the UI in real-time. We will take the top verse reference string (e.g., "GEN 1:3") that is being printed to the console and use it to update the app's state (i.e., the book, chapter, and verse dropdowns). This will provide immediate visual feedback to the user as they scroll.
-
--   **Next Major Goal:** After implementing the real-time UI update, we will tackle the final piece of the navigation puzzle: scrolling *to* a specific verse within a paragraph when a user selects it from the dropdowns.
