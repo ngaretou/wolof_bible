@@ -29,6 +29,7 @@ class ChapterFetchService {
     required String bookId,
     required int chapter,
   }) async {
+    print('getting initial chunk or refresh $collectionId, $bookId, $chapter');
     final toc = await _getCollectionToc(collectionId);
     if (toc.isEmpty) return FetchResult(lines: []);
 
@@ -123,6 +124,12 @@ class ChapterFetchService {
 
   _ChapterInfo? _getPreviousChapterInfo(
       Map<String, dynamic> toc, List<String> bookIds, _ChapterInfo current) {
+    // If the current chapter is not the first one, just decrement the chapter.
+    if (current.chapter > 1) {
+      return _ChapterInfo(current.bookId, current.chapter - 1);
+    }
+
+    // Otherwise, we need to go to the previous book.
     final currentBookIndex = bookIds.indexOf(current.bookId);
     if (currentBookIndex > 0) {
       try {
@@ -155,8 +162,9 @@ class ChapterFetchService {
       if (currentBookIndex < bookIds.length - 1) {
         final nextBookId = bookIds[currentBookIndex + 1];
         // get first chapter of next book
-        
-        final nextBookChapters = toc[nextBookId]['chapters'] as Map<String, dynamic>;
+
+        final nextBookChapters =
+            toc[nextBookId]['chapters'] as Map<String, dynamic>;
         final firstChapterOfNextBook = int.parse(nextBookChapters.keys.first);
         return _ChapterInfo(nextBookId, firstChapterOfNextBook);
       }

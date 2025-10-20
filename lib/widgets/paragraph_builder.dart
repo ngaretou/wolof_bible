@@ -112,7 +112,8 @@ class _ParagraphBuilderState extends State<ParagraphBuilder> {
     // Couple of different tries for the verse numbers !
 
     TextSpan verseNumberLTR(String verseNumber) {
-      final text = ' ${toSuperscript(verseNumber)}\u00A0';
+      final text = ' ${toSuperscript(verseNumber)} ';
+      // final text = ' ${toSuperscript(verseNumber)}\u00A0';
       plainTextBuffer.write(text);
       return TextSpan(
         text: text,
