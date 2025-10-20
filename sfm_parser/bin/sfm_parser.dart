@@ -108,9 +108,13 @@ void sfmToJson() async {
           // beginning of line
           // one or more whitespaces
           // whitespace or end of line
-          final match = RegExp(r'(^\s?\d+)(\s|$)').firstMatch(chapterContent);
+          final match = RegExp(
+            r'(^\s?\d+)(\s|$)',
+            multiLine: true,
+          ).firstMatch(chapterContent);
 
           int chapterNumber = 0;
+
           if (match != null) {
             // there is a number, so a chapter
             chapterNumber = int.parse(match.group(1)!);
@@ -158,7 +162,9 @@ void sfmToJson() async {
               'text': text,
             });
 
+            // currentVerseNumber != '' = if the match does not have a verse number it's a header or other non-text - throw it away
             if (text.isNotEmpty &&
+                currentVerseNumber != '' &&
                 chapterNumber != 0 &&
                 !{'mt1', 'h', 'toc1', 'toc2', 'toc3'}.contains(style)) {
               final tokens = text.toLowerCase().split(
@@ -166,6 +172,7 @@ void sfmToJson() async {
               );
               for (var token in tokens) {
                 if (token.isEmpty || stopWords.contains(token)) continue;
+
                 final processedToken = stemmer?.stem(token) ?? token;
                 final location = [bookId, chapterNumber, currentVerseNumber];
                 final locations = invertedIndex.putIfAbsent(
@@ -184,11 +191,17 @@ void sfmToJson() async {
             }
           }
 
-          if (lastVerseLabel.isNotEmpty) {
-            bookToc['chapters']![chapterNumber.toString()] = lastVerseLabel;
-          }
+          // there is some content in the chapter
+          if (chapterData.isNotEmpty) {
+            // this keeps tracking as it loops and will be on the last verse for each chapter
+            if (lastVerseLabel.isNotEmpty) {
+              bookToc['chapters']![chapterNumber.toString()] = lastVerseLabel;
+            }
+            // but if it's intro chapter 0 and (above) there is data, we want to save that as '0'
+            else if (chapterNumber == 0) {
+              bookToc['chapters']![chapterNumber.toString()] = "1";
+            }
 
-          if (chapterData.isNotEmpty && chapterNumber != 0) {
             final outputDir = Directory('../assets/json/$collectionId/$bookId');
             if (!await outputDir.exists()) {
               await outputDir.create(recursive: true);

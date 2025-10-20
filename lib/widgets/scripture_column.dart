@@ -459,7 +459,10 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
       if (chapters == null || !chapters.containsKey(ch)) return false;
 
       // check verse
-      if (int.parse(vs) < int.parse(chapters[ch])) {
+      // verse could be dashed - 13-15 etc - just get the last number
+      RegExpMatch? match = RegExp(r'(\d*-*)(\d+)').firstMatch(vs);
+      final verseno = match?.group(2) ?? vs;
+      if (int.parse(verseno) < int.parse(chapters[ch])) {
         return true;
       } else {
         return false;
@@ -1023,15 +1026,19 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
                                                 fontFamily: widget.comboBoxFont,
                                                 fontSize: comboBoxFontSize),
                                         isExpanded: true,
-                                        items: currentBookChapters
-                                            .map((e) => ComboBoxItem<String>(
-                                                  value: e,
-                                                  child: Text(
-                                                    e,
-                                                    overflow: textOverflow,
-                                                  ),
-                                                ))
-                                            .toList(),
+                                        items: currentBookChapters.map((e) {
+                                          // account for chapter 0 as intro
+                                          String displayText =
+                                              e == '0' ? 'Intro' : e;
+
+                                          return ComboBoxItem<String>(
+                                            value: e,
+                                            child: Text(
+                                              displayText,
+                                              overflow: textOverflow,
+                                            ),
+                                          );
+                                        }).toList(),
                                         value: val,
                                         onChanged: (value) {
                                           if (value != null) {
@@ -1063,7 +1070,7 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
                                             .copyWith(
                                                 fontFamily: widget.comboBoxFont,
                                                 fontSize: comboBoxFontSize),
-                                        placeholder: const Text('150'),
+                                        placeholder: const Text('--'),
                                         isExpanded: true,
                                         items: currentChapterVerseNumbers
                                             .toSet()
@@ -1273,7 +1280,7 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
                                 itemScrollController: itemScrollController,
                                 itemPositionsListener: itemPositionsListener,
                                 itemCount: _isLoading
-                                    ? 4
+                                    ? 6
                                     : versesByParagraph.length +
                                         (_isFetchingPrevious ? 1 : 0) +
                                         (_isFetchingNext ? 1 : 0),
@@ -1291,7 +1298,7 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
                                             verseFragment: '',
                                             audioMarker: '',
                                             verseText:
-                                                '     Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc auctor nec diam sed egestas. Vestibulum volutpat mollis massa at faucibus. Proin eros urna, pellentesque sit amet mattis id, sollicitudin blandit tortor. Mauris vel ipsum id ipsum auctor lacinia sed at neque. Pellentesque ut malesuada dui, eget blandit est. Fusce lacinia sit amet magna eget viverra. Donec eu orci pharetra, molestie augue non, fermentum enim. Suspendisse mollis tempus sem sit amet pretium. Morbi tempor, ante finibus euismod maximus, massa justo tempus magna, eget commodo nulla turpis vel orci. Duis consequat pellentesque magna finibus malesuada. Nunc porttitor iaculis odio, id congue purus scelerisque vitae. Integer at orci et dolor placerat condimentum quis in odio. Donec ornare rhoncus dignissim. Donec nec est sit amet nisl iaculis fringilla id id diam.',
+                                                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc auctor nec diam sed egestas. Vestibulum volutpat mollis massa at faucibus. Proin eros urna, pellentesque sit amet mattis id, sollicitudin blandit tortor. Mauris vel ipsum id ipsum auctor lacinia sed at neque. Pellentesque ut malesuada dui, eget blandit est. Fusce lacinia sit amet magna eget viverra. Donec eu orci pharetra, molestie augue non, fermentum enim. Suspendisse mollis tempus sem sit amet pretium. Morbi tempor, ante finibus euismod maximus, massa justo tempus magna, eget commodo nulla turpis vel orci.',
                                             verseStyle: 'p')
                                       ],
                                       addDivider: false,
