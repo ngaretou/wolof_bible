@@ -77,7 +77,6 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
   List<String> currentChapterVerseNumbers = [];
 
   List<List<ParsedLine>> versesByParagraph = [];
-  List<ParsedLine> currentParagraph = [];
 
   String? collectionComboBoxValue;
   String? bookComboBoxValue;
@@ -342,7 +341,7 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
         _pendingScrollRefinement!.paragraphIndex == readyParagraphIndex) {
       // debugPrint(
       //     "Layout is now ready for pending scroll. Refining position...");
-      // The layout data is now in _paragraphLayouts, so calling _scrollWithAdjustment again will work.
+      // The layout data is now in _paragraph Layouts, so calling _scroll WithAdjustment again will work.
       _scrollWithAdjustment(
         targetBook: _pendingScrollRefinement!.book,
         targetChapter: _pendingScrollRefinement!.chapter,
@@ -350,7 +349,7 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
         thisColumnNavigation: false,
         jump: true, // Use jump for refinement to be instant.
       );
-      // The pending request is cleared inside the successful path of _scrollWithAdjustment.
+      // The pending request is cleared inside the successful path of _scroll With Adjustment.
     }
   }
 
@@ -419,7 +418,7 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
         paragraphIndex: targetParagraphIndex
       );
       // 2. Jump to the paragraph to ensure it gets built and laid out.
-      itemScrollController.jumpTo(index: targetParagraphIndex, alignment: 0);
+      // itemScrollController.jumpTo(index: targetParagraphIndex, alignment: 0);
       // debugPrint(
       //     'Layout not ready for $targetBook $targetChapter:$targetVerse. Jumping to paragraph and waiting for layout.');
     }
@@ -548,7 +547,8 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
         // hit reset
         versesInMemory.clear();
         versesByParagraph.clear();
-        currentParagraph.clear();
+        _paragraphLayouts.clear();
+
         // get the initial chunk of data
         final fetchResult = await ChapterFetchService().getInitialChunk(
             collectionId: currentCollection.value,
@@ -608,7 +608,7 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
           paragraphs.add(currentParagraph);
         }
         paragraphs.add([lines[i]]);
-        currentParagraph = [];
+        currentParagraph.clear();
         continue;
       }
 
@@ -621,7 +621,7 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
       } else if ((lines[i].verseStyle.contains(RegExp(r'[m,r,d]')))) {
         paragraphs.add(currentParagraph);
         paragraphs.add([lines[i]]);
-        currentParagraph = [];
+        currentParagraph.clear();
       } else {
         //otherwise just add the line to the paragraph
         currentParagraph.add(lines[i]);
@@ -741,7 +741,7 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
             element.chapter == rangeOfVersesToCopy.first.chapter &&
             element.verse == rangeOfVersesToCopy.first.verse);
       }
-      rangeOfVersesToCopy = [];
+      rangeOfVersesToCopy.clear();
       for (var i = startIndex; i <= endIndex; i++) {
         rangeOfVersesToCopy.add(versesInMemory[i]);
       }
@@ -755,7 +755,7 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
 
     // if there is only one verse, and the incoming verse is the same as the one that's in there, get rid of it.
     if (rangeOfVersesToCopy.length == 1 && verseAlreadyInRange) {
-      rangeOfVersesToCopy = [];
+      rangeOfVersesToCopy.clear();
     }
     // if vs not in range, add it and arrange the lines
     else if (!verseAlreadyInRange) {
@@ -861,7 +861,7 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
 
       textToReturn =
           '$textToReturn$lineBreak$reference ($currentCollectionName)';
-      rangeOfVersesToCopy = [];
+      rangeOfVersesToCopy.clear();
       setState(() {});
       return textToReturn;
     }
@@ -884,6 +884,48 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
             verse: scrollGroupRef.verse,
             thisColumnNavigation: false);
       }
+    }
+  }
+
+  Widget userInteractionWidget({required Widget child}) {
+    if (kIsWeb) {
+      return Listener(
+          onPointerDown: (details) {
+            // on touch screen and scrollbar
+
+            if (partOfScrollGroup) {
+              // print(
+              //     'setting myself as active key in column ${widget.myColumnIndex}| ${details.toString()}');
+              _setActiveColumnKey();
+            }
+          },
+          onPointerSignal: (event) {
+            // two finger scroll macos
+            if (partOfScrollGroup) {
+              // print(
+              //     'setting myself as active key in column ${widget.myColumnIndex}');
+              _setActiveColumnKey();
+            }
+          },
+          child: child);
+    } else {
+      return NotificationListener<ScrollNotification>(
+          onNotification: (notification) {
+            // print(notification);
+            // When a user starts a drag/scroll gesture on this column,
+            // designate it as the leader of the scroll group.
+
+            if (notification is ScrollStartNotification &&
+                notification.dragDetails != null) {
+              if (partOfScrollGroup) {
+                // print(
+                //     'setting myself as active key in column ${widget.myColumnIndex}| $notification');
+                _setActiveColumnKey();
+              }
+            }
+            return true; // Allow notification to continue bubbling up
+          },
+          child: child);
     }
   }
 
@@ -1217,6 +1259,7 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
                       bottom: 0)
                   : const EdgeInsets.only(
                       left: 2.5, right: 2.5, top: 0, bottom: 0),
+              // ignore: avoid_unnecessary_containers
               child: Container(
                 decoration: const BoxDecoration(
                   //This is the border between each scripture column and its neighbor to the right
@@ -1227,39 +1270,7 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
                     ),
                   ),
                 ),
-                // child: NotificationListener<ScrollNotification>(
-                //   onNotification: (notification) {
-                //     // print(notification);
-                //     // When a user starts a drag/scroll gesture on this column,
-                //     // designate it as the leader of the scroll group.
-
-                //     if (notification is ScrollStartNotification && dragd) {
-                //       if (partOfScrollGroup) {
-                //         print(
-                //             'setting myself as active key in column ${widget.myColumnIndex}| $notification');
-                //         setActiveColumnKey();
-                //       }
-                //     }
-                //     return true; // Allow notification to continue bubbling up
-                //   },
-                child: Listener(
-                  onPointerDown: (details) {
-                    // on touch screen and scrollbar
-
-                    if (partOfScrollGroup) {
-                      // print(
-                      //     'setting myself as active key in column ${widget.myColumnIndex}| ${details.toString()}');
-                      _setActiveColumnKey();
-                    }
-                  },
-                  onPointerSignal: (event) {
-                    // two finger scroll macos
-                    if (partOfScrollGroup) {
-                      // print(
-                      //     'setting myself as active key in column ${widget.myColumnIndex}');
-                      _setActiveColumnKey();
-                    }
-                  },
+                child: userInteractionWidget(
                   child: ContextMenuRegion(
                     contextMenu: GenericContextMenu(
                       buttonConfigs: [

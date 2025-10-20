@@ -100,23 +100,23 @@ ComposedVerses verseComposer(
 
     //if includeFootnotes is true, this is for screen display (not string copy) so add it to the spans to return.
     //Otherwise the footnotes are thrown away as there's no else
-    if (includeFootnotes) {
-      spansToReturn.add(
-        WidgetSpan(
-          child: Transform.translate(
-              offset: const Offset(0.0, -6.0),
-              child: Tooltip(
-                message: composeFootnotes(footnoteText),
-                child: Text(
-                  '*',
-                  style: DefaultTextStyle.of(context)
-                      .style
-                      .copyWith(color: FluentTheme.of(context).accentColor),
-                ),
-              )),
-        ),
-      );
-    }
+    // if (includeFootnotes) {
+    //   spansToReturn.add(
+    //     WidgetSpan(
+    //       child: Transform.translate(
+    //           offset: const Offset(0.0, -6.0),
+    //           child: Tooltip(
+    //             message: composeFootnotes(footnoteText),
+    //             child: Text(
+    //               '*',
+    //               style: DefaultTextStyle.of(context)
+    //                   .style
+    //                   .copyWith(color: FluentTheme.of(context).accentColor),
+    //             ),
+    //           )),
+    //     ),
+    //   );
+    // }
   }
 
   void pairedUsfmFindingAndFormatting(String text) {
