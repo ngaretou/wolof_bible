@@ -42,6 +42,7 @@ class ScriptureColumn extends StatefulWidget {
 
 class _ScriptureColumnState extends State<ScriptureColumn> {
   void dummy(ParsedLine ref) {}
+  bool _isScrolling = false;
 
   late ItemScrollController itemScrollController;
   late ScrollGroup _scrollGroup;
@@ -252,18 +253,19 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
         positions.map((p) => p.index).reduce((min, p) => p < min ? p : min);
 
     // Proactively fetch next chapter when user is, say, 80% of the way through the loaded content.
-    if (!_isFetchingNext && lastVisibleIndex > versesByParagraph.length * 0.8) {
+    if (!_isFetchingNext && versesByParagraph.length - lastVisibleIndex < 2) {
       _fetchNextChapter();
     }
 
     // Proactively fetch previous chapter when user is near the beginning.
-    if (!_isFetchingPrevious && firstVisibleIndex < 10) {
+    if (!_isFetchingPrevious && firstVisibleIndex < 2) {
       _fetchPreviousChapter();
     }
   }
 
   Future<void> _fetchNextChapter() async {
     if (versesInMemory.isEmpty || _isFetchingNext) return;
+    print('fetching next chapter');
 
     setState(() {
       _isFetchingNext = true;
@@ -291,7 +293,7 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
 
   Future<void> _fetchPreviousChapter() async {
     if (versesInMemory.isEmpty || _isFetchingPrevious) return;
-
+    print('fetching prev chapter');
     final positions = itemPositionsListener.itemPositions.value;
     if (positions.isEmpty) return;
 
@@ -364,76 +366,84 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
       required String targetChapter,
       required String targetVerse,
       required bool thisColumnNavigation,
-      bool jump = false}) {
-    bool navMethod = jump;
-    // if (kIsWeb) {
-    //   navMethod = true;
-    // }
+      bool jump = false}) async {
+    if (_isScrolling) return; // Don't start a new scroll if one is in progress
 
-    final targetParagraphIndex = versesByParagraph.indexWhere(
-      (p) => p.any((l) =>
-          l.book == targetBook &&
-          l.chapter == targetChapter &&
-          l.verse == targetVerse),
-    );
+    setState(() {
+      _isScrolling = true;
+    });
 
-    if (targetParagraphIndex == -1) return;
+    try {
+      bool navMethod = jump;
 
-    final List<VerseOffset>? paragraphLayout =
-        _paragraphLayouts[targetParagraphIndex];
-
-    if (paragraphLayout != null && paragraphLayout.isNotEmpty) {
-      // Layout data is ready, scroll precisely.
-      _pendingScrollRefinement = null; // Clear any pending request for this.
-      final VerseOffset? targetVerseOffset = paragraphLayout.firstWhereOrNull(
-        (vo) =>
-            vo.book == targetBook &&
-            vo.chapter == targetChapter &&
-            vo.verse == targetVerse,
+      final targetParagraphIndex = versesByParagraph.indexWhere(
+        (p) => p.any((l) =>
+            l.book == targetBook &&
+            l.chapter == targetChapter &&
+            l.verse == targetVerse),
       );
 
-      if (targetVerseOffset != null) {
-        final double alignment = targetVerseOffset.offset.dy / _viewportHeight;
-        if (navMethod) {
-          itemScrollController.jumpTo(
-              index: targetParagraphIndex, alignment: -alignment);
+      if (targetParagraphIndex == -1) return;
+
+      final List<VerseOffset>? paragraphLayout =
+          _paragraphLayouts[targetParagraphIndex];
+
+      if (paragraphLayout != null && paragraphLayout.isNotEmpty) {
+        _pendingScrollRefinement = null; // Clear any pending request
+        final VerseOffset? targetVerseOffset = paragraphLayout.firstWhereOrNull(
+          (vo) =>
+              vo.book == targetBook &&
+              vo.chapter == targetChapter &&
+              vo.verse == targetVerse,
+        );
+
+        if (targetVerseOffset != null) {
+          final double alignment =
+              targetVerseOffset.offset.dy / _viewportHeight;
+          // print('alignment = $alignment');
+          if (navMethod) {
+            itemScrollController.jumpTo(
+                index: targetParagraphIndex, alignment: -alignment);
+          } else {
+            await itemScrollController.scrollTo(
+                index: targetParagraphIndex,
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+                alignment: -alignment);
+          }
         } else {
-          itemScrollController.scrollTo(
-              index: targetParagraphIndex,
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeInOut,
-              alignment: -alignment);
+          itemScrollController.jumpTo(index: targetParagraphIndex);
         }
       } else {
-        // Verse not found in layout, just jump to paragraph.
-        itemScrollController.jumpTo(index: targetParagraphIndex);
-      }
-    } else {
-      // Layout data is NOT ready.
-      // 1. Set a pending scroll request.
-      _pendingScrollRefinement = (
-        book: targetBook,
-        chapter: targetChapter,
-        verse: targetVerse,
-        paragraphIndex: targetParagraphIndex
-      );
-      // 2. Jump to the paragraph to ensure it gets built and laid out.
-      // itemScrollController.jumpTo(index: targetParagraphIndex, alignment: 0);
-      // debugPrint(
-      //     'Layout not ready for $targetBook $targetChapter:$targetVerse. Jumping to paragraph and waiting for layout.');
-    }
-    if (partOfScrollGroup && thisColumnNavigation) {
-      _setActiveColumnKey();
-      final ref = BibleReference(
-          key: widget.key!,
-          partOfScrollGroup: partOfScrollGroup,
-          collectionID: currentCollection.value,
-          bookID: targetBook,
+        _pendingScrollRefinement = (
+          book: targetBook,
           chapter: targetChapter,
           verse: targetVerse,
-          columnIndex: widget.myColumnIndex);
+          paragraphIndex: targetParagraphIndex
+        );
+        itemScrollController.jumpTo(index: targetParagraphIndex, alignment: 0);
+      }
 
-      Provider.of<ScrollGroup>(context, listen: false).setScrollGroupRef = ref;
+      if (partOfScrollGroup && thisColumnNavigation) {
+        _setActiveColumnKey();
+        final ref = BibleReference(
+            key: widget.key!,
+            partOfScrollGroup: partOfScrollGroup,
+            collectionID: currentCollection.value,
+            bookID: targetBook,
+            chapter: targetChapter,
+            verse: targetVerse,
+            columnIndex: widget.myColumnIndex);
+
+        Provider.of<ScrollGroup>(context, listen: false).setScrollGroupRef =
+            ref;
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isScrolling = false;
+        });
+      }
     }
   }
 
