@@ -11,7 +11,7 @@ pubspec.lock
 ios/build
 assets/project/data.old
 sfm_parser/assets/json/
-build
+build/
 
 **/firebase_app_id_file.json
 **/firebase_options.dart
