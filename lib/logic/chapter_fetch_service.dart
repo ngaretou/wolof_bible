@@ -123,17 +123,13 @@ class ChapterFetchService {
 
   _ChapterInfo? _getPreviousChapterInfo(
       Map<String, dynamic> toc, List<String> bookIds, _ChapterInfo current) {
-    if (current.chapter > 1) {
-      return _ChapterInfo(current.bookId, current.chapter - 1);
-    }
-
     final currentBookIndex = bookIds.indexOf(current.bookId);
     if (currentBookIndex > 0) {
       try {
         final prevBookId = bookIds[currentBookIndex - 1];
         final prevBookChapters =
             toc[prevBookId]['chapters'] as Map<String, dynamic>;
-        final lastChapterOfPrevBook = prevBookChapters.keys.length;
+        final lastChapterOfPrevBook = int.parse(prevBookChapters.keys.last);
         return _ChapterInfo(prevBookId, lastChapterOfPrevBook);
       } catch (e) {
         debugPrint('error getting previous chapter');
@@ -149,7 +145,7 @@ class ChapterFetchService {
     try {
       final currentBookChapters =
           toc[current.bookId]['chapters'] as Map<String, dynamic>;
-      final lastChapterOfCurrentBook = currentBookChapters.keys.length;
+      final lastChapterOfCurrentBook = int.parse(currentBookChapters.keys.last);
 
       if (current.chapter < lastChapterOfCurrentBook) {
         return _ChapterInfo(current.bookId, current.chapter + 1);
@@ -158,7 +154,11 @@ class ChapterFetchService {
       final currentBookIndex = bookIds.indexOf(current.bookId);
       if (currentBookIndex < bookIds.length - 1) {
         final nextBookId = bookIds[currentBookIndex + 1];
-        return _ChapterInfo(nextBookId, 1);
+        // get first chapter of next book
+        
+        final nextBookChapters = toc[nextBookId]['chapters'] as Map<String, dynamic>;
+        final firstChapterOfNextBook = int.parse(nextBookChapters.keys.first);
+        return _ChapterInfo(nextBookId, firstChapterOfNextBook);
       }
     } catch (e) {
       debugPrint('error getting next chapter');
@@ -190,8 +190,8 @@ class ChapterFetchService {
       String collectionId, String bookId, int chapter) async {
     final List<ParsedLine> lines = [];
 
-    // If we are fetching chapter 1, also fetch the introduction (chapter 0).
-    if (chapter == 1) {
+    // If we are fetching an introduction (chapter 0) then slightly different:
+    if (chapter == 0) {
       final introPath = 'assets/json/$collectionId/$bookId/0.json';
       try {
         final introJsonString = await rootBundle.loadString(introPath);
@@ -210,36 +210,40 @@ class ChapterFetchService {
           );
         }).toList();
         lines.addAll(introLines);
+        return lines;
       } catch (e) {
         // It's okay if an intro file doesn't exist.
+        debugPrint('problem loading intro from assets: ${e.toString()}');
+        return [];
       }
-    }
+    } else {
+      // this is the normal chapter:
+      final path = 'assets/json/$collectionId/$bookId/$chapter.json';
 
-    final path = 'assets/json/$collectionId/$bookId/$chapter.json';
+      try {
+        final jsonString = await rootBundle.loadString(path);
+        final List<dynamic> jsonData = json.decode(jsonString);
 
-    try {
-      final jsonString = await rootBundle.loadString(path);
-      final List<dynamic> jsonData = json.decode(jsonString);
-
-      // Map the JSON objects to ParsedLine objects
-      final chapterLines = jsonData.map((lineJson) {
-        return ParsedLine(
-          collectionid: collectionId,
-          book: bookId,
-          chapter: chapter.toString(),
-          verse: lineJson['verse']?.toString() ?? '',
-          verseFragment: '', // Not in our current JSON structure
-          audioMarker: '', // Not in our current JSON structure
-          verseText: lineJson['text'] ?? '',
-          verseStyle: lineJson['style'] ?? '',
-        );
-      }).toList();
-      lines.addAll(chapterLines);
-      return lines;
-    } catch (e) {
-      print(
-          'Error fetching or parsing chapter $collectionId/$bookId/$chapter: $e');
-      return [];
+        // Map the JSON objects to ParsedLine objects
+        final chapterLines = jsonData.map((lineJson) {
+          return ParsedLine(
+            collectionid: collectionId,
+            book: bookId,
+            chapter: chapter.toString(),
+            verse: lineJson['verse']?.toString() ?? '',
+            verseFragment: '', // Not in our current JSON structure
+            audioMarker: '', // Not in our current JSON structure
+            verseText: lineJson['text'] ?? '',
+            verseStyle: lineJson['style'] ?? '',
+          );
+        }).toList();
+        lines.addAll(chapterLines);
+        return lines;
+      } catch (e) {
+        print(
+            'Error fetching or parsing chapter $collectionId/$bookId/$chapter: $e');
+        return [];
+      }
     }
   }
 }

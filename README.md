@@ -52,3 +52,8 @@ to pre-process SAB data into assets
   - read in styles from appdef
   - audio
   - Pass in ref via URL to go straight there? https://docs.flutter.dev/development/ui/navigation 
+
+
+## Status
+In web, inconsistent nav with comboboxes.  Sometimes work sometimes not - it seems like it works better after clicking on a column...activekey if activated from this column is true in scrolltoReference?
+Scrolling via search workign well, scrolling in columns working well. 
