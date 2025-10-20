@@ -207,7 +207,8 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
 
         currentBook.value = topVerse.book;
         currentChapter.value = topVerse.chapter;
-        currentVerse.value = topVerse.verse;
+        currentVerse.value = topVerse
+            .verse; // this will work with whatever the real verse number is, even dashed
 
         // If the book or chapter changes, we need to update the list of
         // available chapters/verses for the dropdowns.
@@ -221,13 +222,17 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
         if (partOfScrollGroup && activeColumnKey == widget.key) {
           // debugPrint(
           //     '[ScriptureColumn ${widget.key}] I am the leader. Setting group ref.');
+
+          // account for dashed verses - just send the first of any set to the scrollgroup
+          final verseno = getFirstOfDashedVerses(currentVerse.value);
+
           BibleReference ref = BibleReference(
               key: widget.bibleReference.key,
               partOfScrollGroup: partOfScrollGroup,
               collectionID: currentCollection.value,
               bookID: currentBook.value,
               chapter: currentChapter.value,
-              verse: currentVerse.value,
+              verse: verseno,
               columnIndex: widget.myColumnIndex);
 
           Provider.of<ScrollGroup>(context, listen: false).setScrollGroupRef =
@@ -349,6 +354,12 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
     }
   }
 
+  void _setActiveColumnKey() {
+    print('setting active col: ${widget.key} with ${currentCollection.value}');
+    Provider.of<ScrollGroup>(context, listen: false).setActiveColumnKey =
+        widget.key;
+  }
+
   void _scrollWithAdjustment(
       {required String targetBook,
       required String targetChapter,
@@ -413,8 +424,7 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
       //     'Layout not ready for $targetBook $targetChapter:$targetVerse. Jumping to paragraph and waiting for layout.');
     }
     if (partOfScrollGroup && thisColumnNavigation) {
-      Provider.of<ScrollGroup>(context, listen: false).setActiveColumnKey =
-          widget.key;
+      _setActiveColumnKey();
       final ref = BibleReference(
           key: widget.key!,
           partOfScrollGroup: partOfScrollGroup,
@@ -430,6 +440,11 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
 
   //Function called on first open
   //and also from combobox selectors to go to a Bible reference
+
+  // Not easy to keep track of the cases!
+  // Scrolling: leading and following
+  // Collection/Book/Chapter/Verse Selectors: leading and following
+  // Search: following
   Future<void> scrollToReference(
       {required String collection,
       required String bookID,
@@ -460,8 +475,7 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
 
       // check verse
       // verse could be dashed - 13-15 etc - just get the last number
-      RegExpMatch? match = RegExp(r'(\d*-*)(\d+)').firstMatch(vs);
-      final verseno = match?.group(2) ?? vs;
+      final verseno = getLastOfDashedVerses(vs);
       if (int.parse(verseno) < int.parse(chapters[ch])) {
         return true;
       } else {
@@ -470,58 +484,57 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
     }
 
     bool checkIfRefIsInMemory(String bk, String ch, String vs) {
-      // is the verse already in memory in versesInMemory?
+      // is the verse already in memory?
       return versesInMemory.any(
           (line) => line.book == bk && line.chapter == ch && line.verse == vs);
     }
 
-    if (toc.isEmpty) {
+    // Begins here: sanitize the target destination
+    collectionChanged = (currentCollection.value != collection || isInitState);
+    if (collectionChanged) {
+      currentCollection.value = collection;
       await loadTOC();
-    }
-    bool refIsInCollection =
-        await checkIfRefIsInCollection(targetBook, targetChapter, targetVerse);
-    // if it is get the data and navigate to it
-    if (refIsInCollection) {
-      // Begins here:
-      // If the collection is changing, we handle that as the primary case.
 
-      collectionChanged =
-          (currentCollection.value != collection || isInitState);
-      if (collectionChanged) {
-        currentCollection.value = collection;
-        await loadTOC();
+      // Immediately update the list of books available for the new collection.
+      currentCollectionBooks = widget.collections
+          .firstWhere((element) => element.id == currentCollection.value)
+          .books;
 
-        // Immediately update the list of books available for the new collection.
-        currentCollectionBooks = widget.collections
-            .firstWhere((element) => element.id == currentCollection.value)
-            .books;
-
-        // Now that we have the new TOC, check if the old book is valid.
-        if (!toc.containsKey(bookID)) {
-          // If not, reset the target to the first book of the new collection.
-          if (toc.keys.isNotEmpty) {
-            targetBook = toc.keys.first;
-            targetChapter = '1';
-            targetVerse = '1';
-          }
-        }
-        // If the old book *is* valid in the new collection, we let it pass through,
-        // respecting the original chapter/verse.
-      } else if (currentBook.value != targetBook) {
-        // We can have user directly navigating using the controls in this column
-        // - treat that separately from searching, opening for first time.
-        if (thisColumnNavigation) {
-          // This handles book changes within the same collection.
+      // Now that we have the new TOC, check if the old book is valid.
+      if (!toc.containsKey(bookID)) {
+        // If not, reset the target to the first book of the new collection.
+        if (toc.keys.isNotEmpty) {
+          targetBook = toc.keys.first;
           targetChapter = '1';
           targetVerse = '1';
         }
-      } else if (currentChapter.value != targetChapter) {
-        // This handles chapter changes within the same book.
-        if (thisColumnNavigation) {
-          targetVerse = '1';
-        }
       }
+      // If the old book *is* valid in the new collection, we let it pass through,
+      // respecting the original chapter/verse.
+    } else if (currentBook.value != targetBook) {
+      // We can have user directly navigating using the controls in this column
+      // - treat that separately from searching, opening for first time.
+      // If user is going from Ruth to Genesis, open to 1.1.
+      // If you're searching on the other hand and trying to navigate to Genesis 38.1, go to Gen 38.1.
+      // thisColumnNavigation tells us that.
+      if (thisColumnNavigation) {
+        // This handles book changes within the same collection.
+        targetChapter = '1';
+        targetVerse = '1';
+      }
+    } else if (currentChapter.value != targetChapter) {
+      // This handles chapter changes within the same book.
+      if (thisColumnNavigation) {
+        targetVerse = '1';
+      }
+    }
 
+    // We've already checked the book - this is in the case of other discontinuities in versification systems
+    bool refIsInCollection =
+        await checkIfRefIsInCollection(targetBook, targetChapter, targetVerse);
+
+    // if it is there, get the data and navigate to it
+    if (refIsInCollection) {
       bool verseIsInMemory =
           checkIfRefIsInMemory(targetBook, targetChapter, targetVerse);
       if (!verseIsInMemory || collectionChanged) {
@@ -533,9 +546,9 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
         // check if the reference we're trying to go to is in the collection
 
         // hit reset
-        versesInMemory = [];
-        versesByParagraph = [];
-        currentParagraph = [];
+        versesInMemory.clear();
+        versesByParagraph.clear();
+        currentParagraph.clear();
         // get the initial chunk of data
         final fetchResult = await ChapterFetchService().getInitialChunk(
             collectionId: currentCollection.value,
@@ -548,8 +561,8 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
 
         // finish up and return to the UI
         setState(() {
-          versesInMemory = fetchResult.lines;
-          versesByParagraph = newParagraphs;
+          versesInMemory.addAll(fetchResult.lines);
+          versesByParagraph.addAll(newParagraphs);
           _isLoading = false;
         });
         // Scroll to the target paragraph after the list has been built.
@@ -565,7 +578,6 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
                 jump: true);
           }
         });
-        // }
       } else {
         _scrollWithAdjustment(
             targetBook: targetBook,
@@ -576,11 +588,13 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
       // Update the ValueNotifiers to reflect the final navigation state.
       currentBook.value = targetBook;
       currentChapter.value = targetChapter;
-      currentVerse.value = targetVerse;
+      currentVerse.value =
+          targetVerse; // this will just lazily fail with dashed verse number
       setUpComboBoxesChVs();
     } else {
       // if not, don't do anything, just stay there
     }
+    // end scroll to Referenc
   }
 
   List<List<ParsedLine>> _linesToParagraphs(List<ParsedLine> lines) {
@@ -627,26 +641,43 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
       if (bookData == null || bookData['chapters'] == null) return;
 
       final Map<String, dynamic> temp = bookData['chapters'];
-      currentBookChapters = temp.keys.toList();
+      currentBookChapters.clear();
+      currentBookChapters.addAll(temp.keys.toList());
 
-      String? numberOfVersesInCurrentChapter = temp[currentChapter.value];
-      if (numberOfVersesInCurrentChapter == null) return;
+      // synthetic verse numbers
+      // String? numberOfVersesInCurrentChapter = temp[currentChapter.value];
+      // if (numberOfVersesInCurrentChapter == null) return;
 
-      int verseCount = 0;
-      if (numberOfVersesInCurrentChapter.contains('-')) {
-        final parts = numberOfVersesInCurrentChapter.split('-');
-        verseCount = int.tryParse(parts.last.trim()) ?? 0;
-      } else {
-        verseCount = int.tryParse(numberOfVersesInCurrentChapter) ?? 0;
-      }
+      // int verseCount = 0;
+      // if (numberOfVersesInCurrentChapter.contains('-')) {
+      //   final parts = numberOfVersesInCurrentChapter.split('-');
+      //   verseCount = int.tryParse(parts.last.trim()) ?? 0;
+      // } else {
+      //   verseCount = int.tryParse(numberOfVersesInCurrentChapter) ?? 0;
+      // }
 
-      currentChapterVerseNumbers = List.generate(verseCount, (int i) {
-        return (i + 1).toString();
-      });
+      // currentChapterVerseNumbers = List.generate(verseCount, (int i) {
+      //   return (i + 1).toString();
+      // });
 
-      if (mounted) {
-        setState(() {});
-      }
+      // get the real verse numbers from the chapter
+      currentChapterVerseNumbers.clear();
+
+      final tempverseslist = versesInMemory
+          .where((line) =>
+              line.collectionid == currentCollection.value &&
+              line.book == currentBook.value &&
+              line.chapter == currentChapter.value)
+          .map((line) => line.verse)
+          .where((verse) => verse != '')
+          .toSet()
+          .toList();
+
+      currentChapterVerseNumbers.addAll(tempverseslist);
+
+      // if (mounted) {
+      //   setState(() {});
+      // }
 
       BibleReference ref = BibleReference(
           key: widget.bibleReference.key,
@@ -950,14 +981,15 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
                                           .toList(),
                                       value: val,
                                       onChanged: (value) {
-                                        value != null
-                                            ? scrollToReference(
-                                                collection: value,
-                                                bookID: currentBook.value,
-                                                chapter: currentChapter.value,
-                                                verse: currentVerse.value,
-                                                thisColumnNavigation: true)
-                                            : null;
+                                        if (value != null) {
+                                          _setActiveColumnKey();
+                                          scrollToReference(
+                                              collection: value,
+                                              bookID: currentBook.value,
+                                              chapter: currentChapter.value,
+                                              verse: currentVerse.value,
+                                              thisColumnNavigation: true);
+                                        }
                                       },
                                     );
                                   }),
@@ -999,6 +1031,7 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
                                       value: val,
                                       onChanged: (value) {
                                         if (value != null) {
+                                          _setActiveColumnKey();
                                           scrollToReference(
                                               collection:
                                                   currentCollection.value,
@@ -1042,6 +1075,9 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
                                         value: val,
                                         onChanged: (value) {
                                           if (value != null) {
+                                            _setActiveColumnKey();
+                                            print(
+                                                'setting active column key from chapter combo box');
                                             scrollToReference(
                                                 collection:
                                                     currentCollection.value,
@@ -1073,8 +1109,8 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
                                         placeholder: const Text('--'),
                                         isExpanded: true,
                                         items: currentChapterVerseNumbers
-                                            .toSet()
-                                            .toList()
+                                            // .toSet()
+                                            // .toList()
                                             .map((e) => ComboBoxItem<String>(
                                                   value: e,
                                                   child: Text(
@@ -1086,12 +1122,17 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
                                         value: val,
                                         onChanged: (value) {
                                           if (value != null) {
+                                            _setActiveColumnKey();
+                                            print(
+                                                'setting active column key from verse combo box');
+                                            final verseno =
+                                                getFirstOfDashedVerses(value);
                                             scrollToReference(
                                                 collection:
                                                     currentCollection.value,
                                                 bookID: currentBook.value,
                                                 chapter: currentChapter.value,
-                                                verse: value,
+                                                verse: verseno,
                                                 thisColumnNavigation: true);
                                           }
                                         },
@@ -1196,8 +1237,7 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
                 //       if (partOfScrollGroup) {
                 //         print(
                 //             'setting myself as active key in column ${widget.myColumnIndex}| $notification');
-                //         Provider.of<ScrollGroup>(context, listen: false)
-                //             .setActiveColumnKey = widget.key;
+                //         setActiveColumnKey();
                 //       }
                 //     }
                 //     return true; // Allow notification to continue bubbling up
@@ -1209,8 +1249,7 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
                     if (partOfScrollGroup) {
                       // print(
                       //     'setting myself as active key in column ${widget.myColumnIndex}| ${details.toString()}');
-                      Provider.of<ScrollGroup>(context, listen: false)
-                          .setActiveColumnKey = widget.key;
+                      _setActiveColumnKey();
                     }
                   },
                   onPointerSignal: (event) {
@@ -1218,8 +1257,7 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
                     if (partOfScrollGroup) {
                       // print(
                       //     'setting myself as active key in column ${widget.myColumnIndex}');
-                      Provider.of<ScrollGroup>(context, listen: false)
-                          .setActiveColumnKey = widget.key;
+                      _setActiveColumnKey();
                     }
                   },
                   child: ContextMenuRegion(
@@ -1383,4 +1421,20 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
       ),
     );
   }
+}
+
+String getFirstOfDashedVerses(String vs) {
+// account for dashed verses - just send the first of any set to the scrollgroup
+  RegExpMatch? match = RegExp(r'(\d+)(-*\d*)').firstMatch(vs);
+// send the cleaned verse number or as fallback send the current Verse
+  final verseno = match?.group(1) ?? vs;
+  return verseno;
+}
+
+String getLastOfDashedVerses(String vs) {
+// account for dashed verses - just send the last of any set
+  RegExpMatch? match = RegExp(r'(\d*-*)(\d+)').firstMatch(vs);
+// send the cleaned verse number or as fallback send the current Verse
+  final verseno = match?.group(2) ?? vs;
+  return verseno;
 }

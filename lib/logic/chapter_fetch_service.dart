@@ -57,6 +57,10 @@ class ChapterFetchService {
           collectionId, nextChapterInfo.bookId, nextChapterInfo.chapter));
     }
 
+// troubleshooting
+    print('----');
+    print('$collectionId, $bookId, $chapter');
+
     return FetchResult(
       lines: allLines,
       isAtBeginning: prevChapterInfo == null,
@@ -155,8 +159,9 @@ class ChapterFetchService {
       if (currentBookIndex < bookIds.length - 1) {
         final nextBookId = bookIds[currentBookIndex + 1];
         // get first chapter of next book
-        
-        final nextBookChapters = toc[nextBookId]['chapters'] as Map<String, dynamic>;
+
+        final nextBookChapters =
+            toc[nextBookId]['chapters'] as Map<String, dynamic>;
         final firstChapterOfNextBook = int.parse(nextBookChapters.keys.first);
         return _ChapterInfo(nextBookId, firstChapterOfNextBook);
       }
