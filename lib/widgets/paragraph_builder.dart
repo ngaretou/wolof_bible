@@ -112,8 +112,8 @@ class _ParagraphBuilderState extends State<ParagraphBuilder> {
     // Couple of different tries for the verse numbers !
 
     TextSpan verseNumberLTR(String verseNumber) {
-      final text = ' ${toSuperscript(verseNumber)} ';
-      // final text = ' ${toSuperscript(verseNumber)}\u00A0';
+      // final text = ' ${toSuperscript(verseNumber)} ';
+      final text = ' ${toSuperscript(verseNumber)}\u00A0';
       plainTextBuffer.write(text);
       return TextSpan(
         text: text,
@@ -215,6 +215,11 @@ class _ParagraphBuilderState extends State<ParagraphBuilder> {
         // Per requirement, leave a switch for future styling.
         // For now, all intro lines are treated the same.
         switch (line.verseStyle) {
+          case 'ili':
+            styledParagraphFragments
+                .add(TextSpan(text: "•\t", style: introStyle));
+            styledParagraphFragments
+                .addAll(processLine(line, paraStyle: introStyle));
           //
 
           default:
@@ -283,7 +288,8 @@ class _ParagraphBuilderState extends State<ParagraphBuilder> {
     }
 
     bool indentAdded = false;
-    if (styledParagraphFragments.length > 1 && !poetry && !header) {
+    // if (styledParagraphFragments.length > 1 && !poetry && !header) {
+    if (!poetry && !header) {
       const indent = '    ';
       styledParagraphFragments.insert(
           0, TextSpan(text: indent, style: mainTextStyle));
@@ -358,7 +364,8 @@ class _ParagraphBuilderState extends State<ParagraphBuilder> {
 
     bool ltrText = widget.textDirection == ui.TextDirection.ltr;
     TextAlign paraAlignment = ltrText ? TextAlign.left : TextAlign.right;
-    bool header = widget.paragraph.first.verseStyle.contains(RegExp(r'(s|mt)'));
+    bool header =
+        widget.paragraph.first.verseStyle.contains(RegExp(r'(s|mt|mr)'));
     final ParsedLine currentFirstVerse = widget.paragraph.first;
     bool isPoetry = currentFirstVerse.verseStyle.contains(RegExp(r'q'));
 

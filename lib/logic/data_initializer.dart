@@ -383,19 +383,6 @@ Future<List<Collection>> collectionsFromXML(
     }
   }
 
-  //Get Changes
-  Map<String, String> changes = {};
-  Iterable<XmlElement> xmlChanges = document
-      .getElement('app-definition')!
-      .getElement('changes')!
-      .findAllElements('change');
-
-  for (var xmlChange in xmlChanges) {
-    changes.addAll({
-      xmlChange.getElement('find')!.innerText.toString():
-          xmlChange.getElement('replace')!.innerText.toString()
-    });
-  }
 
   //Get each collection's information
   final Iterable<XmlElement> xmlCollections = document.findAllElements('books');

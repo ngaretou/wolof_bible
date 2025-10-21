@@ -55,6 +55,22 @@ void sfmToJson() async {
     'assets/translations.json',
   };
 
+  //Get Changes
+  Map<String, String> changes = {};
+  Iterable<XmlElement> xmlChanges = document
+      .getElement('app-definition')!
+      .getElement('changes')!
+      .findAllElements('change');
+
+  for (var xmlChange in xmlChanges) {
+    changes.addAll({
+      xmlChange.getElement('find')!.innerText.toString(): xmlChange
+          .getElement('replace')!
+          .innerText
+          .toString(),
+    });
+  }
+
   // --- 3. Process Collections ---
   final collections = document.findAllElements('books');
   print('Found ${collections.length} collections.');
@@ -101,6 +117,14 @@ void sfmToJson() async {
       if (await sfmFile.exists()) {
         print('  - Processing SFM file for book: $bookId');
         String bookText = await sfmFile.readAsString();
+
+        //incorporate Changes from appDef
+        for (var k in changes.keys) {
+          //convert raw string to regular string
+          String findString = k.replaceAll(r'\', '\\');
+          bookText = bookText.replaceAll(RegExp(findString), changes[k]!);
+        }
+
         final chapters = bookText.split(r'\c ');
         // chapters.removeAt(0);
 
