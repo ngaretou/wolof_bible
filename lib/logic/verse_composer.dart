@@ -70,7 +70,7 @@ ComposedVerses verseComposer(
 
     if (match != null) {
       /*This is to loop back through pairedUsfmFindingAndFormatting below - 
-      we have to bring it with here because we're looping back and forth and this is neededy by that 
+      we have to bring it with here because we're looping back and forth and this is needed by that 
       and that by this function, and so this makes the function declared below accessible here at the top*/
       if (cleaningFunction != null) cleaningFunction(thisString);
     } else {

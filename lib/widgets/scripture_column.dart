@@ -265,7 +265,7 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
 
   Future<void> _fetchNextChapter() async {
     if (versesInMemory.isEmpty || _isFetchingNext) return;
-    print('fetching next chapter');
+    // print('fetching next chapter');
 
     setState(() {
       _isFetchingNext = true;
@@ -293,7 +293,7 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
 
   Future<void> _fetchPreviousChapter() async {
     if (versesInMemory.isEmpty || _isFetchingPrevious) return;
-    print('fetching prev chapter');
+    // print('fetching prev chapter');
     final positions = itemPositionsListener.itemPositions.value;
     if (positions.isEmpty) return;
 
@@ -356,7 +356,6 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
   }
 
   void _setActiveColumnKey() {
-    print('setting active col: ${widget.key} with ${currentCollection.value}');
     Provider.of<ScrollGroup>(context, listen: false).setActiveColumnKey =
         widget.key;
   }
@@ -1119,8 +1118,7 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
                                         onChanged: (value) {
                                           if (value != null) {
                                             _setActiveColumnKey();
-                                            print(
-                                                'setting active column key from chapter combo box');
+
                                             scrollToReference(
                                                 collection:
                                                     currentCollection.value,
@@ -1166,8 +1164,7 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
                                         onChanged: (value) {
                                           if (value != null) {
                                             _setActiveColumnKey();
-                                            print(
-                                                'setting active column key from verse combo box');
+
                                             final verseno =
                                                 getFirstOfDashedVerses(value);
                                             scrollToReference(
