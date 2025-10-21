@@ -25,8 +25,7 @@ class ParagraphBuilder extends StatefulWidget {
   final String fontName;
   final ui.TextDirection textDirection;
   final double fontSize;
-  final List<ParsedLine> rangeOfVersesToCopy;
-  final Function addVerseToCopyRange;
+
   final Function(List<VerseOffset>)? onLayoutCalculated;
 
   const ParagraphBuilder(
@@ -36,8 +35,6 @@ class ParagraphBuilder extends StatefulWidget {
       required this.fontName,
       required this.textDirection,
       required this.fontSize,
-      required this.rangeOfVersesToCopy,
-      required this.addVerseToCopyRange,
       this.onLayoutCalculated});
 
   @override
@@ -66,8 +63,7 @@ class _ParagraphBuilderState extends State<ParagraphBuilder> {
     super.didUpdateWidget(oldWidget);
     // Re-prepare spans if the paragraph data or styling props change.
     if (widget.paragraph != oldWidget.paragraph ||
-        widget.fontSize != oldWidget.fontSize ||
-        widget.rangeOfVersesToCopy != oldWidget.rangeOfVersesToCopy) {
+        widget.fontSize != oldWidget.fontSize) {
       _prepareSpans();
     }
   }
@@ -82,8 +78,8 @@ class _ParagraphBuilderState extends State<ParagraphBuilder> {
       fontSize: fontSize,
       color: DefaultTextStyle.of(context).style.color,
     );
-    TextStyle underlineStyle =
-        mainTextStyle.copyWith(decoration: TextDecoration.underline);
+    // TextStyle underlineStyle =
+    //     mainTextStyle.copyWith(decoration: TextDecoration.underline);
     TextStyle italicStyle = mainTextStyle.copyWith(fontStyle: FontStyle.italic);
 
     TextStyle introStyle = mainTextStyle.copyWith(
@@ -167,18 +163,12 @@ class _ParagraphBuilderState extends State<ParagraphBuilder> {
     // }
 
     List<InlineSpan> processLine(ParsedLine line, {TextStyle? paraStyle}) {
-      bool textSpanUnderline = widget.rangeOfVersesToCopy.any(
-          (ParsedLine element) =>
-              element.book == line.book &&
-              element.chapter == line.chapter &&
-              element.verse == line.verse);
+      TextStyle computedTextStyle = paraStyle ?? mainTextStyle;
 
-      TextStyle computedTextStyle =
-          textSpanUnderline ? underlineStyle : (paraStyle ?? mainTextStyle);
-
-      void tileOnTap() {
-        widget.addVerseToCopyRange(line);
-      }
+      // former method for copying lines
+      // void tileOnTap() {
+      //   widget.addVerseToCopyRange(line);
+      // }
 
       if (line.verse.isNotEmpty && line.verse != "0") {
         characterIndexToVerseMap[plainTextBuffer.length] = line;
@@ -189,7 +179,9 @@ class _ParagraphBuilderState extends State<ParagraphBuilder> {
           computedTextStyle: computedTextStyle,
           includeFootnotes: true,
           context: context,
-          tileOnTap: tileOnTap);
+          tileOnTap: () {}
+          // tileOnTap: tileOnTap
+          );
 
       plainTextBuffer.write(composed.versesAsString);
       return composed.versesAsSpans;
@@ -385,8 +377,8 @@ class _ParagraphBuilderState extends State<ParagraphBuilder> {
 
         Widget para = Padding(
           padding: padding,
-          child: RichText(
-            text: _cachedTextSpanWithWidgets!,
+          child: Text.rich(
+            _cachedTextSpanWithWidgets!,
             textAlign: header ? TextAlign.center : paraAlignment,
             textDirection: widget.textDirection,
           ),

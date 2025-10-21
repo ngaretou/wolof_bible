@@ -57,10 +57,9 @@ ComposedVerses verseComposer(
         //   thisString = '$thisString \n';
         // }
         spansToReturn.add(TextSpan(
-            text: thisString,
-            style: textStyle ?? computedTextStyle,
-            mouseCursor: SystemMouseCursors.basic,
-            recognizer: TapGestureRecognizer()..onTap = () => tileOnTap()));
+          text: thisString,
+          style: textStyle ?? computedTextStyle,
+        ));
       }
       textToReturn = '$textToReturn$thisString';
     } //end stringIsCleanAddIt
@@ -103,17 +102,18 @@ ComposedVerses verseComposer(
     if (includeFootnotes) {
       spansToReturn.add(
         WidgetSpan(
-          child: Transform.translate(
-              offset: const Offset(0.0, -6.0),
-              child: Tooltip(
-                message: composeFootnotes(footnoteText),
-                child: Text(
-                  '*',
-                  style: DefaultTextStyle.of(context)
+          child: Tooltip(
+            message: composeFootnotes(footnoteText),
+            triggerMode: TooltipTriggerMode.tap,
+            child: Text(
+              '\u202F*',
+              style: computedTextStyle?.copyWith(
+                      color: FluentTheme.of(context).accentColor) ??
+                  DefaultTextStyle.of(context)
                       .style
                       .copyWith(color: FluentTheme.of(context).accentColor),
-                ),
-              )),
+            ),
+          ),
         ),
       );
     }

@@ -1,24 +1,22 @@
 import 'dart:ui' as ui;
 import 'dart:async';
 import 'dart:convert';
+
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:provider/provider.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:skeletonizer/skeletonizer.dart';
-import '../providers/column_manager.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/services.dart';
-import 'package:context_menus/context_menus.dart';
 import 'package:collection/collection.dart';
 
 import '../logic/data_initializer.dart';
-import '../logic/verse_composer.dart';
-import '../widgets/paragraph_builder.dart';
-
-import '../providers/user_prefs.dart';
 import '../logic/chapter_fetch_service.dart';
+
+import '../providers/column_manager.dart';
+import '../providers/user_prefs.dart';
+
+import '../widgets/paragraph_builder.dart';
 
 class ScriptureColumn extends StatefulWidget {
   final int myColumnIndex;
@@ -54,13 +52,12 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
   }
 
   ItemPositionsListener itemPositionsListener = ItemPositionsListener.create();
-  late ScrollablePositionedList scrollablePositionedList;
+  // late ScrollablePositionedList scrollablePositionedList;
 
   bool wideWindow = false;
   late double wideWindowPadding;
   late bool partOfScrollGroup;
   late double baseFontSize;
-  List<ParsedLine> rangeOfVersesToCopy = [];
 
   //All verses in memory
   List<ParsedLine> versesInMemory = [];
@@ -699,174 +696,6 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
     }
   }
 
-  void addVerseToCopyRange(ParsedLine ref) {
-    //This function fills in the gaps where there is poetry over many ParsedLines to get the whole verse despite the separation
-    /*
-    Xanaa dungeen bàyyee songandoo nit, 
-    nar koo sànk, 
-    ni kuy màbb tabax bu joy, 
-    mbaa ngay bàddi per mu ràpp?  
-      Sabóor 62.4-4 (Kàddug Yàlla)
-     */
-    addLinesBetweenIndexes() {
-      int startIndex = 0;
-      int endIndex = 0;
-
-      /*add all between the first and last index. 
-      Because the user can select up as well as down (select vs 5 then 1 as well as 1 and then 5)
-      Check first which way round we're going */
-      int oneEnd = versesInMemory.indexWhere((element) =>
-          element.book == rangeOfVersesToCopy.first.book &&
-          element.chapter == rangeOfVersesToCopy.first.chapter &&
-          element.verse == rangeOfVersesToCopy.first.verse);
-
-      int otherEnd = versesInMemory.indexWhere((element) =>
-          element.book == rangeOfVersesToCopy.last.book &&
-          element.chapter == rangeOfVersesToCopy.last.chapter &&
-          element.verse == rangeOfVersesToCopy.last.verse);
-
-      //See which way round the entries are - later verse first or earlier first
-      int result = oneEnd.compareTo(otherEnd);
-      if (result < 0) {
-        startIndex = oneEnd;
-        // endIndex = otherEnd;
-        endIndex = versesInMemory.lastIndexWhere((element) =>
-            element.book == rangeOfVersesToCopy.last.book &&
-            element.chapter == rangeOfVersesToCopy.last.chapter &&
-            element.verse == rangeOfVersesToCopy.last.verse);
-      } else {
-        startIndex = otherEnd;
-        endIndex = versesInMemory.lastIndexWhere((element) =>
-            element.book == rangeOfVersesToCopy.first.book &&
-            element.chapter == rangeOfVersesToCopy.first.chapter &&
-            element.verse == rangeOfVersesToCopy.first.verse);
-      }
-      rangeOfVersesToCopy.clear();
-      for (var i = startIndex; i <= endIndex; i++) {
-        rangeOfVersesToCopy.add(versesInMemory[i]);
-      }
-    }
-
-    //Start of function
-    bool verseAlreadyInRange = rangeOfVersesToCopy.any((ParsedLine element) =>
-        element.book == ref.book &&
-        element.chapter == ref.chapter &&
-        element.verse == ref.verse);
-
-    // if there is only one verse, and the incoming verse is the same as the one that's in there, get rid of it.
-    if (rangeOfVersesToCopy.length == 1 && verseAlreadyInRange) {
-      rangeOfVersesToCopy.clear();
-    }
-    // if vs not in range, add it and arrange the lines
-    else if (!verseAlreadyInRange) {
-      // // print('third case');
-      //add this verse and then
-      rangeOfVersesToCopy.add(ref);
-
-      addLinesBetweenIndexes();
-    }
-
-    //if only 2 verses, and the one clicked is already in, remove it and any after it
-    else if (verseAlreadyInRange) {
-      int first = rangeOfVersesToCopy.indexWhere((element) =>
-          element.book == ref.book &&
-          element.chapter == ref.chapter &&
-          element.verse == ref.verse);
-
-      rangeOfVersesToCopy.removeRange(first, rangeOfVersesToCopy.length);
-    }
-    // if the verses to copy does not contain the ref that the user just sent, add all the refs between the first and last ref
-    // This is the 'normal' case, where there is no selection yet
-
-    //if the user has changed their minds and wants to shorten the list of verses to work with
-    // else if (rangeOfVersesToCopy.length >= 2 && verseAlreadyInRange) {
-    //   // // print('fourth option');
-    //   // startIndex = versesInCollection.indexWhere((element) =>
-    //   //     element.book == rangeOfVersesToCopy[0].book &&
-    //   //     element.chapter == rangeOfVersesToCopy[0].chapter &&
-    //   //     element.verse == rangeOfVersesToCopy[0].verse);
-
-    //   // endIndex = versesInCollection.indexWhere((element) =>
-    //   //     element.book == ref.book &&
-    //   //     element.chapter == ref.chapter &&
-    //   //     element.verse == ref.verse);
-    //   // addVersesBetweenIndexes(startIndex, endIndex);
-    // }
-    setState(() {});
-  }
-
-  String? textToShareOrCopy() {
-    // // print('textToShareOrCopy');
-    String textToReturn = '';
-    String reference = '';
-    String lineBreak = '\n';
-
-    //Get the text of the verses to share or copy
-    if (rangeOfVersesToCopy.isEmpty) {
-      return null;
-    } else {
-      for (var i = 0; i < rangeOfVersesToCopy.length; i++) {
-        var temp = verseComposer(
-                line: rangeOfVersesToCopy[i],
-                includeFootnotes: false,
-                context: context)
-            .versesAsString;
-        textToReturn = '$textToReturn$temp ';
-      }
-
-      //Now get the reference for the selection
-      //Get collection name in regular text
-      String currentCollectionName = collections
-          .where((element) => element.id == currentCollection.value)
-          .first
-          .name;
-
-      //Get the books
-      if (rangeOfVersesToCopy.first.book == rangeOfVersesToCopy.last.book) {
-        String bookName = currentCollectionBooks
-            .where((element) => element.id == rangeOfVersesToCopy.first.book)
-            .first
-            .name;
-
-        //only one verse: Genesis 1.1
-        if (rangeOfVersesToCopy.length == 1) {
-          reference =
-              '$bookName ${rangeOfVersesToCopy.first.chapter}.${rangeOfVersesToCopy.first.verse}';
-        }
-        //same chapter: Genesis 1.2-10
-        else if (rangeOfVersesToCopy.first.chapter ==
-            rangeOfVersesToCopy.last.chapter) {
-          reference =
-              '$bookName ${rangeOfVersesToCopy.first.chapter}.${rangeOfVersesToCopy.first.verse}-${rangeOfVersesToCopy.last.verse}';
-        } else {
-          //same book different chapter: Genesis 1.20-2.2
-          reference =
-              '$bookName ${rangeOfVersesToCopy.first.chapter}.${rangeOfVersesToCopy.first.verse}-${rangeOfVersesToCopy.last.chapter}.${rangeOfVersesToCopy.last.verse}';
-        }
-      } else {
-        // range is across books so just take first and last
-        String firstBookName = currentCollectionBooks
-            .where((element) => element.id == rangeOfVersesToCopy.first.book)
-            .first
-            .name;
-        String lastBookName = currentCollectionBooks
-            .where((element) => element.id == rangeOfVersesToCopy.last.book)
-            .last
-            .name;
-
-        //Genesis 50.30-Exodus 1.20
-        reference =
-            '$firstBookName ${rangeOfVersesToCopy.first.chapter}.${rangeOfVersesToCopy.first.verse}-$lastBookName ${rangeOfVersesToCopy.last.chapter}.${rangeOfVersesToCopy.last.verse}';
-      }
-
-      textToReturn =
-          '$textToReturn$lineBreak$reference ($currentCollectionName)';
-      rangeOfVersesToCopy.clear();
-      setState(() {});
-      return textToReturn;
-    }
-  }
-
   void _onScrollGroupChanged() {
     final scrollGroupRef = _scrollGroup.getScrollGroupRef;
     final activeColumnKey = _scrollGroup.getActiveColumnKey;
@@ -1269,169 +1098,118 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
                   ),
                 ),
                 child: userInteractionWidget(
-                  child: ContextMenuRegion(
-                    contextMenu: GenericContextMenu(
-                      buttonConfigs: [
-                        ContextMenuButtonConfig(
-                          Provider.of<UserPrefs>(context, listen: false)
-                              .currentTranslation
-                              .copy,
-                          icon: const Icon(FluentIcons.copy),
-                          onPressed: () {
-                            String? text = textToShareOrCopy();
-
-                            if (text != null) {
-                              Clipboard.setData(ClipboardData(text: text));
-                            }
-                          },
-                        ),
-                        ContextMenuButtonConfig(
-                          Provider.of<UserPrefs>(context, listen: false)
-                              .currentTranslation
-                              .share,
-                          icon: const Icon(FluentIcons.share),
-                          onPressed: () async {
-                            String? text = textToShareOrCopy();
-
-                            if (text != null) {
-                              //if it's not the web app, share using the device share function
-
-                              if (!kIsWeb) {
-                                SharePlus.instance
-                                    .share(ShareParams(text: text));
-                              } else {
-                                //If it's the web app version best way to share is probably email, so put the text to share in an email
-                                final String url =
-                                    "mailto:?subject=&body=$text";
-
-                                if (await canLaunchUrl(Uri.parse(url))) {
-                                  await launchUrl(Uri.parse(url));
-                                } else {
-                                  throw 'Could not launch $url';
-                                }
+                  child: Skeletonizer(
+                    enabled: _isLoading,
+                    child: LayoutBuilder(builder: (context, constraints) {
+                      _viewportHeight = constraints.maxHeight;
+                      return SelectionArea(
+                        child: ScrollablePositionedList.builder(
+                            //this is the space between the right of the column and the text for the scrollbar
+                            padding: const EdgeInsets.only(right: 10),
+                            initialAlignment: 1,
+                            itemScrollController: itemScrollController,
+                            itemPositionsListener: itemPositionsListener,
+                            itemCount: _isLoading
+                                ? 6
+                                : versesByParagraph.length +
+                                    (_isFetchingPrevious ? 1 : 0) +
+                                    (_isFetchingNext ? 1 : 0),
+                            shrinkWrap: false,
+                            physics: const ClampingScrollPhysics(),
+                            itemBuilder: (ctx, i) {
+                              if (_isLoading) {
+                                return ParagraphBuilder(
+                                  paragraph: [
+                                    ParsedLine(
+                                        collectionid: '',
+                                        book: '',
+                                        chapter: '',
+                                        verse: '',
+                                        verseFragment: '',
+                                        audioMarker: '',
+                                        verseText:
+                                            'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc auctor nec diam sed egestas. Vestibulum volutpat mollis massa at faucibus. Proin eros urna, pellentesque sit amet mattis id, sollicitudin blandit tortor. Mauris vel ipsum id ipsum auctor lacinia sed at neque. Pellentesque ut malesuada dui, eget blandit est. Fusce lacinia sit amet magna eget viverra. Donec eu orci pharetra, molestie augue non, fermentum enim. Suspendisse mollis tempus sem sit amet pretium. Morbi tempor, ante finibus euismod maximus, massa justo tempus magna, eget commodo nulla turpis vel orci.',
+                                        verseStyle: 'p')
+                                  ],
+                                  addDivider: false,
+                                  fontName: 'Charis',
+                                  textDirection: ui.TextDirection.ltr,
+                                  fontSize: 20,
+                                );
                               }
-                            }
-                          },
-                        )
-                      ],
-                    ),
-                    child: Skeletonizer(
-                      enabled: _isLoading,
-                      child: LayoutBuilder(builder: (context, constraints) {
-                        _viewportHeight = constraints.maxHeight;
-                        return scrollablePositionedList =
-                            ScrollablePositionedList.builder(
-                                //this is the space between the right of the column and the text for the scrollbar
-                                padding: const EdgeInsets.only(right: 10),
-                                initialAlignment: 1,
-                                itemScrollController: itemScrollController,
-                                itemPositionsListener: itemPositionsListener,
-                                itemCount: _isLoading
-                                    ? 6
-                                    : versesByParagraph.length +
-                                        (_isFetchingPrevious ? 1 : 0) +
-                                        (_isFetchingNext ? 1 : 0),
-                                shrinkWrap: false,
-                                physics: const ClampingScrollPhysics(),
-                                itemBuilder: (ctx, i) {
-                                  if (_isLoading) {
-                                    return ParagraphBuilder(
-                                      paragraph: [
-                                        ParsedLine(
-                                            collectionid: '',
-                                            book: '',
-                                            chapter: '',
-                                            verse: '',
-                                            verseFragment: '',
-                                            audioMarker: '',
-                                            verseText:
-                                                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc auctor nec diam sed egestas. Vestibulum volutpat mollis massa at faucibus. Proin eros urna, pellentesque sit amet mattis id, sollicitudin blandit tortor. Mauris vel ipsum id ipsum auctor lacinia sed at neque. Pellentesque ut malesuada dui, eget blandit est. Fusce lacinia sit amet magna eget viverra. Donec eu orci pharetra, molestie augue non, fermentum enim. Suspendisse mollis tempus sem sit amet pretium. Morbi tempor, ante finibus euismod maximus, massa justo tempus magna, eget commodo nulla turpis vel orci.',
-                                            verseStyle: 'p')
-                                      ],
-                                      addDivider: false,
-                                      fontName: 'Charis',
-                                      textDirection: ui.TextDirection.ltr,
-                                      fontSize: 20,
-                                      rangeOfVersesToCopy: const [],
-                                      addVerseToCopyRange: dummy,
-                                    );
-                                  }
-                                  if (_isFetchingPrevious && i == 0) {
-                                    return const Skeletonizer(
-                                      child: Card(
-                                        child: SizedBox(
-                                          height: 100,
-                                          child: Center(
-                                            child: Text('Loading...'),
-                                          ),
-                                        ),
+                              if (_isFetchingPrevious && i == 0) {
+                                return const Skeletonizer(
+                                  child: Card(
+                                    child: SizedBox(
+                                      height: 100,
+                                      child: Center(
+                                        child: Text('Loading...'),
                                       ),
-                                    );
-                                  }
+                                    ),
+                                  ),
+                                );
+                              }
 
-                                  final paraIndex =
-                                      _isFetchingPrevious ? i - 1 : i;
+                              final paraIndex = _isFetchingPrevious ? i - 1 : i;
 
-                                  if (_isFetchingNext &&
-                                      paraIndex == versesByParagraph.length) {
-                                    return const Skeletonizer(
-                                      child: Card(
-                                        child: SizedBox(
-                                          height: 100,
-                                          child: Center(
-                                            child: Text('Loading...'),
-                                          ),
-                                        ),
+                              if (_isFetchingNext &&
+                                  paraIndex == versesByParagraph.length) {
+                                return const Skeletonizer(
+                                  child: Card(
+                                    child: SizedBox(
+                                      height: 100,
+                                      child: Center(
+                                        child: Text('Loading...'),
                                       ),
-                                    );
-                                  }
+                                    ),
+                                  ),
+                                );
+                              }
 
-                                  bool addDivider = false;
-                                  // try {
-                                  //   if (
-                                  //       // this isn't the first in the list
-                                  //       i != 0 &&
-                                  //           // there is content
-                                  //           versesByParagraph[i].isNotEmpty &&
-                                  //           // this is the intro
-                                  //           versesByParagraph[i]
-                                  //                   .first
-                                  //                   .chapter ==
-                                  //               '0'
-                                  //       //  &&
-                                  //       // this is the first paragraph of the intro
-                                  //       // versesByParagraph[i - 1]
-                                  //       //     .isNotEmpty &&
-                                  //       // versesByParagraph[i - 1]
-                                  //       //         .first
-                                  //       //         .chapter !=
-                                  //       //     '0'
-                                  //       ) {
-                                  //     addDivider = true;
-                                  //   }
-                                  // } catch (e) {
-                                  //   debugPrint(
-                                  //       'Error ascertaining whether it\'s the first of an intro');
+                              bool addDivider = false;
+                              // try {
+                              //   if (
+                              //       // this isn't the first in the list
+                              //       i != 0 &&
+                              //           // there is content
+                              //           versesByParagraph[i].isNotEmpty &&
+                              //           // this is the intro
+                              //           versesByParagraph[i]
+                              //                   .first
+                              //                   .chapter ==
+                              //               '0'
+                              //       //  &&
+                              //       // this is the first paragraph of the intro
+                              //       // versesByParagraph[i - 1]
+                              //       //     .isNotEmpty &&
+                              //       // versesByParagraph[i - 1]
+                              //       //         .first
+                              //       //         .chapter !=
+                              //       //     '0'
+                              //       ) {
+                              //     addDivider = true;
+                              //   }
+                              // } catch (e) {
+                              //   debugPrint(
+                              //       'Error ascertaining whether it\'s the first of an intro');
 
-                                  //   debugPrint(e.toString());
-                                  // }
+                              //   debugPrint(e.toString());
+                              // }
 
-                                  return ParagraphBuilder(
-                                    paragraph: versesByParagraph[paraIndex],
-                                    addDivider: addDivider,
-                                    fontSize: baseFontSize,
-                                    fontName: fontName,
-                                    textDirection: textDirection,
-                                    rangeOfVersesToCopy: rangeOfVersesToCopy,
-                                    addVerseToCopyRange: addVerseToCopyRange,
-                                    onLayoutCalculated: (offsets) {
-                                      _paragraphLayouts[paraIndex] = offsets;
-                                      _attemptScrollRefinement(paraIndex);
-                                    },
-                                  );
-                                });
-                      }),
-                    ),
+                              return ParagraphBuilder(
+                                paragraph: versesByParagraph[paraIndex],
+                                addDivider: addDivider,
+                                fontSize: baseFontSize,
+                                fontName: fontName,
+                                textDirection: textDirection,
+                                onLayoutCalculated: (offsets) {
+                                  _paragraphLayouts[paraIndex] = offsets;
+                                  _attemptScrollRefinement(paraIndex);
+                                },
+                              );
+                            }),
+                      );
+                    }),
                   ),
                 ),
               ),
