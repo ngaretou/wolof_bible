@@ -71,6 +71,7 @@ class ChapterFetchService {
     required String bookId,
     required int lastChapter,
   }) async {
+    print('starting get next chunk $bookId $lastChapter');
     final toc = await _getCollectionToc(collectionId);
     if (toc.isEmpty) return FetchResult(lines: []);
 
@@ -88,7 +89,7 @@ class ChapterFetchService {
 
     // Check if the new chunk is the very last chapter
     final isAtEnd = _getNextChapterInfo(toc, bookIds, nextChapterInfo) == null;
-
+    print('sending back ${lines.length} lines from getNextChunk');
     return FetchResult(lines: lines, isAtEnd: isAtEnd);
   }
 
@@ -125,30 +126,44 @@ class ChapterFetchService {
   _ChapterInfo? _getPreviousChapterInfo(
       Map<String, dynamic> toc, List<String> bookIds, _ChapterInfo current) {
     // If the current chapter is not the first one, just decrement the chapter.
+    final currentBookIndex = bookIds.indexOf(current.bookId);
+
+    // if it's not one of 0 or 1, just decrement
     if (current.chapter > 1) {
       return _ChapterInfo(current.bookId, current.chapter - 1);
-    }
-
-    // Otherwise, we need to go to the previous book.
-    final currentBookIndex = bookIds.indexOf(current.bookId);
-    if (currentBookIndex > 0) {
-      try {
-        final prevBookId = bookIds[currentBookIndex - 1];
-        final prevBookChapters =
-            toc[prevBookId]['chapters'] as Map<String, dynamic>;
-        final lastChapterOfPrevBook = int.parse(prevBookChapters.keys.last);
-        return _ChapterInfo(prevBookId, lastChapterOfPrevBook);
-      } catch (e) {
-        debugPrint('error getting previous chapter');
-        debugPrint(e.toString());
+    } else {
+      // remember if we're here we're either in chapter 1 or chapter 0/intro.
+      // current.chapter == '0' or == '1'
+      // is this chapter the first chapter in the book?
+      String? firstChapter = toc[current.bookId]['chapters'].keys.first;
+      if (firstChapter == current.chapter.toString()) {
+        // we are at the first chapter - no previous chapter
+        // is this the first book?
+        if (currentBookIndex == 0) {
+          return null;
+        } else {
+          try {
+            final prevBookId = bookIds[currentBookIndex - 1];
+            final prevBookChapters =
+                toc[prevBookId]['chapters'] as Map<String, dynamic>;
+            final lastChapterOfPrevBook = int.parse(prevBookChapters.keys.last);
+            return _ChapterInfo(prevBookId, lastChapterOfPrevBook);
+          } catch (e) {
+            debugPrint('error getting previous chapter');
+            debugPrint(e.toString());
+            return null;
+          }
+        }
+      } else {
+        // not at first chapter
+        return _ChapterInfo(current.bookId, current.chapter - 1);
       }
     }
-
-    return null; // At the beginning of the collection
   }
 
   _ChapterInfo? _getNextChapterInfo(
       Map<String, dynamic> toc, List<String> bookIds, _ChapterInfo current) {
+    print('_getNextChapterInfo');
     try {
       final currentBookChapters =
           toc[current.bookId]['chapters'] as Map<String, dynamic>;

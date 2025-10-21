@@ -253,12 +253,12 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
         positions.map((p) => p.index).reduce((min, p) => p < min ? p : min);
 
     // Proactively fetch next chapter when user is, say, 80% of the way through the loaded content.
-    if (!_isFetchingNext && versesByParagraph.length - lastVisibleIndex < 2) {
+    if (!_isFetchingNext && versesByParagraph.length - lastVisibleIndex < 5) {
       _fetchNextChapter();
     }
 
     // Proactively fetch previous chapter when user is near the beginning.
-    if (!_isFetchingPrevious && firstVisibleIndex < 2) {
+    if (!_isFetchingPrevious && firstVisibleIndex < 5) {
       _fetchPreviousChapter();
     }
   }
@@ -434,7 +434,7 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
             chapter: targetChapter,
             verse: targetVerse,
             columnIndex: widget.myColumnIndex);
-
+        if (!mounted) return;
         Provider.of<ScrollGroup>(context, listen: false).setScrollGroupRef =
             ref;
       }
@@ -608,30 +608,21 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
   }
 
   List<List<ParsedLine>> _linesToParagraphs(List<ParsedLine> lines) {
+    //TODO not getting last paragraph
     List<List<ParsedLine>> paragraphs = [];
     List<ParsedLine> currentParagraph = [];
 
     for (var i = 0; i < lines.length; i++) {
-      // If it's an intro line, create a new paragraph for it.
-      if (lines[i].chapter == '0') {
-        if (currentParagraph.isNotEmpty) {
-          paragraphs.add(currentParagraph);
-        }
-        paragraphs.add([lines[i]]);
-        currentParagraph.clear();
-        continue;
-      }
-
       //If it is a new paragraph marker, add the existing verses to the big list, and start over with a new paragraph
       if (lines[i].verseStyle.contains(RegExp(
-          r'[p,po,pr,cls,pmo,pm,pmc,pmr,pi\d,mi,nb,pc,ph\d,b,mt\d,mte\d,ms\d,mr,s\d*,sr,sp,sd\d,q,q1,q2,qr,qc,qa,qm\d,qd,lh,li\d,lf,lim\d]'))) {
+          r'[p,po,pr,cls,pmo,pm,pmc,pmr,pi\d,mi,nb,pc,ph\d,b,mt\d,mte\d,ms\d,mr,s\d*,sr,sp,sd\d,q,q1,q2,qr,qc,qa,qm\d,qd,lh,li\d,lf,lim\d,ip,im,ie,ili]'))) {
         paragraphs.add(currentParagraph);
         currentParagraph = [lines[i]];
         //If it's a one line paragraph
       } else if ((lines[i].verseStyle.contains(RegExp(r'[m,r,d]')))) {
         paragraphs.add(currentParagraph);
         paragraphs.add([lines[i]]);
-        currentParagraph.clear();
+        currentParagraph = [];
       } else {
         //otherwise just add the line to the paragraph
         currentParagraph.add(lines[i]);
@@ -1399,23 +1390,34 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
                                   }
 
                                   bool addDivider = false;
-                                  try {
-                                    if (i != 0 &&
-                                        versesByParagraph[i].isNotEmpty &&
-                                        versesByParagraph[i].first.chapter ==
-                                            '0' &&
-                                        versesByParagraph[i - 1]
-                                                .first
-                                                .chapter !=
-                                            '0') {
-                                      addDivider = true;
-                                    }
-                                  } catch (e) {
-                                    debugPrint(
-                                        'Error ascertaining whether it\'s the first of an intro');
+                                  // try {
+                                  //   if (
+                                  //       // this isn't the first in the list
+                                  //       i != 0 &&
+                                  //           // there is content
+                                  //           versesByParagraph[i].isNotEmpty &&
+                                  //           // this is the intro
+                                  //           versesByParagraph[i]
+                                  //                   .first
+                                  //                   .chapter ==
+                                  //               '0'
+                                  //       //  &&
+                                  //       // this is the first paragraph of the intro
+                                  //       // versesByParagraph[i - 1]
+                                  //       //     .isNotEmpty &&
+                                  //       // versesByParagraph[i - 1]
+                                  //       //         .first
+                                  //       //         .chapter !=
+                                  //       //     '0'
+                                  //       ) {
+                                  //     addDivider = true;
+                                  //   }
+                                  // } catch (e) {
+                                  //   debugPrint(
+                                  //       'Error ascertaining whether it\'s the first of an intro');
 
-                                    debugPrint(e.toString());
-                                  }
+                                  //   debugPrint(e.toString());
+                                  // }
 
                                   return ParagraphBuilder(
                                     paragraph: versesByParagraph[paraIndex],
