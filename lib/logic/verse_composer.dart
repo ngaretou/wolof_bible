@@ -102,16 +102,18 @@ ComposedVerses verseComposer(
     if (includeFootnotes) {
       spansToReturn.add(
         WidgetSpan(
-          child: Tooltip(
-            message: composeFootnotes(footnoteText),
-            triggerMode: TooltipTriggerMode.tap,
-            child: Text(
-              '\u202F*',
-              style: computedTextStyle?.copyWith(
-                      color: FluentTheme.of(context).accentColor) ??
-                  DefaultTextStyle.of(context)
-                      .style
-                      .copyWith(color: FluentTheme.of(context).accentColor),
+          child: SelectionContainer.disabled(
+            child: Tooltip(
+              message: composeFootnotes(footnoteText),
+              triggerMode: TooltipTriggerMode.tap,
+              child: Text(
+                '\u202F*',
+                style: computedTextStyle?.copyWith(
+                        color: FluentTheme.of(context).accentColor) ??
+                    DefaultTextStyle.of(context)
+                        .style
+                        .copyWith(color: FluentTheme.of(context).accentColor),
+              ),
             ),
           ),
         ),

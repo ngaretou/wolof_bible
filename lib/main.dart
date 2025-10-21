@@ -14,7 +14,6 @@ import 'package:system_theme/system_theme.dart';
 import 'package:url_strategy/url_strategy.dart';
 import 'package:url_launcher/link.dart';
 import 'package:window_manager/window_manager.dart';
-import 'package:context_menus/context_menus.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:pwa_install/pwa_install.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -158,7 +157,7 @@ void main() async {
       await windowManager.setSkipTaskbar(false);
     });
   }
-
+  BrowserContextMenu.disableContextMenu();
   // print('runApp');
   runApp(
     MultiProvider(
@@ -569,188 +568,161 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
             finalNavPaneItems.addAll(normalNavPaneItems);
           }
 
-          return ContextMenuOverlay(
-            buttonStyle: ContextMenuButtonStyle(
-              fgColor: DefaultTextStyle.of(context).style.color,
-              hoverFgColor: DefaultTextStyle.of(context).style.color,
-            ),
-            cardBuilder: (_, children) => Container(
-                decoration: BoxDecoration(
-                  backgroundBlendMode: BlendMode.srcOver,
-                  color: FluentTheme.of(context).menuColor,
-                  borderRadius: const BorderRadius.all(
-                    Radius.circular(5),
-                  ),
-                  boxShadow: const [
-                    BoxShadow(
-                        color: Colors.grey, //New
-                        blurRadius: 25.0,
-                        offset: Offset(0, 10))
-                  ],
-                ),
-                width: 200,
-                padding: const EdgeInsets.symmetric(horizontal: 1, vertical: 6),
-                // color: Colors.purple,
-                child: Column(children: children)),
-            child: NavigationView(
-              key: viewKey,
-              //appBar is across top of the screen in place of normal OS specific title bar.
+          return NavigationView(
+            key: viewKey,
+            //appBar is across top of the screen in place of normal OS specific title bar.
 
-              appBar: !kIsWeb && Platform.isWindows
-                  ? NavigationAppBar(
-                      height: 30,
-                      automaticallyImplyLeading: false,
-                      title: () {
-                        if (kIsWeb) return Text(appTitle);
-                        return DragToMoveArea(
-                          child: Row(
-                            children: [
-                              const SizedBox(width: 15),
-                              Align(
-                                alignment: AlignmentDirectional.centerStart,
-                                child: Text(appTitle),
-                              ),
-                            ],
-                          ),
-                        );
-                      }(),
-                      actions: const Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          //     IconButton(
-                          //         icon: const Icon(FluentIcons.add),
-                          //         onPressed: () {
-                          //           numberOfColumns <= 3 //keep it to four columns
-                          //               ? changeNumberColumns(add: true)
-                          //               : null;
+            appBar: !kIsWeb && Platform.isWindows
+                ? NavigationAppBar(
+                    height: 30,
+                    automaticallyImplyLeading: false,
+                    title: () {
+                      if (kIsWeb) return Text(appTitle);
+                      return DragToMoveArea(
+                        child: Row(
+                          children: [
+                            const SizedBox(width: 15),
+                            Align(
+                              alignment: AlignmentDirectional.centerStart,
+                              child: Text(appTitle),
+                            ),
+                          ],
+                        ),
+                      );
+                    }(),
+                    actions: const Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        //     IconButton(
+                        //         icon: const Icon(FluentIcons.add),
+                        //         onPressed: () {
+                        //           numberOfColumns <= 3 //keep it to four columns
+                        //               ? changeNumberColumns(add: true)
+                        //               : null;
 
-                          //           // setState(() {});
-                          //         }),
+                        //           // setState(() {});
+                        //         }),
 
-                          //     // Spacer(),
+                        //     // Spacer(),
 
-                          WindowButtons()
-                        ],
-                      ),
-                    )
-                  : const NavigationAppBar(
-                      automaticallyImplyLeading: false, height: 4),
-              //Main big row that holds the text columns
-              pane: NavigationPane(
-                  selected: index,
-                  onChanged: (i) => setState(() => index = i),
-                  size: const NavigationPaneSize(
-                    openMinWidth: 250.0,
-                    openMaxWidth: 320.0,
-                  ),
-                  header: Container(
-                    height: kOneLineTileHeight,
-                    padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                  ),
-                  displayMode: widget.appTheme.displayMode,
-                  indicator: () {
-                    switch (widget.appTheme.indicator) {
-                      case NavigationIndicators.end:
-                        return const EndNavigationIndicator();
-                      case NavigationIndicators.sticky:
-                    }
-                  }(),
-                  items: [
-                    PaneItem(
-                      body: FutureBuilder(
-                        future: initCollections,
-                        builder: (ctx, snapshot) {
-                          // Remove splash screen when bootstrap is complete
-                          FlutterNativeSplash.remove();
-
-                          if (snapshot.connectionState ==
-                              ConnectionState.waiting) {
-                            return ValueListenableBuilder<double>(
-                                valueListenable: myProgress,
-                                builder: (context, val, child) {
-                                  if (val == 0) {
-                                    return const Center(child: ProgressRing());
-                                  } else {
-                                    return Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.center,
-                                      mainAxisAlignment: MainAxisAlignment.end,
-                                      children: [
-                                        Stack(
-                                          alignment: Alignment.center,
-                                          children: [
-                                            ProgressRing(value: val),
-                                            if (val.ceil() != 100)
-                                              Text('${val.ceil().toString()}%',
-                                                  style: const TextStyle(
-                                                      fontSize: 10))
-                                          ],
-                                        ),
-                                        SizedBox(
-                                            height: (MediaQuery.of(context)
-                                                        .size
-                                                        .height /
-                                                    2) -
-                                                70),
-                                        if (kIsWeb &&
-                                            appTitle == "Kàddug Yàlla")
-                                          Button(
-                                              onPressed: () async {
-                                                const url =
-                                                    'https://kaddugyalla.com/av/';
-                                                if (await canLaunchUrl(
-                                                    Uri.parse(url))) {
-                                                  await launchUrl(
-                                                      Uri.parse(url),
-                                                      webOnlyWindowName:
-                                                          "_self");
-                                                } else {
-                                                  throw 'Could not launch $url';
-                                                }
-                                              },
-                                              child: const Text(
-                                                  'Dafa yeex ba ëpp, demal ci version bu weesu')),
-                                        const SizedBox(
-                                          height: 30,
-                                        )
-                                      ],
-                                    );
-                                  }
-                                });
-                          }
-                          //Main row that holds the text columns
-                          else {
-                            List<Collection> collections =
-                                snapshot.data as List<Collection>;
-                            //Sets a default in case there is no RTL below
-                            late String comboBoxFont =
-                                collections.first.fonts.first.fontFamily;
-                            bool anyRTL = collections.any(
-                                (element) => element.textDirection != 'LTR');
-
-                            if (anyRTL) {
-                              String font = collections
-                                  .firstWhere((element) =>
-                                      element.textDirection == 'RTL')
-                                  .fonts
-                                  .first
-                                  .fontFamily;
-                              comboBoxFont = font;
-                            }
-
-                            return BibleView(
-                                collections: collections,
-                                comboBoxFont: comboBoxFont);
-                          }
-                        },
-                      ),
-                      icon: const Icon(FluentIcons.reading_mode),
-                      title: Text(appTitle),
+                        WindowButtons()
+                      ],
                     ),
-                  ],
-                  footerItems: finalNavPaneItems),
-            ),
+                  )
+                : const NavigationAppBar(
+                    automaticallyImplyLeading: false, height: 4),
+            //Main big row that holds the text columns
+            pane: NavigationPane(
+                selected: index,
+                onChanged: (i) => setState(() => index = i),
+                size: const NavigationPaneSize(
+                  openMinWidth: 250.0,
+                  openMaxWidth: 320.0,
+                ),
+                header: Container(
+                  height: kOneLineTileHeight,
+                  padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                ),
+                displayMode: widget.appTheme.displayMode,
+                indicator: () {
+                  switch (widget.appTheme.indicator) {
+                    case NavigationIndicators.end:
+                      return const EndNavigationIndicator();
+                    case NavigationIndicators.sticky:
+                  }
+                }(),
+                items: [
+                  PaneItem(
+                    body: FutureBuilder(
+                      future: initCollections,
+                      builder: (ctx, snapshot) {
+                        // Remove splash screen when bootstrap is complete
+                        FlutterNativeSplash.remove();
+
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return ValueListenableBuilder<double>(
+                              valueListenable: myProgress,
+                              builder: (context, val, child) {
+                                if (val == 0) {
+                                  return const Center(child: ProgressRing());
+                                } else {
+                                  return Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
+                                    mainAxisAlignment: MainAxisAlignment.end,
+                                    children: [
+                                      Stack(
+                                        alignment: Alignment.center,
+                                        children: [
+                                          ProgressRing(value: val),
+                                          if (val.ceil() != 100)
+                                            Text('${val.ceil().toString()}%',
+                                                style: const TextStyle(
+                                                    fontSize: 10))
+                                        ],
+                                      ),
+                                      SizedBox(
+                                          height: (MediaQuery.of(context)
+                                                      .size
+                                                      .height /
+                                                  2) -
+                                              70),
+                                      if (kIsWeb && appTitle == "Kàddug Yàlla")
+                                        Button(
+                                            onPressed: () async {
+                                              const url =
+                                                  'https://kaddugyalla.com/av/';
+                                              if (await canLaunchUrl(
+                                                  Uri.parse(url))) {
+                                                await launchUrl(Uri.parse(url),
+                                                    webOnlyWindowName: "_self");
+                                              } else {
+                                                throw 'Could not launch $url';
+                                              }
+                                            },
+                                            child: const Text(
+                                                'Dafa yeex ba ëpp, demal ci version bu weesu')),
+                                      const SizedBox(
+                                        height: 30,
+                                      )
+                                    ],
+                                  );
+                                }
+                              });
+                        }
+                        //Main row that holds the text columns
+                        else {
+                          List<Collection> collections =
+                              snapshot.data as List<Collection>;
+                          //Sets a default in case there is no RTL below
+                          late String comboBoxFont =
+                              collections.first.fonts.first.fontFamily;
+                          bool anyRTL = collections
+                              .any((element) => element.textDirection != 'LTR');
+
+                          if (anyRTL) {
+                            String font = collections
+                                .firstWhere(
+                                    (element) => element.textDirection == 'RTL')
+                                .fonts
+                                .first
+                                .fontFamily;
+                            comboBoxFont = font;
+                          }
+
+                          return BibleView(
+                              collections: collections,
+                              comboBoxFont: comboBoxFont);
+                        }
+                      },
+                    ),
+                    icon: const Icon(FluentIcons.reading_mode),
+                    title: Text(appTitle),
+                  ),
+                ],
+                footerItems: finalNavPaneItems),
           );
         }
       },
