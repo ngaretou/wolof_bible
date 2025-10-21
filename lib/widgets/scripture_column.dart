@@ -39,7 +39,7 @@ class ScriptureColumn extends StatefulWidget {
 }
 
 class _ScriptureColumnState extends State<ScriptureColumn> {
-  void dummy(ParsedLine ref) {}
+  String _lastSelectedText = '';
   bool _isScrolling = false;
 
   late ItemScrollController itemScrollController;
@@ -1103,6 +1103,90 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
                     child: LayoutBuilder(builder: (context, constraints) {
                       _viewportHeight = constraints.maxHeight;
                       return SelectionArea(
+                        contextMenuBuilder: (BuildContext context,
+                            SelectableRegionState regionState) {
+                          // the defaults
+                          // final buttonItems =
+                          //     regionState.contextMenuButtonItems;
+
+                          // Add your own "Copy with Ref" button
+                          return AdaptiveTextSelectionToolbar.buttonItems(
+                            anchors: regionState.contextMenuAnchors,
+                            buttonItems: [
+                              ContextMenuButtonItem(
+                                label: 'Copy',
+                                onPressed: () async {
+                                  final selected = _lastSelectedText;
+                                  await Clipboard.setData(
+                                    ClipboardData(text: selected),
+                                  );
+                                  ContextMenuController.removeAny();
+                                },
+                              ),
+                              ContextMenuButtonItem(
+                                label: 'Copy with Reference',
+                                onPressed: () async {
+                                  String collectionName = widget.collections
+                                      .where((col) =>
+                                          col.id == currentCollection.value)
+                                      .first
+                                      .name;
+
+                                  // Track the selected text
+                                  // via SelectionArea.onSelectionChanged
+                                  final selected = _lastSelectedText;
+                                  await Clipboard.setData(
+                                    ClipboardData(
+                                        text: '$selected\n\n$collectionName'),
+                                  );
+                                  ContextMenuController.removeAny();
+                                },
+                              ),
+                              // ContextMenuButtonItem(
+                              //   label: 'Copy these Verses',
+                              //   onPressed: () async {
+                              //     String collectionName = widget.collections
+                              //         .where((col) =>
+                              //             col.id == currentCollection.value)
+                              //         .first
+                              //         .name;
+
+                              //     // Track the selected text
+                              //     // via SelectionArea.onSelectionChanged
+                              //     final selected = _lastSelectedText;
+                              //     await Clipboard.setData(
+                              //       ClipboardData(
+                              //           text: '$selected\n\n$collectionName'),
+                              //     );
+                              //     ContextMenuController.removeAny();
+                              //   },
+                              // ),
+                            ],
+                          );
+                        },
+                        onSelectionChanged: (selection) {
+                          _lastSelectedText = selection?.plainText ?? '';
+                        },
+                        // onSelectionChanged: (value) => print(value),
+                        // contextMenuBuilder: (context, selectableRegionState) {
+                        //   return AdaptiveTextSelectionToolbar.buttonItems(
+                        //     anchors: selectableRegionState.contextMenuAnchors,
+                        //     buttonItems: [
+                        //       ContextMenuButtonItem(
+                        //         onPressed: () async {
+                        //           print('here');
+                        //           final selected = selectableRegionState.currentTextEditingValue.selection.textInside(
+                        //             selectableRegionState.currentTextEditingValue.text,
+                        //           );
+                        //           final withReference = '$selected\n\n[Reference: My Source]';
+                        //           await Clipboard.setData(ClipboardData(text: withReference));
+                        //           selectableRegionState.hideToolbar();
+                        //         },
+                        //         label: 'Copy with Ref',
+                        //       ),
+                        //     ],
+                        //   );
+                        // },
                         child: ScrollablePositionedList.builder(
                             //this is the space between the right of the column and the text for the scrollbar
                             padding: const EdgeInsets.only(right: 10),
