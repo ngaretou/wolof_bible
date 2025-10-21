@@ -92,13 +92,13 @@
     </change>
     <change>
       <name>Alternate reading marker not available in Charis left</name>
-      <find>\u2E24</find>
-      <replace>\u02FB</replace>
+      <find>⸤</find>
+      <replace>˻</replace>
     </change>
     <change>
       <name>Alternate reading marker not available in Charis right</name>
-      <find>\u2E25</find>
-      <replace>\u02FC</replace>
+      <find>⸥</find>
+      <replace>˼</replace>
     </change>
   </changes>
 

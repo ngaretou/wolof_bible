@@ -29,7 +29,7 @@ class ChapterFetchService {
     required String bookId,
     required int chapter,
   }) async {
-    print('getting initial chunk or refresh $collectionId, $bookId, $chapter');
+    // print('getting initial chunk or refresh $collectionId, $bookId, $chapter');
     final toc = await _getCollectionToc(collectionId);
     if (toc.isEmpty) return FetchResult(lines: []);
 
@@ -71,7 +71,6 @@ class ChapterFetchService {
     required String bookId,
     required int lastChapter,
   }) async {
-    print('starting get next chunk $bookId $lastChapter');
     final toc = await _getCollectionToc(collectionId);
     if (toc.isEmpty) return FetchResult(lines: []);
 
@@ -89,7 +88,7 @@ class ChapterFetchService {
 
     // Check if the new chunk is the very last chapter
     final isAtEnd = _getNextChapterInfo(toc, bookIds, nextChapterInfo) == null;
-    print('sending back ${lines.length} lines from getNextChunk');
+
     return FetchResult(lines: lines, isAtEnd: isAtEnd);
   }
 
@@ -163,7 +162,6 @@ class ChapterFetchService {
 
   _ChapterInfo? _getNextChapterInfo(
       Map<String, dynamic> toc, List<String> bookIds, _ChapterInfo current) {
-    print('_getNextChapterInfo');
     try {
       final currentBookChapters =
           toc[current.bookId]['chapters'] as Map<String, dynamic>;
@@ -203,7 +201,7 @@ class ChapterFetchService {
       _tocCache[collectionId] = toc;
       return toc;
     } catch (e) {
-      print('Error loading TOC for $collectionId: $e');
+      debugPrint('Error loading TOC for $collectionId: $e');
       return {};
     }
   }
@@ -263,7 +261,7 @@ class ChapterFetchService {
         lines.addAll(chapterLines);
         return lines;
       } catch (e) {
-        print(
+        debugPrint(
             'Error fetching or parsing chapter $collectionId/$bookId/$chapter: $e');
         return [];
       }
