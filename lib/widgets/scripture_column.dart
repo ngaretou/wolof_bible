@@ -12,6 +12,8 @@ import 'package:collection/collection.dart';
 
 import '../logic/data_initializer.dart';
 import '../logic/chapter_fetch_service.dart';
+import '../logic/verse_composer.dart';
+import '../logic/text_utils.dart';
 
 import '../providers/column_manager.dart';
 import '../providers/user_prefs.dart';
@@ -100,6 +102,7 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
   bool _isLoading = false;
   bool _isFetchingNext = false;
   bool _isFetchingPrevious = false;
+  final GlobalKey _listKey = GlobalKey();
   bool _isScrollGroupListenerInitialized = false;
 
   Future<void> loadTOC() async {
@@ -187,24 +190,24 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
     if (topVerse != null) {
       // If the top verse is part of an introduction, do not update the UI.
       // This keeps the reference at Chapter 1, Verse 1.
-      if (topVerse.chapter == '0') {
+      if (topVerse.line.chapter == '0') {
         return;
       }
 
       final refString =
-          '${topVerse.book} ${topVerse.chapter}:${topVerse.verse}';
+          '${topVerse.line.book} ${topVerse.line.chapter}:${topVerse.line.verse}';
       // When the top verse changes, update the UI and notify other columns.
       if (_topVerseRef != refString) {
         _topVerseRef = refString;
 
         // Update the ValueNotifiers to reflect the change in the UI.
         // This will cause the ComboBoxes to update their displayed value.
-        final bookChanged = currentBook.value != topVerse.book;
-        final chapterChanged = currentChapter.value != topVerse.chapter;
+        final bookChanged = currentBook.value != topVerse.line.book;
+        final chapterChanged = currentChapter.value != topVerse.line.chapter;
 
-        currentBook.value = topVerse.book;
-        currentChapter.value = topVerse.chapter;
-        currentVerse.value = topVerse
+        currentBook.value = topVerse.line.book;
+        currentChapter.value = topVerse.line.chapter;
+        currentVerse.value = topVerse.line
             .verse; // this will work with whatever the real verse number is, even dashed
 
         // If the book or chapter changes, we need to update the list of
@@ -388,9 +391,9 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
         _pendingScrollRefinement = null; // Clear any pending request
         final VerseOffset? targetVerseOffset = paragraphLayout.firstWhereOrNull(
           (vo) =>
-              vo.book == targetBook &&
-              vo.chapter == targetChapter &&
-              vo.verse == targetVerse,
+              vo.line.book == targetBook &&
+              vo.line.chapter == targetChapter &&
+              vo.line.verse == targetVerse,
         );
 
         if (targetVerseOffset != null) {
@@ -610,8 +613,7 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
 
     for (var i = 0; i < lines.length; i++) {
       //If it is a new paragraph marker, add the existing verses to the big list, and start over with a new paragraph
-      if (lines[i].verseStyle.contains(RegExp(
-          r'[p,po,pr,cls,pmo,pm,pmc,pmr,pi\d,mi,nb,pc,ph\d,b,mt\d,mte\d,ms\d,mr,s\d*,sr,sp,sd\d,q,q1,q2,qr,qc,qa,qm\d,qd,lh,li\d,lf,lim\d,ip,im,ie,ili]'))) {
+      if (isParagraph(lines[i])) {
         paragraphs.add(currentParagraph);
         currentParagraph = [lines[i]];
         //If it's a one line paragraph
@@ -694,6 +696,143 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
       debugPrint('Error in setUpComboBoxesChVs: $e');
       debugPrint(s.toString());
     }
+  }
+
+  String _composeVersesInRange(ParsedLine firstLine, ParsedLine lastLine,
+      {required bool includeVerseNumbers}) {
+    final StringBuffer buffer = StringBuffer();
+
+    final startIndex = versesInMemory.indexOf(firstLine);
+
+    final endIndex = versesInMemory.indexOf(lastLine);
+
+    if (startIndex == -1 || endIndex == -1) {
+      return '';
+    }
+
+    for (int i = startIndex; i <= endIndex; i++) {
+      final line = versesInMemory[i];
+
+      if (isParagraph(line)) {
+        String composedText = verseComposer(
+          line: line,
+          includeFootnotes: false,
+          context: context,
+        ).versesAsString.trim();
+
+        if (includeVerseNumbers && line.verse.isNotEmpty && line.verse != '0') {
+          buffer.write('${toSuperscript(line.verse)} ');
+        }
+
+        buffer.write('$composedText ');
+      }
+    }
+
+    final reference = _getFormattedReferenceString(firstLine, lastLine);
+
+    if (reference.isNotEmpty) {
+      buffer.write('\n\n$reference');
+    }
+
+    return buffer.toString().trim();
+  }
+
+  String _getFormattedReferenceString(
+      ParsedLine firstSelectedLine, ParsedLine lastSelectedLine) {
+    String reference = '';
+    String currentCollectionName = widget.collections
+        .where((element) => element.id == currentCollection.value)
+        .first
+        .name;
+
+    if (firstSelectedLine.book == lastSelectedLine.book) {
+      String bookName = currentCollectionBooks
+          .where((element) => element.id == firstSelectedLine.book)
+          .first
+          .name;
+
+      if (firstSelectedLine.chapter == lastSelectedLine.chapter) {
+        if (firstSelectedLine.verse == lastSelectedLine.verse) {
+          reference =
+              '$bookName ${firstSelectedLine.chapter}:${firstSelectedLine.verse}';
+        } else {
+          reference =
+              '$bookName ${firstSelectedLine.chapter}:${firstSelectedLine.verse}-${lastSelectedLine.verse}';
+        }
+      } else {
+        reference =
+            '$bookName ${firstSelectedLine.chapter}:${firstSelectedLine.verse}-${lastSelectedLine.chapter}:${lastSelectedLine.verse}';
+      }
+    } else {
+      // Selection spans across books
+      String firstBookName = currentCollectionBooks
+          .where((element) => element.id == firstSelectedLine.book)
+          .first
+          .name;
+      String lastBookName = currentCollectionBooks
+          .where((element) => element.id == lastSelectedLine.book)
+          .first
+          .name;
+      reference =
+          '$firstBookName ${firstSelectedLine.chapter}:${firstSelectedLine.verse}-$lastBookName ${lastSelectedLine.chapter}:${lastSelectedLine.verse}';
+    }
+
+    return '$reference ($currentCollectionName)';
+  }
+
+  ParsedLine? _getLineAtOffset(Offset globalOffset) {
+    final RenderBox? listRenderBox =
+        _listKey.currentContext?.findRenderObject() as RenderBox?;
+    if (listRenderBox == null || !listRenderBox.hasSize) return null;
+    final Offset localOffset = listRenderBox.globalToLocal(globalOffset);
+
+    final positions = itemPositionsListener.itemPositions.value;
+    if (positions.isEmpty) return null;
+
+    ItemPosition? targetParagraphPosition;
+    for (final pos in positions) {
+      final itemTop = pos.itemLeadingEdge * _viewportHeight;
+      final itemBottom = pos.itemTrailingEdge * _viewportHeight;
+      if (localOffset.dy >= itemTop && localOffset.dy <= itemBottom) {
+        targetParagraphPosition = pos;
+        break;
+      }
+    }
+
+    if (targetParagraphPosition == null) {
+      // If not found (e.g., tap is in padding), find the closest one.
+      if (positions.isNotEmpty) {
+        targetParagraphPosition = positions.reduce((a, b) =>
+            (a.itemLeadingEdge * _viewportHeight - localOffset.dy).abs() <
+                    (b.itemLeadingEdge * _viewportHeight - localOffset.dy).abs()
+                ? a
+                : b);
+      } else {
+        return null;
+      }
+    }
+
+    final paragraphIndex = targetParagraphPosition.index;
+    final paragraphTopOffsetInViewport =
+        targetParagraphPosition.itemLeadingEdge * _viewportHeight;
+    final offsetInParagraph = Offset(
+      localOffset.dx,
+      localOffset.dy - paragraphTopOffsetInViewport,
+    );
+
+    final layout = _paragraphLayouts[paragraphIndex];
+    if (layout == null || layout.isEmpty) return null;
+
+    VerseOffset? closestVerse;
+    for (final verseOffset in layout) {
+      if (verseOffset.offset.dy <= offsetInParagraph.dy) {
+        closestVerse = verseOffset;
+      } else {
+        break;
+      }
+    }
+
+    return closestVerse?.line;
   }
 
   void _onScrollGroupChanged() {
@@ -1088,6 +1227,7 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
                       left: 2.5, right: 2.5, top: 0, bottom: 0),
               // ignore: avoid_unnecessary_containers
               child: Container(
+                key: _listKey,
                 decoration: const BoxDecoration(
                   //This is the border between each scripture column and its neighbor to the right
                   border: Border(
@@ -1124,21 +1264,90 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
                                 },
                               ),
                               ContextMenuButtonItem(
-                                label: 'Copy with Reference',
-                                onPressed: () async {
-                                  String collectionName = widget.collections
-                                      .where((col) =>
-                                          col.id == currentCollection.value)
-                                      .first
-                                      .name;
+                                label: 'Copy Verses (with numbers)',
+                                onPressed: () {
+                                  final anchors =
+                                      regionState.contextMenuAnchors;
+                                  final firstLine =
+                                      _getLineAtOffset(anchors.primaryAnchor);
+                                  final lastLine =
+                                      (anchors.secondaryAnchor != null)
+                                          ? _getLineAtOffset(
+                                              anchors.secondaryAnchor!)
+                                          : firstLine;
 
-                                  // Track the selected text
-                                  // via SelectionArea.onSelectionChanged
-                                  final selected = _lastSelectedText;
-                                  await Clipboard.setData(
-                                    ClipboardData(
-                                        text: '$selected\n\n$collectionName'),
-                                  );
+                                  if (firstLine != null && lastLine != null) {
+                                    // Ensure correct order
+                                    final startIndex =
+                                        versesInMemory.indexOf(firstLine);
+                                    final endIndex =
+                                        versesInMemory.indexOf(lastLine);
+                                    final ParsedLine startLine =
+                                        (startIndex <= endIndex)
+                                            ? firstLine
+                                            : lastLine;
+                                    final ParsedLine endLine =
+                                        (startIndex <= endIndex)
+                                            ? lastLine
+                                            : firstLine;
+
+                                    final textToCopy = _composeVersesInRange(
+                                        startLine, endLine,
+                                        includeVerseNumbers: true);
+                                    Clipboard.setData(
+                                        ClipboardData(text: textToCopy));
+                                  } else {
+                                    // Fallback to copying the raw selected text if geometry fails
+                                    final selected = _lastSelectedText;
+                                    if (selected.isNotEmpty) {
+                                      Clipboard.setData(
+                                          ClipboardData(text: selected));
+                                    }
+                                  }
+                                  ContextMenuController.removeAny();
+                                },
+                              ),
+                              ContextMenuButtonItem(
+                                label: 'Copy Verses (without numbers)',
+                                onPressed: () {
+                                  final anchors =
+                                      regionState.contextMenuAnchors;
+                                  final firstLine =
+                                      _getLineAtOffset(anchors.primaryAnchor);
+                                  final lastLine =
+                                      (anchors.secondaryAnchor != null)
+                                          ? _getLineAtOffset(
+                                              anchors.secondaryAnchor!)
+                                          : firstLine;
+
+                                  if (firstLine != null && lastLine != null) {
+                                    // Ensure correct order
+                                    final startIndex =
+                                        versesInMemory.indexOf(firstLine);
+                                    final endIndex =
+                                        versesInMemory.indexOf(lastLine);
+                                    final ParsedLine startLine =
+                                        (startIndex <= endIndex)
+                                            ? firstLine
+                                            : lastLine;
+                                    final ParsedLine endLine =
+                                        (startIndex <= endIndex)
+                                            ? lastLine
+                                            : firstLine;
+
+                                    final textToCopy = _composeVersesInRange(
+                                        startLine, endLine,
+                                        includeVerseNumbers: false);
+                                    Clipboard.setData(
+                                        ClipboardData(text: textToCopy));
+                                  } else {
+                                    // Fallback to copying the raw selected text if geometry fails
+                                    final selected = _lastSelectedText;
+                                    if (selected.isNotEmpty) {
+                                      Clipboard.setData(
+                                          ClipboardData(text: selected));
+                                    }
+                                  }
                                   ContextMenuController.removeAny();
                                 },
                               ),
@@ -1319,4 +1528,9 @@ String getLastOfDashedVerses(String vs) {
 // send the cleaned verse number or as fallback send the current Verse
   final verseno = match?.group(2) ?? vs;
   return verseno;
+}
+
+bool isParagraph(ParsedLine line) {
+  return line.verseStyle.contains(RegExp(
+      r'[p,po,pr,cls,pmo,pm,pmc,pmr,pi\d,mi,nb,pc,ph\d,b,mt\d,mte\d,ms\d,mr,s\d*,sr,sp,sd\d,q,q1,q2,qr,qc,qa,qm\d,qd,lh,li\d,lf,lim\d,ip,im,ie,ili]'));
 }
