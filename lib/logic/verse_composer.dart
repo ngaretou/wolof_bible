@@ -24,11 +24,12 @@ ComposedVerses verseComposer(
     TextStyle? computedTextStyle,
     required bool includeFootnotes,
     Function? tileOnTap,
-    required BuildContext context}) {
+    required BuildContext context,
+    bool firstLineOfParagraph = false}) {
   List<InlineSpan> spansToReturn = [];
   String textToReturn = '';
   int dealtWithSoFar = 0;
-  String leftToDealWith = "";
+  String leftToDealWith = '';
   // int totalCharacters = 0;
 
   //The method for adding the text strings we're about to parse
@@ -108,7 +109,8 @@ ComposedVerses verseComposer(
               message: composeFootnotes(footnoteText),
               triggerMode: TooltipTriggerMode.tap,
               child: Text(
-                '\u202F*',
+                // '\u202F*', // with thin no-break space
+                '*', // without thin no-break space
                 style: computedTextStyle?.copyWith(
                         color: FluentTheme.of(context).accentColor) ??
                     DefaultTextStyle.of(context)
@@ -238,6 +240,11 @@ ComposedVerses verseComposer(
   pairedUsfmFindingAndFormatting(line.verseText);
 
   //Then after all is accounted for it falls back down here
+
+  // make sure no matter what comes in there are no spaces at beginning and one
+  // space at end of this line. That way everywhere we use this we know what's coming in.
+  spansToReturn.add(TextSpan(text: ' '));
+
   ComposedVerses returnInfo = ComposedVerses(
       versesAsSpans: spansToReturn, versesAsString: textToReturn);
   // if (dealtWithSoFar != line.verseText.length) {
