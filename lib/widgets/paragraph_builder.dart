@@ -1,20 +1,18 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'dart:ui' as ui;
 import 'dart:core';
+
 import '../logic/data_initializer.dart';
 import '../logic/verse_composer.dart';
+import '../logic/text_utils.dart';
 
 // Data class to hold the calculated layout information for a verse.
 class VerseOffset {
-  final String book;
-  final String chapter;
-  final String verse;
+  final ParsedLine line;
   final Offset offset; // Offset within the ParagraphBuilder widget.
 
   VerseOffset({
-    required this.book,
-    required this.chapter,
-    required this.verse,
+    required this.line,
     required this.offset,
   });
 }
@@ -174,14 +172,18 @@ class _ParagraphBuilderState extends State<ParagraphBuilder> {
         characterIndexToVerseMap[plainTextBuffer.length] = line;
       }
 
+      // void tileOnTap() {
+      //   print(line.toString());
+      // }
+
       final composed = verseComposer(
           line: line,
           computedTextStyle: computedTextStyle,
           includeFootnotes: true,
           context: context,
-          tileOnTap: () {}
-          // tileOnTap: tileOnTap
-          );
+          tileOnTap: () {
+            // in case of future features keeping this function
+          });
 
       plainTextBuffer.write(composed.versesAsString);
       return composed.versesAsSpans;
@@ -337,9 +339,7 @@ class _ParagraphBuilderState extends State<ParagraphBuilder> {
         final offset = textPainter.getOffsetForCaret(
             TextPosition(offset: charIndex), Rect.zero);
         offsets.add(VerseOffset(
-          book: line.book,
-          chapter: line.chapter,
-          verse: line.verse,
+          line: line,
           offset: offset,
         ));
       }
@@ -411,23 +411,3 @@ class _ParagraphBuilderState extends State<ParagraphBuilder> {
     );
   }
 }
-
-// Superscript mapping using Unicode. Extend as needed.
-const _sup = {
-  '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴', '5': '⁵', '6': '⁶',
-  '7': '⁷', '8': '⁸', '9': '⁹',
-  '+': '⁺', '-': '⁻', '=': '⁼', '(': '⁽', ')': '⁾',
-  // common letters used as exponents
-  'a': 'ᵃ', 'b': 'ᵇ', 'c': 'ᶜ', 'd': 'ᵈ', 'e': 'ᵉ', 'f': 'ᶠ', 'g': 'ᵍ',
-  'h': 'ʰ', 'i': 'ⁱ', 'j': 'ʲ',
-  'k': 'ᵏ', 'l': 'ˡ', 'm': 'ᵐ', 'n': 'ⁿ', 'o': 'ᵒ', 'p': 'ᵖ', 'r': 'ʳ',
-  's': 'ˢ', 't': 'ᵗ', 'u': 'ᵘ',
-  'v': 'ᵛ', 'w': 'ʷ', 'x': 'ˣ', 'y': 'ʸ', 'z': 'ᶻ',
-  'A': 'ᴬ', 'B': 'ᴮ', 'D': 'ᴰ', 'E': 'ᴱ', 'G': 'ᴳ', 'H': 'ᴴ', 'I': 'ᴵ',
-  'J': 'ᴶ', 'K': 'ᴷ', 'L': 'ᴸ',
-  'M': 'ᴹ', 'N': 'ᴺ', 'O': 'ᴼ', 'P': 'ᴾ', 'R': 'ᴿ', 'T': 'ᵀ', 'U': 'ᵁ',
-  'V': 'ⱽ', 'W': 'ᵂ',
-};
-
-String toSuperscript(String input) =>
-    input.split('').map((c) => _sup[c] ?? c).join();

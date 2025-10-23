@@ -1,7 +1,7 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'dart:core';
 import 'data_initializer.dart';
-import 'package:flutter/gestures.dart';
+// import 'package:flutter/gestures.dart'; // if in the future we need TextSpan recognizer
 
 /* this class and associated verseComposer function is exposed as we have to use it several different places. 
 It gets confusing but it is this way to avoid code duplication. Sometimes we need the verses composed 
@@ -56,6 +56,7 @@ ComposedVerses verseComposer(
         // if (totalCharacters > 75 && thisString.endsWith('.')) {
         //   thisString = '$thisString \n';
         // }
+
         spansToReturn.add(TextSpan(
           text: thisString,
           style: textStyle ?? computedTextStyle,

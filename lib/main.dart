@@ -157,7 +157,7 @@ void main() async {
       await windowManager.setSkipTaskbar(false);
     });
   }
-  BrowserContextMenu.disableContextMenu();
+  if (kIsWeb) BrowserContextMenu.disableContextMenu();
   // print('runApp');
   runApp(
     MultiProvider(
@@ -243,23 +243,22 @@ class MyApp extends StatelessWidget {
                   color: appTheme.color,
                   // color: Colors.black,
                   darkTheme: FluentThemeData(
-                    brightness: Brightness.dark,
-                    accentColor: appTheme.color,
-                    visualDensity: VisualDensity.standard,
-                    // focusTheme: FocusThemeData(
-                    //   glowFactor: is10footScreen() ? 2.0 : 0.0,
-                    // ),
-                    scrollbarTheme: scrollBarTheme,
-                  ),
+                      brightness: Brightness.dark,
+                      accentColor: appTheme.color,
+                      visualDensity: VisualDensity.standard,
+                      // focusTheme: FocusThemeData(
+                      //   glowFactor: is10footScreen() ? 2.0 : 0.0,
+                      // ),
+                      scrollbarTheme: scrollBarTheme,
+                      selectionColor: appTheme.color.darkest),
                   theme: FluentThemeData(
-                    accentColor: appTheme.color,
-
-                    visualDensity: VisualDensity.standard,
-                    // focusTheme: FocusThemeData(
-                    //   glowFactor: is10footScreen() ? 2.0 : 0.0,
-                    // ),
-                    scrollbarTheme: scrollBarTheme,
-                  ),
+                      accentColor: appTheme.color,
+                      visualDensity: VisualDensity.standard,
+                      // focusTheme: FocusThemeData(
+                      //   glowFactor: is10footScreen() ? 2.0 : 0.0,
+                      // ),
+                      scrollbarTheme: scrollBarTheme,
+                      selectionColor: appTheme.color.lightest),
                   builder: (context, child) {
                     return Directionality(
                       textDirection: appTheme.textDirection,

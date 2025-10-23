@@ -82,6 +82,18 @@ class ParsedLine {
     required this.verseStyle,
     // required this.newParagraph,
   });
+
+  @override
+  String toString() {
+    return 'ParsedLine('
+        'collectionid: $collectionid, '
+        'book: $book, '
+        'chapter: $chapter, '
+        'verse: $verse, '
+        'verseText: $verseText, '
+        'verseStyle: $verseStyle, '
+        ')';
+  }
 }
 
 // class AppInfo {
@@ -382,7 +394,6 @@ Future<List<Collection>> collectionsFromXML(
           style: fontStyle));
     }
   }
-
 
   //Get each collection's information
   final Iterable<XmlElement> xmlCollections = document.findAllElements('books');
