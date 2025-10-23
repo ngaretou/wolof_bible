@@ -607,18 +607,17 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
   }
 
   List<List<ParsedLine>> _linesToParagraphs(List<ParsedLine> lines) {
-    //TODO not getting last paragraph
     List<List<ParsedLine>> paragraphs = [];
     List<ParsedLine> currentParagraph = [];
 
     for (var i = 0; i < lines.length; i++) {
       //If it is a new paragraph marker, add the existing verses to the big list, and start over with a new paragraph
       if (isParagraph(lines[i])) {
-        paragraphs.add(currentParagraph);
+        if (currentParagraph.isNotEmpty) paragraphs.add(currentParagraph);
         currentParagraph = [lines[i]];
         //If it's a one line paragraph
       } else if ((lines[i].verseStyle.contains(RegExp(r'[m,r,d]')))) {
-        paragraphs.add(currentParagraph);
+        if (currentParagraph.isNotEmpty) paragraphs.add(currentParagraph);
         paragraphs.add([lines[i]]);
         currentParagraph = [];
       } else {
@@ -627,7 +626,7 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
       }
     }
     //Get that last paragraph added!
-    paragraphs.add(currentParagraph);
+    if (currentParagraph.isNotEmpty) paragraphs.add(currentParagraph);
     return paragraphs;
   }
 
@@ -713,19 +712,22 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
     for (int i = startIndex; i <= endIndex; i++) {
       final line = versesInMemory[i];
 
+      if (isHeader(line)) continue;
+
       if (isParagraph(line)) {
-        String composedText = verseComposer(
-          line: line,
-          includeFootnotes: false,
-          context: context,
-        ).versesAsString.trim();
-
-        if (includeVerseNumbers && line.verse.isNotEmpty && line.verse != '0') {
-          buffer.write('${toSuperscript(line.verse)} ');
-        }
-
-        buffer.write('$composedText ');
+        buffer.write('\n    ');
       }
+      String composedText = verseComposer(
+        line: line,
+        includeFootnotes: false,
+        context: context,
+      ).versesAsString.trim();
+
+      if (includeVerseNumbers && line.verse.isNotEmpty && line.verse != '0') {
+        buffer.write('${toSuperscript(line.verse)}\u202f');
+      }
+
+      buffer.write('$composedText ');
     }
 
     final reference = _getFormattedReferenceString(firstLine, lastLine);
@@ -1374,6 +1376,7 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
                           );
                         },
                         onSelectionChanged: (selection) {
+                          print('here');
                           _lastSelectedText = selection?.plainText ?? '';
                         },
                         // onSelectionChanged: (value) => print(value),
@@ -1459,35 +1462,20 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
                                 );
                               }
 
+                              // this complicated thing is just to add a big divider after books endign and before next book intro
                               bool addDivider = false;
-                              // try {
-                              //   if (
-                              //       // this isn't the first in the list
-                              //       i != 0 &&
-                              //           // there is content
-                              //           versesByParagraph[i].isNotEmpty &&
-                              //           // this is the intro
-                              //           versesByParagraph[i]
-                              //                   .first
-                              //                   .chapter ==
-                              //               '0'
-                              //       //  &&
-                              //       // this is the first paragraph of the intro
-                              //       // versesByParagraph[i - 1]
-                              //       //     .isNotEmpty &&
-                              //       // versesByParagraph[i - 1]
-                              //       //         .first
-                              //       //         .chapter !=
-                              //       //     '0'
-                              //       ) {
-                              //     addDivider = true;
-                              //   }
-                              // } catch (e) {
-                              //   debugPrint(
-                              //       'Error ascertaining whether it\'s the first of an intro');
-
-                              //   debugPrint(e.toString());
-                              // }
+                              final me = versesByParagraph[paraIndex];
+                              if (me.isNotEmpty && me.first.chapter == '0') {
+                                final firstParaOfCurrentBookIntro =
+                                    versesByParagraph
+                                        .where((element) =>
+                                            element.isNotEmpty &&
+                                            element.first.book == me.first.book)
+                                        .first;
+                                if (me == firstParaOfCurrentBookIntro) {
+                                  addDivider = true;
+                                }
+                              }
 
                               return ParagraphBuilder(
                                 paragraph: versesByParagraph[paraIndex],
@@ -1531,6 +1519,12 @@ String getLastOfDashedVerses(String vs) {
 }
 
 bool isParagraph(ParsedLine line) {
+  // based on verseStyle, is this a new paragraph?
   return line.verseStyle.contains(RegExp(
       r'[p,po,pr,cls,pmo,pm,pmc,pmr,pi\d,mi,nb,pc,ph\d,b,mt\d,mte\d,ms\d,mr,s\d*,sr,sp,sd\d,q,q1,q2,qr,qc,qa,qm\d,qd,lh,li\d,lf,lim\d,ip,im,ie,ili]'));
+}
+
+bool isHeader(ParsedLine line) {
+  // based on verseStyle, is this a new paragraph?
+  return line.verseStyle.contains(RegExp(r'[s\d*,mt\d*,mr,ms\d*,]'));
 }

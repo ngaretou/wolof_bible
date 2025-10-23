@@ -1,10 +1,13 @@
 import 'package:fluent_ui/fluent_ui.dart';
+import 'package:wolof_bible/widgets/scripture_column.dart';
 import 'dart:ui' as ui;
 import 'dart:core';
 
 import '../logic/data_initializer.dart';
 import '../logic/verse_composer.dart';
 import '../logic/text_utils.dart';
+
+import 'scripture_column.dart';
 
 // Data class to hold the calculated layout information for a verse.
 class VerseOffset {
@@ -89,7 +92,11 @@ class _ParagraphBuilderState extends State<ParagraphBuilder> {
     Map<int, ParsedLine> characterIndexToVerseMap = {};
 
     TextSpan verseNumberRTL(String verseNumber) {
-      final text = ' ${toSuperscript(verseNumber)} ';
+      // final text = isFirstLine
+      //     ? '${toSuperscript(verseNumber)}\u00A0'
+      //     : ' ${toSuperscript(verseNumber)}\u00A0';
+
+      final text = '${toSuperscript(verseNumber)}\u00A0';
 
       plainTextBuffer.write(text);
       return TextSpan(
@@ -107,7 +114,12 @@ class _ParagraphBuilderState extends State<ParagraphBuilder> {
 
     TextSpan verseNumberLTR(String verseNumber) {
       // final text = ' ${toSuperscript(verseNumber)} ';
-      final text = ' ${toSuperscript(verseNumber)}\u00A0';
+
+      // final text = isFirstLine
+      //     ? '${toSuperscript(verseNumber)}\u00A0'
+      //     : ' ${toSuperscript(verseNumber)}\u00A0';
+
+      final text = '${toSuperscript(verseNumber)}\u00A0';
       plainTextBuffer.write(text);
       return TextSpan(
         text: text,
@@ -236,52 +248,71 @@ class _ParagraphBuilderState extends State<ParagraphBuilder> {
             } else {
               styledParagraphFragments.add(verseNumberRTL(line.verse));
             }
-            styledParagraphFragments.addAll(processLine(line));
+            if (line.verseText != '') {
+              styledParagraphFragments.addAll(processLine(line));
+            }
 
             break;
           case 'm':
-            styledParagraphFragments.addAll(processLine(line));
+            if (line.verseText != '') {
+              styledParagraphFragments.addAll(processLine(line));
+            }
 
             break;
           case 's':
           case 's1':
           case 's2':
-            styledParagraphFragments.add(s(line.verseText, fontScaling: 1.2));
+            if (line.verseText != '') {
+              styledParagraphFragments.add(s(line.verseText, fontScaling: 1.2));
+            }
             header = true;
             break;
           case 'mt1':
-            styledParagraphFragments.add(s(line.verseText, fontScaling: 1.5));
+            if (line.verseText != '') {
+              styledParagraphFragments.add(s(line.verseText, fontScaling: 1.5));
+            }
             header = true;
             break;
           case 'mr':
-            styledParagraphFragments
-                .add(s(line.verseText, fontScaling: .9, italics: true));
+            if (line.verseText != '') {
+              styledParagraphFragments
+                  .add(s(line.verseText, fontScaling: .9, italics: true));
+            }
             header = true;
             break;
           case 'ms':
           case 'ms1':
           case 'ms2':
-            styledParagraphFragments.add(s(line.verseText, fontScaling: 1));
+            if (line.verseText != '') {
+              styledParagraphFragments.add(s(line.verseText, fontScaling: 1));
+            }
             header = true;
             break;
           case 'q':
           case 'q1':
           case 'q2':
-            styledParagraphFragments.addAll(processLine(line));
+            if (line.verseText != '') {
+              styledParagraphFragments.addAll(processLine(line));
+            }
             poetry = true;
             break;
           case 'd':
           case 'r':
-            styledParagraphFragments
-                .addAll(processLine(line, paraStyle: italicStyle));
+            if (line.verseText != '') {
+              styledParagraphFragments
+                  .addAll(processLine(line, paraStyle: italicStyle));
+            }
             break;
           default:
-            styledParagraphFragments.addAll(processLine(line));
+            if (line.verseText != '') {
+              styledParagraphFragments.addAll(processLine(line));
+            }
         }
       }
     }
 
     bool indentAdded = false;
+
     // if (styledParagraphFragments.length > 1 && !poetry && !header) {
     if (!poetry && !header) {
       const indent = '    ';
