@@ -478,27 +478,7 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
           //Normal pane items we always use
           List<NavigationPaneItem> normalNavPaneItems = [
             PaneItemSeparator(),
-            //Search
 
-            RunFunctionPaneItemAction(
-                body: const About(),
-                title: Text(Provider.of<UserPrefs>(context, listen: true)
-                    .currentTranslation
-                    .search),
-                icon: const Icon(FluentIcons.search),
-                functionToRun:
-                    Provider.of<ColumnManager>(context, listen: false)
-                        .toggleSearch),
-            //Add Column
-            RunFunctionPaneItemAction(
-                body: const About(),
-                title: Text(Provider.of<UserPrefs>(context, listen: true)
-                    .currentTranslation
-                    .addColumn),
-                icon: const Icon(FluentIcons.calculator_addition),
-                functionToRun:
-                    Provider.of<ColumnManager>(context, listen: false)
-                        .addColumn),
             //Light Dark Toggle
             PaneItemAction(
               icon: FluentTheme.of(context).brightness.isDark
@@ -542,7 +522,6 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
               },
             ),
 
-            PaneItemSeparator(),
             //About
             PaneItem(
                 body: const About(),
@@ -720,6 +699,33 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
                     icon: const Icon(FluentIcons.reading_mode),
                     title: Text(appTitle),
                   ),
+                  //Search
+
+                  RunFunctionPaneItemAction(
+                      body: const About(),
+                      title: Text(Provider.of<UserPrefs>(context, listen: true)
+                          .currentTranslation
+                          .search),
+                      icon: const Icon(FluentIcons.search),
+                      functionToRun: () {
+                        if (index == 0) {
+                          Provider.of<ColumnManager>(context, listen: false)
+                              .toggleSearch();
+                        }
+                      }),
+                  //Add Column
+                  RunFunctionPaneItemAction(
+                      body: const About(),
+                      title: Text(Provider.of<UserPrefs>(context, listen: true)
+                          .currentTranslation
+                          .addColumn),
+                      icon: const Icon(FluentIcons.calculator_addition),
+                      functionToRun: () {
+                        if (index == 0) {
+                          Provider.of<ColumnManager>(context, listen: false)
+                              .addColumn();
+                        }
+                      }),
                 ],
                 footerItems: finalNavPaneItems),
           );

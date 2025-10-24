@@ -55,5 +55,3 @@ to pre-process SAB data into assets
 
 
 ## Status
-In web, inconsistent nav with comboboxes.  Sometimes work sometimes not - it seems like it works better after clicking on a column...activekey if activated from this column is true in scrolltoReference?
-Scrolling via search workign well, scrolling in columns working well. 

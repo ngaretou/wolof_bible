@@ -852,18 +852,10 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
     // Global position of the pointer when drag starts
     copyEndLine = null;
     copyStartLine = _getLineAtOffset(position);
-    if (copyStartLine != null) {
-      print(
-          'down @ ${copyStartLine!.book} ${copyStartLine!.chapter}.${copyStartLine!.verse}');
-    }
   }
 
   void _onDragEnd(Offset position) {
     copyEndLine = _getLineAtOffset(position);
-    if (copyEndLine != null) {
-      print(
-          'up @ ${copyEndLine!.book} ${copyEndLine!.chapter}.${copyEndLine!.verse}');
-    }
   }
 
   void _onScrollGroupChanged() {
@@ -1247,13 +1239,10 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
                           buttonPressed = event.buttons;
                           // Primary mouse button
                           if (event.buttons == 1 && _lastSelectedText == '') {
-                            print(
-                                'event.buttons == 1 && !widget.isTextSelected');
                             _onDragStart(event.position);
                           }
                         },
                         onPointerUp: (event) {
-                          print('onPointerUp');
                           if (buttonPressed == 1) {
                             // This is the way to grab the end of the selection on pointer device
                             _onDragEnd(event.position);
