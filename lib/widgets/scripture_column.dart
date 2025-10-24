@@ -1239,211 +1239,247 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
                     child: LayoutBuilder(builder: (context, constraints) {
                       _viewportHeight = constraints.maxHeight;
 
-                      Widget selectionArea(){return SelectionArea(
-                        contextMenuBuilder: (BuildContext context,
-                            SelectableRegionState regionState) {
-                          // just grab the selection
-                          Future<void> simpleCopy() async {
-                            final selected = _lastSelectedText;
-                            await Clipboard.setData(
-                              ClipboardData(text: selected),
-                            );
-                            ContextMenuController.removeAny();
-                          }
-
-                          // compose the verses nicely
-                          void complexCopy(bool withVerses) async {
-                            if (copyStartLine != null && copyEndLine != null) {
-                              // Ensure correct order
-                              final startIndex =
-                                  versesInMemory.indexOf(copyStartLine!);
-                              final endIndex =
-                                  versesInMemory.indexOf(copyEndLine!);
-                              final ParsedLine startLine =
-                                  (startIndex <= endIndex)
-                                      ? copyStartLine!
-                                      : copyEndLine!;
-                              final ParsedLine endLine =
-                                  (startIndex <= endIndex)
-                                      ? copyEndLine!
-                                      : copyStartLine!;
-
-                              final textToCopy = _composeVersesInRange(
-                                  startLine, endLine,
-                                  includeVerseNumbers: true);
-                              Clipboard.setData(
-                                  ClipboardData(text: textToCopy));
-                            } else {
-                              // Fallback to copying the raw selected text if geometry fails
-                              simpleCopy();
-                            }
-                            ContextMenuController.removeAny();
-                          }
-                          // the defaults
-                          // final buttonItems =
-                          //     regionState.contextMenuButtonItems;
-
-                          // Add your own "Copy with Ref" button
-                          return AdaptiveTextSelectionToolbar.buttonItems(
-                            anchors: regionState.contextMenuAnchors,
-                            buttonItems: [
-                              ContextMenuButtonItem(
-                                label: 'Copy',
-                                onPressed: simpleCopy,
-                              ),
-                              ContextMenuButtonItem(
-                                label: 'Copy Verses (with numbers)',
-                                onPressed: () => complexCopy(true),
-                              ),
-                              ContextMenuButtonItem(
-                                label: 'Copy Verses (without numbers)',
-                                onPressed: () => complexCopy(false),
-                              ),
-                            ],
-                          );
-                        },
-                        onSelectionChanged: (selection) {
-                          _lastSelectedText = selection?.plainText ?? '';
-                        },
-                        child: ScrollablePositionedList.builder(
-                            //this is the space between the right of the column and the text for the scrollbar
-                            padding: const EdgeInsets.only(right: 10),
-                            initialAlignment: 1,
-                            itemScrollController: itemScrollController,
-                            itemPositionsListener: itemPositionsListener,
-                            itemCount: _isLoading
-                                ? 6
-                                : versesByParagraph.length +
-                                    (_isFetchingPrevious ? 1 : 0) +
-                                    (_isFetchingNext ? 1 : 0),
-                            shrinkWrap: false,
-                            physics: const ClampingScrollPhysics(),
-                            itemBuilder: (ctx, i) {
-                              if (_isLoading) {
-                                return ParagraphBuilder(
-                                  paragraph: [
-                                    ParsedLine(
-                                        collectionid: '',
-                                        book: '',
-                                        chapter: '',
-                                        verse: '',
-                                        verseFragment: '',
-                                        audioMarker: '',
-                                        verseText:
-                                            'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc auctor nec diam sed egestas. Vestibulum volutpat mollis massa at faucibus. Proin eros urna, pellentesque sit amet mattis id, sollicitudin blandit tortor. Mauris vel ipsum id ipsum auctor lacinia sed at neque. Pellentesque ut malesuada dui, eget blandit est. Fusce lacinia sit amet magna eget viverra. Donec eu orci pharetra, molestie augue non, fermentum enim. Suspendisse mollis tempus sem sit amet pretium. Morbi tempor, ante finibus euismod maximus, massa justo tempus magna, eget commodo nulla turpis vel orci.',
-                                        verseStyle: 'p')
-                                  ],
-                                  addDivider: false,
-                                  fontName: 'Charis',
-                                  textDirection: ui.TextDirection.ltr,
-                                  fontSize: 20,
-                                );
-                              }
-                              if (_isFetchingPrevious && i == 0) {
-                                return const Skeletonizer(
-                                  child: Card(
-                                    child: SizedBox(
-                                      height: 100,
-                                      child: Center(
-                                        child: Text('Loading...'),
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              }
-
-                              final paraIndex = _isFetchingPrevious ? i - 1 : i;
-
-                              if (_isFetchingNext &&
-                                  paraIndex == versesByParagraph.length) {
-                                return const Skeletonizer(
-                                  child: Card(
-                                    child: SizedBox(
-                                      height: 100,
-                                      child: Center(
-                                        child: Text('Loading...'),
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              }
-
-                              // this complicated thing is just to add a big divider after books endign and before next book intro
-                              bool addDivider = false;
-                              final me = versesByParagraph[paraIndex];
-                              if (me.isNotEmpty && me.first.chapter == '0') {
-                                final firstParaOfCurrentBookIntro =
-                                    versesByParagraph
-                                        .where((element) =>
-                                            element.isNotEmpty &&
-                                            element.first.book == me.first.book)
-                                        .first;
-                                if (me == firstParaOfCurrentBookIntro) {
-                                  addDivider = true;
-                                }
-                              }
-
-                              return ParagraphBuilder(
-                                paragraph: versesByParagraph[paraIndex],
-                                addDivider: addDivider,
-                                fontSize: baseFontSize,
-                                fontName: fontName,
-                                textDirection: textDirection,
-                                onLayoutCalculated: (offsets) {
-                                  _paragraphLayouts[paraIndex] = offsets;
-                                  _attemptScrollRefinement(paraIndex);
-                                },
+                      Widget selectionArea() {
+                        return SelectionArea(
+                          contextMenuBuilder: (BuildContext context,
+                              SelectableRegionState regionState) {
+                            print('context menu build firing');
+                            print(
+                                regionState.contextMenuAnchors.secondaryAnchor);
+                            // just grab the selection
+                            Future<void> simpleCopy() async {
+                              final selected = _lastSelectedText;
+                              await Clipboard.setData(
+                                ClipboardData(text: selected),
                               );
-                            }),
-                      );}
-Widget pointerVersion(Widget child) {
-      return Listener(
-        onPointerDown: (event) {
-          buttonPressed = event.buttons;
-          // Primary mouse button
-          if (event.buttons == 1 && _lastSelectedText == '') {
-            print('event.buttons == 1 && !widget.isTextSelected');
-            _onDragStart(event.position);
-          }
-        },
-        onPointerUp: (event) {
-          if (buttonPressed == 1) {
-            _onDragEnd(event.position);
-          }
-          buttonPressed = null;
-        },
-        child: child,
-      );
-    }
+                              ContextMenuController.removeAny();
+                            }
 
-    Widget touchVersion(Widget child) {
-      return GestureDetector(
-        onPanStart: (details) {
-          if (_lastSelectedText=='') {
-            _onDragStart(details.globalPosition);
-          }
-        },
-       
-        onPanEnd: (details) {
-              _onDragEnd(details.globalPosition);
-        },
-        child: child,
-      );
-    }
+                            // compose the verses nicely
+                            void complexCopy(bool withVerses) async {
+                              if (copyStartLine != null &&
+                                  copyEndLine != null) {
+                                // Ensure correct order
+                                final startIndex =
+                                    versesInMemory.indexOf(copyStartLine!);
+                                final endIndex =
+                                    versesInMemory.indexOf(copyEndLine!);
+                                final ParsedLine startLine =
+                                    (startIndex <= endIndex)
+                                        ? copyStartLine!
+                                        : copyEndLine!;
+                                final ParsedLine endLine =
+                                    (startIndex <= endIndex)
+                                        ? copyEndLine!
+                                        : copyStartLine!;
 
-    if (kIsWeb) {
-      // On web choose between pointer and touch behavior using media query.
-      return isTouchWebDevice() ? touchVersion(selectionArea()) : pointerVersion(selectionArea());
-    } else if (Platform.isAndroid || Platform.isIOS) {
-      return touchVersion(selectionArea());
-    } else {
-      return pointerVersion(selectionArea());
-    }
+                                final textToCopy = _composeVersesInRange(
+                                    startLine, endLine,
+                                    includeVerseNumbers: true);
+                                Clipboard.setData(
+                                    ClipboardData(text: textToCopy));
+                              } else {
+                                // Fallback to copying the raw selected text if geometry fails
+                                simpleCopy();
+                              }
+                              ContextMenuController.removeAny();
+                            }
+                            // the defaults
+                            // final buttonItems =
+                            //     regionState.contextMenuButtonItems;
 
+                            // Add your own "Copy with Ref" button
+                            return AdaptiveTextSelectionToolbar.buttonItems(
+                              anchors: regionState.contextMenuAnchors,
+                              buttonItems: [
+                                ContextMenuButtonItem(
+                                  label: 'Copy',
+                                  onPressed: simpleCopy,
+                                ),
+                                ContextMenuButtonItem(
+                                  label: 'Copy Verses (with numbers)',
+                                  onPressed: () => complexCopy(true),
+                                ),
+                                ContextMenuButtonItem(
+                                  label: 'Copy Verses (without numbers)',
+                                  onPressed: () => complexCopy(false),
+                                ),
+                              ],
+                            );
+                          },
+                          onSelectionChanged: (selection) {
+                            _lastSelectedText = selection?.plainText ?? '';
+                          },
+                          child: ScrollablePositionedList.builder(
+                              //this is the space between the right of the column and the text for the scrollbar
+                              padding: const EdgeInsets.only(right: 10),
+                              initialAlignment: 1,
+                              itemScrollController: itemScrollController,
+                              itemPositionsListener: itemPositionsListener,
+                              itemCount: _isLoading
+                                  ? 6
+                                  : versesByParagraph.length +
+                                      (_isFetchingPrevious ? 1 : 0) +
+                                      (_isFetchingNext ? 1 : 0),
+                              shrinkWrap: false,
+                              physics: const ClampingScrollPhysics(),
+                              itemBuilder: (ctx, i) {
+                                if (_isLoading) {
+                                  return ParagraphBuilder(
+                                    paragraph: [
+                                      ParsedLine(
+                                          collectionid: '',
+                                          book: '',
+                                          chapter: '',
+                                          verse: '',
+                                          verseFragment: '',
+                                          audioMarker: '',
+                                          verseText:
+                                              'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc auctor nec diam sed egestas. Vestibulum volutpat mollis massa at faucibus. Proin eros urna, pellentesque sit amet mattis id, sollicitudin blandit tortor. Mauris vel ipsum id ipsum auctor lacinia sed at neque. Pellentesque ut malesuada dui, eget blandit est. Fusce lacinia sit amet magna eget viverra. Donec eu orci pharetra, molestie augue non, fermentum enim. Suspendisse mollis tempus sem sit amet pretium. Morbi tempor, ante finibus euismod maximus, massa justo tempus magna, eget commodo nulla turpis vel orci.',
+                                          verseStyle: 'p')
+                                    ],
+                                    addDivider: false,
+                                    fontName: 'Charis',
+                                    textDirection: ui.TextDirection.ltr,
+                                    fontSize: 20,
+                                  );
+                                }
+                                if (_isFetchingPrevious && i == 0) {
+                                  return const Skeletonizer(
+                                    child: Card(
+                                      child: SizedBox(
+                                        height: 100,
+                                        child: Center(
+                                          child: Text('Loading...'),
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                }
 
+                                final paraIndex =
+                                    _isFetchingPrevious ? i - 1 : i;
 
+                                if (_isFetchingNext &&
+                                    paraIndex == versesByParagraph.length) {
+                                  return const Skeletonizer(
+                                    child: Card(
+                                      child: SizedBox(
+                                        height: 100,
+                                        child: Center(
+                                          child: Text('Loading...'),
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                }
 
-                      
+                                // this complicated thing is just to add a big divider after books endign and before next book intro
+                                bool addDivider = false;
+                                final me = versesByParagraph[paraIndex];
+                                if (me.isNotEmpty && me.first.chapter == '0') {
+                                  final firstParaOfCurrentBookIntro =
+                                      versesByParagraph
+                                          .where((element) =>
+                                              element.isNotEmpty &&
+                                              element.first.book ==
+                                                  me.first.book)
+                                          .first;
+                                  if (me == firstParaOfCurrentBookIntro) {
+                                    addDivider = true;
+                                  }
+                                }
+
+                                return ParagraphBuilder(
+                                  paragraph: versesByParagraph[paraIndex],
+                                  addDivider: addDivider,
+                                  fontSize: baseFontSize,
+                                  fontName: fontName,
+                                  textDirection: textDirection,
+                                  onLayoutCalculated: (offsets) {
+                                    _paragraphLayouts[paraIndex] = offsets;
+                                    _attemptScrollRefinement(paraIndex);
+                                  },
+                                );
+                              }),
+                        );
+                      }
+
+                      // if we're on a pointer driven system (non-iPad)
+                      // or on web on a pointer driven system
+                      Widget pointerVersion(Widget child) {
+                        return Listener(
+                          behavior: HitTestBehavior.deferToChild,
+                          onPointerMove: (event) {
+                            print('pointermove');
+                          },
+                          onPointerDown: (event) {
+                            buttonPressed = event.buttons;
+                            // Primary mouse button
+                            if (event.buttons == 1 && _lastSelectedText == '') {
+                              print(
+                                  'event.buttons == 1 && !widget.isTextSelected');
+                              _onDragStart(event.position);
+                            }
+                          },
+                          onPointerUp: (event) {
+                            print('onPointerUp');
+                            if (buttonPressed == 1) {
+                              _onDragEnd(event.position);
+                            }
+                            buttonPressed = null;
+                          },
+                          onPointerCancel: (event) {
+                            print('onPointerCancel');
+                          },
+                          onPointerPanZoomStart: (event) {
+                            print('onPointerPanZoomStart');
+                          },
+                          child: child,
+                        );
+                      }
+
+                      Widget touchVersion(Widget child) {
+                        return GestureDetector(
+                          onTapDown: (details) {
+                            print('onTapDown');
+                            if (_lastSelectedText == '') {
+                              _onDragStart(details.globalPosition);
+                            }
+                          },
+                          onTapUp: (details) {
+                            print('onTapUp');
+                            _onDragEnd(details.globalPosition);
+                          },
+                          onVerticalDragEnd: (details) {
+                            print('dragend');
+                          },
+                          onTapCancel: () {
+                            print('onTapCancel');
+                          },
+                          onTapMove: (details) {
+                            print('onTapMove');
+                          },
+                          onPanStart: (details) {
+                            print('onPanStart');
+                          },
+                          onPanEnd: (details) {
+                            print('onPanend');
+                          },
+                          child: child,
+                        );
+                      }
+
+                      // if (kIsWeb) {
+                      //   // On web choose between pointer and touch behavior using media query.
+                      //   return isTouchWebDevice()
+                      //       ? touchVersion(selectionArea())
+                      //       : pointerVersion(selectionArea());
+                      // } else if (Platform.isAndroid || Platform.isIOS) {
+                      // return touchVersion(selectionArea());
+                      // // } else {
+                      return pointerVersion(selectionArea());
+                      // }
                     }),
                   ),
                 ),
