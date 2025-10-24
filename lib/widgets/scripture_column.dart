@@ -1,4 +1,5 @@
 import 'dart:ui' as ui;
+import 'dart:io';
 import 'dart:async';
 import 'dart:convert';
 
@@ -14,11 +15,13 @@ import '../logic/data_initializer.dart';
 import '../logic/chapter_fetch_service.dart';
 import '../logic/verse_composer.dart';
 import '../logic/text_utils.dart';
+import '../logic/touch_media.dart';
 
 import '../providers/column_manager.dart';
 import '../providers/user_prefs.dart';
 
 import '../widgets/paragraph_builder.dart';
+import '../widgets/user_interaction.dart';
 
 class ScriptureColumn extends StatefulWidget {
   final int myColumnIndex;
@@ -43,6 +46,13 @@ class ScriptureColumn extends StatefulWidget {
 class _ScriptureColumnState extends State<ScriptureColumn> {
   String _lastSelectedText = '';
   bool _isScrolling = false;
+
+  // for copy/paste
+  Offset? dragStartOffset;
+  Offset? dragEndOffset;
+  ParsedLine? copyStartLine;
+  ParsedLine? copyEndLine;
+  int? buttonPressed;
 
   late ItemScrollController itemScrollController;
   late ScrollGroup _scrollGroup;
@@ -355,7 +365,7 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
     }
   }
 
-  void _setActiveColumnKey() {
+  void setActiveColumnKey() {
     Provider.of<ScrollGroup>(context, listen: false).setActiveColumnKey =
         widget.key;
   }
@@ -424,7 +434,7 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
       }
 
       if (partOfScrollGroup && thisColumnNavigation) {
-        _setActiveColumnKey();
+        setActiveColumnKey();
         final ref = BibleReference(
             key: widget.key!,
             partOfScrollGroup: partOfScrollGroup,
@@ -837,6 +847,30 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
     return closestVerse?.line;
   }
 
+  void _onDragStart(Offset position) {
+    // Global position of the pointer when drag starts
+    copyEndLine = null;
+    dragStartOffset = position;
+    if (dragStartOffset != null) {
+      copyStartLine = _getLineAtOffset(dragStartOffset!);
+      if (copyStartLine != null) {
+        print(
+            'down @ ${copyStartLine!.book} ${copyStartLine!.chapter}.${copyStartLine!.verse}');
+      }
+    }
+  }
+
+  void _onDragEnd(Offset position) {
+    dragEndOffset = position;
+    if (dragEndOffset != null) {
+      copyEndLine = _getLineAtOffset(dragEndOffset!);
+      if (copyEndLine != null) {
+        print(
+            'up @ ${copyEndLine!.book} ${copyEndLine!.chapter}.${copyEndLine!.verse}');
+      }
+    }
+  }
+
   void _onScrollGroupChanged() {
     final scrollGroupRef = _scrollGroup.getScrollGroupRef;
     final activeColumnKey = _scrollGroup.getActiveColumnKey;
@@ -854,48 +888,6 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
             verse: scrollGroupRef.verse,
             thisColumnNavigation: false);
       }
-    }
-  }
-
-  Widget userInteractionWidget({required Widget child}) {
-    if (kIsWeb) {
-      return Listener(
-          onPointerDown: (details) {
-            // on touch screen and scrollbar
-
-            if (partOfScrollGroup) {
-              // print(
-              //     'setting myself as active key in column ${widget.myColumnIndex}| ${details.toString()}');
-              _setActiveColumnKey();
-            }
-          },
-          onPointerSignal: (event) {
-            // two finger scroll macos
-            if (partOfScrollGroup) {
-              // print(
-              //     'setting myself as active key in column ${widget.myColumnIndex}');
-              _setActiveColumnKey();
-            }
-          },
-          child: child);
-    } else {
-      return NotificationListener<ScrollNotification>(
-          onNotification: (notification) {
-            // print(notification);
-            // When a user starts a drag/scroll gesture on this column,
-            // designate it as the leader of the scroll group.
-
-            if (notification is ScrollStartNotification &&
-                notification.dragDetails != null) {
-              if (partOfScrollGroup) {
-                // print(
-                //     'setting myself as active key in column ${widget.myColumnIndex}| $notification');
-                _setActiveColumnKey();
-              }
-            }
-            return true; // Allow notification to continue bubbling up
-          },
-          child: child);
     }
   }
 
@@ -994,7 +986,7 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
                                       value: val,
                                       onChanged: (value) {
                                         if (value != null) {
-                                          _setActiveColumnKey();
+                                          setActiveColumnKey();
                                           scrollToReference(
                                               collection: value,
                                               bookID: currentBook.value,
@@ -1043,7 +1035,7 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
                                       value: val,
                                       onChanged: (value) {
                                         if (value != null) {
-                                          _setActiveColumnKey();
+                                          setActiveColumnKey();
                                           scrollToReference(
                                               collection:
                                                   currentCollection.value,
@@ -1087,7 +1079,7 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
                                         value: val,
                                         onChanged: (value) {
                                           if (value != null) {
-                                            _setActiveColumnKey();
+                                            setActiveColumnKey();
 
                                             scrollToReference(
                                                 collection:
@@ -1133,7 +1125,7 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
                                         value: val,
                                         onChanged: (value) {
                                           if (value != null) {
-                                            _setActiveColumnKey();
+                                            setActiveColumnKey();
 
                                             final verseno =
                                                 getFirstOfDashedVerses(value);
@@ -1239,14 +1231,54 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
                     ),
                   ),
                 ),
-                child: userInteractionWidget(
+                child: UserInterAction(
+                  partOfScrollGroup: partOfScrollGroup,
+                  setActiveColumnKey: setActiveColumnKey,
                   child: Skeletonizer(
                     enabled: _isLoading,
                     child: LayoutBuilder(builder: (context, constraints) {
                       _viewportHeight = constraints.maxHeight;
-                      return SelectionArea(
+
+                      Widget selectionArea(){return SelectionArea(
                         contextMenuBuilder: (BuildContext context,
                             SelectableRegionState regionState) {
+                          // just grab the selection
+                          Future<void> simpleCopy() async {
+                            final selected = _lastSelectedText;
+                            await Clipboard.setData(
+                              ClipboardData(text: selected),
+                            );
+                            ContextMenuController.removeAny();
+                          }
+
+                          // compose the verses nicely
+                          void complexCopy(bool withVerses) async {
+                            if (copyStartLine != null && copyEndLine != null) {
+                              // Ensure correct order
+                              final startIndex =
+                                  versesInMemory.indexOf(copyStartLine!);
+                              final endIndex =
+                                  versesInMemory.indexOf(copyEndLine!);
+                              final ParsedLine startLine =
+                                  (startIndex <= endIndex)
+                                      ? copyStartLine!
+                                      : copyEndLine!;
+                              final ParsedLine endLine =
+                                  (startIndex <= endIndex)
+                                      ? copyEndLine!
+                                      : copyStartLine!;
+
+                              final textToCopy = _composeVersesInRange(
+                                  startLine, endLine,
+                                  includeVerseNumbers: true);
+                              Clipboard.setData(
+                                  ClipboardData(text: textToCopy));
+                            } else {
+                              // Fallback to copying the raw selected text if geometry fails
+                              simpleCopy();
+                            }
+                            ContextMenuController.removeAny();
+                          }
                           // the defaults
                           // final buttonItems =
                           //     regionState.contextMenuButtonItems;
@@ -1257,148 +1289,22 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
                             buttonItems: [
                               ContextMenuButtonItem(
                                 label: 'Copy',
-                                onPressed: () async {
-                                  final selected = _lastSelectedText;
-                                  await Clipboard.setData(
-                                    ClipboardData(text: selected),
-                                  );
-                                  ContextMenuController.removeAny();
-                                },
+                                onPressed: simpleCopy,
                               ),
                               ContextMenuButtonItem(
                                 label: 'Copy Verses (with numbers)',
-                                onPressed: () {
-                                  final anchors =
-                                      regionState.contextMenuAnchors;
-                                  final firstLine =
-                                      _getLineAtOffset(anchors.primaryAnchor);
-                                  final lastLine =
-                                      (anchors.secondaryAnchor != null)
-                                          ? _getLineAtOffset(
-                                              anchors.secondaryAnchor!)
-                                          : firstLine;
-
-                                  if (firstLine != null && lastLine != null) {
-                                    // Ensure correct order
-                                    final startIndex =
-                                        versesInMemory.indexOf(firstLine);
-                                    final endIndex =
-                                        versesInMemory.indexOf(lastLine);
-                                    final ParsedLine startLine =
-                                        (startIndex <= endIndex)
-                                            ? firstLine
-                                            : lastLine;
-                                    final ParsedLine endLine =
-                                        (startIndex <= endIndex)
-                                            ? lastLine
-                                            : firstLine;
-
-                                    final textToCopy = _composeVersesInRange(
-                                        startLine, endLine,
-                                        includeVerseNumbers: true);
-                                    Clipboard.setData(
-                                        ClipboardData(text: textToCopy));
-                                  } else {
-                                    // Fallback to copying the raw selected text if geometry fails
-                                    final selected = _lastSelectedText;
-                                    if (selected.isNotEmpty) {
-                                      Clipboard.setData(
-                                          ClipboardData(text: selected));
-                                    }
-                                  }
-                                  ContextMenuController.removeAny();
-                                },
+                                onPressed: () => complexCopy(true),
                               ),
                               ContextMenuButtonItem(
                                 label: 'Copy Verses (without numbers)',
-                                onPressed: () {
-                                  final anchors =
-                                      regionState.contextMenuAnchors;
-                                  final firstLine =
-                                      _getLineAtOffset(anchors.primaryAnchor);
-                                  final lastLine =
-                                      (anchors.secondaryAnchor != null)
-                                          ? _getLineAtOffset(
-                                              anchors.secondaryAnchor!)
-                                          : firstLine;
-
-                                  if (firstLine != null && lastLine != null) {
-                                    // Ensure correct order
-                                    final startIndex =
-                                        versesInMemory.indexOf(firstLine);
-                                    final endIndex =
-                                        versesInMemory.indexOf(lastLine);
-                                    final ParsedLine startLine =
-                                        (startIndex <= endIndex)
-                                            ? firstLine
-                                            : lastLine;
-                                    final ParsedLine endLine =
-                                        (startIndex <= endIndex)
-                                            ? lastLine
-                                            : firstLine;
-
-                                    final textToCopy = _composeVersesInRange(
-                                        startLine, endLine,
-                                        includeVerseNumbers: false);
-                                    Clipboard.setData(
-                                        ClipboardData(text: textToCopy));
-                                  } else {
-                                    // Fallback to copying the raw selected text if geometry fails
-                                    final selected = _lastSelectedText;
-                                    if (selected.isNotEmpty) {
-                                      Clipboard.setData(
-                                          ClipboardData(text: selected));
-                                    }
-                                  }
-                                  ContextMenuController.removeAny();
-                                },
+                                onPressed: () => complexCopy(false),
                               ),
-                              // ContextMenuButtonItem(
-                              //   label: 'Copy these Verses',
-                              //   onPressed: () async {
-                              //     String collectionName = widget.collections
-                              //         .where((col) =>
-                              //             col.id == currentCollection.value)
-                              //         .first
-                              //         .name;
-
-                              //     // Track the selected text
-                              //     // via SelectionArea.onSelectionChanged
-                              //     final selected = _lastSelectedText;
-                              //     await Clipboard.setData(
-                              //       ClipboardData(
-                              //           text: '$selected\n\n$collectionName'),
-                              //     );
-                              //     ContextMenuController.removeAny();
-                              //   },
-                              // ),
                             ],
                           );
                         },
                         onSelectionChanged: (selection) {
-                          print('here');
                           _lastSelectedText = selection?.plainText ?? '';
                         },
-                        // onSelectionChanged: (value) => print(value),
-                        // contextMenuBuilder: (context, selectableRegionState) {
-                        //   return AdaptiveTextSelectionToolbar.buttonItems(
-                        //     anchors: selectableRegionState.contextMenuAnchors,
-                        //     buttonItems: [
-                        //       ContextMenuButtonItem(
-                        //         onPressed: () async {
-                        //           print('here');
-                        //           final selected = selectableRegionState.currentTextEditingValue.selection.textInside(
-                        //             selectableRegionState.currentTextEditingValue.text,
-                        //           );
-                        //           final withReference = '$selected\n\n[Reference: My Source]';
-                        //           await Clipboard.setData(ClipboardData(text: withReference));
-                        //           selectableRegionState.hideToolbar();
-                        //         },
-                        //         label: 'Copy with Ref',
-                        //       ),
-                        //     ],
-                        //   );
-                        // },
                         child: ScrollablePositionedList.builder(
                             //this is the space between the right of the column and the text for the scrollbar
                             padding: const EdgeInsets.only(right: 10),
@@ -1489,7 +1395,55 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
                                 },
                               );
                             }),
-                      );
+                      );}
+Widget pointerVersion(Widget child) {
+      return Listener(
+        onPointerDown: (event) {
+          buttonPressed = event.buttons;
+          // Primary mouse button
+          if (event.buttons == 1 && _lastSelectedText == '') {
+            print('event.buttons == 1 && !widget.isTextSelected');
+            _onDragStart(event.position);
+          }
+        },
+        onPointerUp: (event) {
+          if (buttonPressed == 1) {
+            _onDragEnd(event.position);
+          }
+          buttonPressed = null;
+        },
+        child: child,
+      );
+    }
+
+    Widget touchVersion(Widget child) {
+      return GestureDetector(
+        onPanStart: (details) {
+          if (_lastSelectedText=='') {
+            _onDragStart(details.globalPosition);
+          }
+        },
+       
+        onPanEnd: (details) {
+              _onDragEnd(details.globalPosition);
+        },
+        child: child,
+      );
+    }
+
+    if (kIsWeb) {
+      // On web choose between pointer and touch behavior using media query.
+      return isTouchWebDevice() ? touchVersion(selectionArea()) : pointerVersion(selectionArea());
+    } else if (Platform.isAndroid || Platform.isIOS) {
+      return touchVersion(selectionArea());
+    } else {
+      return pointerVersion(selectionArea());
+    }
+
+
+
+
+                      
                     }),
                   ),
                 ),

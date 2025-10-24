@@ -1,5 +1,4 @@
 import 'package:fluent_ui/fluent_ui.dart';
-import 'package:wolof_bible/widgets/scripture_column.dart';
 import 'dart:ui' as ui;
 import 'dart:core';
 
@@ -7,7 +6,6 @@ import '../logic/data_initializer.dart';
 import '../logic/verse_composer.dart';
 import '../logic/text_utils.dart';
 
-import 'scripture_column.dart';
 
 // Data class to hold the calculated layout information for a verse.
 class VerseOffset {
