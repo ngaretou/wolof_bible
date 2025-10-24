@@ -53,6 +53,7 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
   ParsedLine? copyStartLine;
   ParsedLine? copyEndLine;
   int? buttonPressed;
+  late bool isTouch;
 
   late ItemScrollController itemScrollController;
   late ScrollGroup _scrollGroup;
@@ -850,24 +851,18 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
   void _onDragStart(Offset position) {
     // Global position of the pointer when drag starts
     copyEndLine = null;
-    dragStartOffset = position;
-    if (dragStartOffset != null) {
-      copyStartLine = _getLineAtOffset(dragStartOffset!);
-      if (copyStartLine != null) {
-        print(
-            'down @ ${copyStartLine!.book} ${copyStartLine!.chapter}.${copyStartLine!.verse}');
-      }
+    copyStartLine = _getLineAtOffset(position);
+    if (copyStartLine != null) {
+      print(
+          'down @ ${copyStartLine!.book} ${copyStartLine!.chapter}.${copyStartLine!.verse}');
     }
   }
 
   void _onDragEnd(Offset position) {
-    dragEndOffset = position;
-    if (dragEndOffset != null) {
-      copyEndLine = _getLineAtOffset(dragEndOffset!);
-      if (copyEndLine != null) {
-        print(
-            'up @ ${copyEndLine!.book} ${copyEndLine!.chapter}.${copyEndLine!.verse}');
-      }
+    copyEndLine = _getLineAtOffset(position);
+    if (copyEndLine != null) {
+      print(
+          'up @ ${copyEndLine!.book} ${copyEndLine!.chapter}.${copyEndLine!.verse}');
     }
   }
 
@@ -897,6 +892,14 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
     //     'scripture column build: columnIndex: ${widget.bibleReference.columnIndex}; collection: ${widget.bibleReference.collectionID}; key: ${widget.key}');
 
     //Couple of things to get to pass in to the Paragraph Builder
+
+    if (kIsWeb) {
+      isTouch = isTouchWebDevice();
+    } else if (Platform.isAndroid || Platform.isIOS) {
+      isTouch = true;
+    } else {
+      isTouch = false;
+    }
 
     Collection thisCollection = collections
         .firstWhere((element) => element.id == currentCollection.value);
@@ -1239,13 +1242,37 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
                     child: LayoutBuilder(builder: (context, constraints) {
                       _viewportHeight = constraints.maxHeight;
 
-                      Widget selectionArea() {
-                        return SelectionArea(
+                      return Listener(
+                        onPointerDown: (event) {
+                          buttonPressed = event.buttons;
+                          // Primary mouse button
+                          if (event.buttons == 1 && _lastSelectedText == '') {
+                            print(
+                                'event.buttons == 1 && !widget.isTextSelected');
+                            _onDragStart(event.position);
+                          }
+                        },
+                        onPointerUp: (event) {
+                          print('onPointerUp');
+                          if (buttonPressed == 1) {
+                            // This is the way to grab the end of the selection on pointer device
+                            _onDragEnd(event.position);
+                          }
+                          buttonPressed = null;
+                        },
+                        child: SelectionArea(
                           contextMenuBuilder: (BuildContext context,
                               SelectableRegionState regionState) {
-                            print('context menu build firing');
-                            print(
-                                regionState.contextMenuAnchors.secondaryAnchor);
+                            // This is the way to grab the end of the selection on touchscreen
+                            if (isTouch) {
+                              final pos = regionState
+                                  .contextMenuAnchors.secondaryAnchor;
+                              if (pos != null) {
+                                _onDragEnd(regionState
+                                    .contextMenuAnchors.secondaryAnchor!);
+                              }
+                            }
+
                             // just grab the selection
                             Future<void> simpleCopy() async {
                               final selected = _lastSelectedText;
@@ -1402,73 +1429,8 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
                                   },
                                 );
                               }),
-                        );
-                      }
-
-                      // if we're on a pointer driven system (non-iPad)
-                      // or on web on a pointer driven system
-                      Widget pointerVersion(Widget child) {
-                        return Listener(
-                          behavior: HitTestBehavior.deferToChild,
-                          onPointerMove: (event) {
-                            print('pointermove');
-                          },
-                          onPointerDown: (event) {
-                            buttonPressed = event.buttons;
-                            // Primary mouse button
-                            if (event.buttons == 1 && _lastSelectedText == '') {
-                              print(
-                                  'event.buttons == 1 && !widget.isTextSelected');
-                              _onDragStart(event.position);
-                            }
-                          },
-                          onPointerUp: (event) {
-                            print('onPointerUp');
-                            if (buttonPressed == 1) {
-                              _onDragEnd(event.position);
-                            }
-                            buttonPressed = null;
-                          },
-                          onPointerCancel: (event) {
-                            print('onPointerCancel');
-                          },
-                          onPointerPanZoomStart: (event) {
-                            print('onPointerPanZoomStart');
-                          },
-                          child: child,
-                        );
-                      }
-
-                      Widget touchVersion(Widget child) {
-                        return GestureDetector(
-                          onTapDown: (details) {
-                            print('onTapDown');
-                            if (_lastSelectedText == '') {
-                              _onDragStart(details.globalPosition);
-                            }
-                          },
-                          onTapUp: (details) {
-                            print('onTapUp');
-                            _onDragEnd(details.globalPosition);
-                          },
-                          onVerticalDragEnd: (details) {
-                            print('dragend');
-                          },
-                          onTapCancel: () {
-                            print('onTapCancel');
-                          },
-                          onTapMove: (details) {
-                            print('onTapMove');
-                          },
-                          onPanStart: (details) {
-                            print('onPanStart');
-                          },
-                          onPanEnd: (details) {
-                            print('onPanend');
-                          },
-                          child: child,
-                        );
-                      }
+                        ),
+                      );
 
                       // if (kIsWeb) {
                       //   // On web choose between pointer and touch behavior using media query.
@@ -1478,7 +1440,7 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
                       // } else if (Platform.isAndroid || Platform.isIOS) {
                       // return touchVersion(selectionArea());
                       // // } else {
-                      return pointerVersion(selectionArea());
+
                       // }
                     }),
                   ),
