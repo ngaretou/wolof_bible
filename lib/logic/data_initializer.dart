@@ -120,6 +120,8 @@ class Translation {
   String settingsInterfaceLanguage;
   String copy;
   String share;
+  String copyWithNumbers;
+  String copyWithoutNumbers;
 
   Translation(
       {required this.langCode,
@@ -134,7 +136,9 @@ class Translation {
       required this.settings,
       required this.settingsInterfaceLanguage,
       required this.copy,
-      required this.share});
+      required this.share,
+      required this.copyWithNumbers,
+      required this.copyWithoutNumbers});
 }
 
 List<Collection> collections = [];
@@ -292,6 +296,8 @@ Future<void> asyncGetTranslations(BuildContext context) async {
             "systemTheme": translation['systemTheme'],
             "lightTheme": translation['lightTheme'],
             "darkTheme": translation['darkTheme'],
+            "copyWithNumbers": translation['copyWithNumbers'],
+            "copyWithoutNumbers": translation['copyWithoutNumbers'],
           });
         }
       }
@@ -310,7 +316,9 @@ Future<void> asyncGetTranslations(BuildContext context) async {
           settings: settingsText,
           settingsInterfaceLanguage: settingsInterfaceLanguageText,
           copy: copyText,
-          share: shareText));
+          share: shareText,
+          copyWithNumbers: translationSupplement['copyWithNumbers']!,
+          copyWithoutNumbers: translationSupplement['copyWithoutNumbers']!));
     }
   }
 

@@ -880,6 +880,8 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
 
   @override
   Widget build(BuildContext context) {
+    final translation =
+        Provider.of<UserPrefs>(context, listen: true).currentTranslation;
     // // print(
     //     'scripture column build: columnIndex: ${widget.bibleReference.columnIndex}; collection: ${widget.bibleReference.collectionID}; key: ${widget.key}');
 
@@ -1273,31 +1275,37 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
 
                             // compose the verses nicely
                             void complexCopy(bool withVerses) async {
-                              if (copyStartLine != null &&
-                                  copyEndLine != null) {
-                                // Ensure correct order
-                                final startIndex =
-                                    versesInMemory.indexOf(copyStartLine!);
-                                final endIndex =
-                                    versesInMemory.indexOf(copyEndLine!);
-                                final ParsedLine startLine =
-                                    (startIndex <= endIndex)
-                                        ? copyStartLine!
-                                        : copyEndLine!;
-                                final ParsedLine endLine =
-                                    (startIndex <= endIndex)
-                                        ? copyEndLine!
-                                        : copyStartLine!;
+                              try {
+                                if (copyStartLine != null &&
+                                    copyEndLine != null) {
+                                  // Ensure correct order
+                                  final startIndex =
+                                      versesInMemory.indexOf(copyStartLine!);
+                                  final endIndex =
+                                      versesInMemory.indexOf(copyEndLine!);
+                                  final ParsedLine startLine =
+                                      (startIndex <= endIndex)
+                                          ? copyStartLine!
+                                          : copyEndLine!;
+                                  final ParsedLine endLine =
+                                      (startIndex <= endIndex)
+                                          ? copyEndLine!
+                                          : copyStartLine!;
 
-                                final textToCopy = _composeVersesInRange(
-                                    startLine, endLine,
-                                    includeVerseNumbers: true);
-                                Clipboard.setData(
-                                    ClipboardData(text: textToCopy));
-                              } else {
-                                // Fallback to copying the raw selected text if geometry fails
+                                  final textToCopy = _composeVersesInRange(
+                                      startLine, endLine,
+                                      includeVerseNumbers: withVerses);
+                                  Clipboard.setData(
+                                      ClipboardData(text: textToCopy));
+                                } else {
+                                  // Fallback to copying the raw selected text if geometry fails
+                                  simpleCopy();
+                                }
+                              } catch (e) {
+                                debugPrint(e.toString());
                                 simpleCopy();
                               }
+
                               ContextMenuController.removeAny();
                             }
                             // the defaults
@@ -1309,15 +1317,15 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
                               anchors: regionState.contextMenuAnchors,
                               buttonItems: [
                                 ContextMenuButtonItem(
-                                  label: 'Copy',
+                                  label: translation.copy,
                                   onPressed: simpleCopy,
                                 ),
                                 ContextMenuButtonItem(
-                                  label: 'Copy Verses (with numbers)',
+                                  label: translation.copyWithNumbers,
                                   onPressed: () => complexCopy(true),
                                 ),
                                 ContextMenuButtonItem(
-                                  label: 'Copy Verses (without numbers)',
+                                  label: translation.copyWithoutNumbers,
                                   onPressed: () => complexCopy(false),
                                 ),
                               ],

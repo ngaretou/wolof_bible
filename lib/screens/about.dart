@@ -5,6 +5,7 @@ import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:wolof_bible/screens/bulk_verse_copy.dart';
 import '../logic/data_initializer.dart';
 import 'package:xml/xml.dart';
 
@@ -261,6 +262,50 @@ Kàddug Yàlla+ app code © 2025 Foundational LLC.
                 useRootNavigator: false);
           },
           child: const Text('Licenses')),
+      SizedBox(height: 20),
+      Button(
+          onPressed: () {
+            //Here we're transforming the saved theme to the Material theme just by grabbing
+            //the brightness and seed color
+            String themeMode =
+                userPrefsBox.get('themeMode') ?? 'ThemeMode.dark';
+            Color colorToReturn = Colors.teal;
+            int? savedColorIndex = userPrefsBox.get('colorIndex');
+            if (savedColorIndex != null) {
+              colorToReturn = Colors.accentColors[savedColorIndex];
+            }
+
+            void showBulkCopy({
+              required BuildContext context,
+              String? applicationName,
+              String? applicationVersion,
+              Widget? applicationIcon,
+              String? applicationLegalese,
+            }) {
+              // assert(context != null);
+              // assert(useRootNavigator != null);
+              Navigator.of(context, rootNavigator: false)
+                  .push(material.MaterialPageRoute<void>(
+                builder: (BuildContext licenseContext) => material.Theme(
+                  //Here after Flutter 3 the theming wouldn't work right -
+                  //wrap the License Page in its own Material theme,
+                  //getting the imporant components from the saved theme
+                  data: material.ThemeData(
+                      useMaterial3: true, //important!
+                      colorSchemeSeed: colorToReturn,
+                      brightness: themeMode == 'ThemeMode.dark'
+                          ? Brightness.dark
+                          : Brightness.light),
+                  child: BulkVerseCopy(),
+                ),
+              ));
+            }
+
+            showBulkCopy(
+              context: context,
+            );
+          },
+          child: const Text('Bulk Verse Copy')),
     ];
 
     return ScaffoldPage.scrollable(
