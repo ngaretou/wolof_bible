@@ -53,5 +53,18 @@ to pre-process SAB data into assets
   - audio
   - Pass in ref via URL to go straight there? https://docs.flutter.dev/development/ui/navigation 
 
+### Versions
+* 2.0.0
+  * new data pre-processing
+  * new data structure
+  * new indexed search
+  * new copy and paste
+
+* 2.0.1
+  * Corrected translations
+  * Corrected copy without numbers to work 
+  * new icons for macos and ios
+    * ios - transparent single size @ 1024 with the core image @ 63% for ios 18 - to test with 26
+    * macos - made with iconcomposer for macos 15 - to test with 26
 
 ## Status
