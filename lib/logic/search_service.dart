@@ -1,5 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/services.dart' show rootBundle;
+import 'package:wolof_bible/logic/bulk_verse_copy_logic.dart';
+import 'package:wolof_bible/logic/data_initializer.dart';
+import 'package:wolof_bible/logic/text_utils.dart';
+import 'package:wolof_bible/logic/verse_composer.dart';
 import 'text_processor.dart';
 
 class SearchResult {
@@ -15,6 +19,16 @@ class SearchResult {
       required this.book,
       required this.chapter,
       required this.verse});
+}
+
+class HydratedVerseResult {
+  final String composedText;
+  final String reference;
+
+  const HydratedVerseResult({
+    required this.composedText,
+    required this.reference,
+  });
 }
 
 class _VerseLocation {
@@ -107,6 +121,136 @@ class SearchService {
     yield* _hydrateResults(finalLocations.toList());
   }
 
+  Future<List<HydratedVerseResult>> getVerseRanges({
+    required String collectionId,
+    required List<VerseRange> verseRanges,
+    required List<Collection> collections,
+    bool includeVerseNumbers = false,
+  }) async {
+    final Collection currentCollection =
+        collections.firstWhere((c) => c.id == collectionId);
+
+    final futures = verseRanges
+        .map((vRange) => _hydrateVerseRange(
+            vRange, collectionId, currentCollection, includeVerseNumbers))
+        .toList();
+
+    final results = await Future.wait(futures);
+
+    return results.whereType<HydratedVerseResult>().toList();
+  }
+
+  Future<HydratedVerseResult?> _hydrateVerseRange(
+      VerseRange vRange,
+      String collectionId,
+      Collection collection,
+      bool includeVerseNumbers) async {
+    final List<ParsedLine> verseLines = [];
+
+    final int startChapter = vRange.chapter;
+    final int endChapter = vRange.endingChapter ?? vRange.chapter;
+
+    for (int ch = startChapter; ch <= endChapter; ch++) {
+      final chapterPath = 'assets/json/$collectionId/${vRange.book}/$ch.json';
+      try {
+        final List<dynamic> chapterData = await _getChapterData(chapterPath);
+        final parsedLines = chapterData.map((item) {
+          return ParsedLine(
+            collectionid: collectionId,
+            book: vRange.book,
+            chapter: ch.toString(),
+            verse: item['verse']?.toString() ?? '',
+            verseFragment: item['vfrag']?.toString() ?? '',
+            audioMarker: item['audio']?.toString() ?? '',
+            verseText: item['text']?.toString() ?? '',
+            verseStyle: item['style']?.toString() ?? '',
+          );
+        }).toList();
+        verseLines.addAll(parsedLines);
+      } catch (e) {
+        print('Could not load chapter $chapterPath: $e');
+      }
+    }
+
+    if (verseLines.isEmpty) return null;
+
+    // Filter verses based on range
+    List<ParsedLine> selectedLines;
+    if (vRange.startVerse == null) {
+      // whole chapter(s)
+      selectedLines = verseLines;
+    } else {
+      selectedLines = verseLines.where((line) {
+        final verseStr = line.verse;
+        if (verseStr.isEmpty) return false;
+
+        final firstVerseInLine = int.parse(_getFirstOfDashedVerses(verseStr));
+        final lastVerseInLine = int.parse(_getLastOfDashedVerses(verseStr));
+
+        final startVerse = vRange.startVerse!;
+        final endVerse = vRange.endingVerse ?? startVerse;
+
+        final lineChapter = int.parse(line.chapter);
+
+        if (startChapter == endChapter) {
+          return firstVerseInLine <= endVerse && lastVerseInLine >= startVerse;
+        } else {
+          // Multi-chapter range
+          if (lineChapter == startChapter) {
+            return lastVerseInLine >= startVerse;
+          } else if (lineChapter == endChapter) {
+            return firstVerseInLine <= endVerse;
+          } else if (lineChapter > startChapter && lineChapter < endChapter) {
+            return true;
+          }
+        }
+
+        return false;
+      }).toList();
+    }
+
+    // Now compose text
+    final StringBuffer buffer = StringBuffer();
+    for (final line in selectedLines) {
+      if (_isHeader(line)) continue;
+
+      if (_isParagraph(line)) {
+        buffer.write('\n    ');
+      }
+      String composedText = verseComposer(
+        line: line,
+        includeFootnotes: false,
+      ).versesAsString.trim();
+
+      if (includeVerseNumbers && line.verse.isNotEmpty && line.verse != '0') {
+        buffer.write('${toSuperscript(line.verse)}\u202f');
+      }
+
+      buffer.write('$composedText ');
+    }
+
+    // Format reference
+    final String bookName =
+        collection.books.firstWhere((b) => b.id == vRange.book).name;
+    String reference;
+    if (vRange.startVerse == null) {
+      reference = '$bookName ${vRange.chapter}';
+    } else if (vRange.endingVerse == null) {
+      reference = '$bookName ${vRange.chapter}:${vRange.startVerse}';
+    } else if (vRange.endingChapter == null ||
+        vRange.endingChapter == vRange.chapter) {
+      reference =
+          '$bookName ${vRange.chapter}:${vRange.startVerse}-${vRange.endingVerse}';
+    } else {
+      reference =
+          '$bookName ${vRange.chapter}:${vRange.startVerse}-${vRange.endingChapter}:${vRange.endingVerse}';
+    }
+    // reference += ' (${collection.name})';
+
+    return HydratedVerseResult(
+        composedText: buffer.toString().trim(), reference: reference);
+  }
+
   Future<Map<String, dynamic>> _getIndexShard(
       String collectionId, String firstLetter) async {
     final path = 'assets/json/$collectionId/index/$firstLetter.json';
@@ -121,6 +265,20 @@ class SearchService {
     } catch (e) {
       // It's normal for some index files not to exist (e.g., x.json)
       return {};
+    }
+  }
+
+  Future<List<dynamic>> _getChapterData(String chapterPath) async {
+    if (_chapterCache.containsKey(chapterPath)) {
+      return _chapterCache[chapterPath]!;
+    }
+    try {
+      final jsonString = await rootBundle.loadString(chapterPath);
+      final chapterData = json.decode(jsonString) as List<dynamic>;
+      _chapterCache[chapterPath] = chapterData;
+      return chapterData;
+    } catch (e) {
+      return [];
     }
   }
 
@@ -141,14 +299,8 @@ class SearchService {
       final chapterPath = 'assets/json/$collectionId/$bookId/$chapter.json';
 
       try {
-        List<dynamic> chapterData;
-        if (_chapterCache.containsKey(chapterPath)) {
-          chapterData = _chapterCache[chapterPath]!;
-        } else {
-          final jsonString = await rootBundle.loadString(chapterPath);
-          chapterData = json.decode(jsonString) as List<dynamic>;
-          _chapterCache[chapterPath] = chapterData;
-        }
+        final List<dynamic> chapterData = await _getChapterData(chapterPath);
+        if (chapterData.isEmpty) continue;
 
         final versesInChapter = entry.value;
         for (final loc in versesInChapter) {
@@ -173,4 +325,25 @@ class SearchService {
       }
     }
   }
+}
+
+String _getFirstOfDashedVerses(String vs) {
+  RegExpMatch? match = RegExp(r'^(\d+)').firstMatch(vs);
+  return match?.group(1) ?? vs;
+}
+
+String _getLastOfDashedVerses(String vs) {
+  RegExpMatch? match = RegExp(r'(\d+)$').firstMatch(vs);
+  return match?.group(1) ?? vs;
+}
+
+bool _isParagraph(ParsedLine line) {
+  // based on verseStyle, is this a new paragraph?
+  return line.verseStyle.contains(RegExp(
+      r'[p,po,pr,cls,pmo,pm,pmc,pmr,pi\d,mi,nb,pc,ph\d,b,mt\d,mte\d,ms\d,mr,s\d*,sr,sp,sd\d,q,q1,q2,qr,qc,qa,qm\d,qd,lh,li\d,lf,lim\d,ip,im,ie,ili]'));
+}
+
+bool _isHeader(ParsedLine line) {
+  // based on verseStyle, is this a new paragraph?
+  return line.verseStyle.contains(RegExp(r'[s\d*,mt\d*,mr,ms\d*,]'));
 }

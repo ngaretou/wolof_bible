@@ -452,7 +452,6 @@ Future<List<Collection>> collectionsFromXML(
   // print('now we have the collections info');
 
   for (double i = 0; i < 100; i++) {
-    // TODO come back to this - what does this do?
     updater(i);
   }
 

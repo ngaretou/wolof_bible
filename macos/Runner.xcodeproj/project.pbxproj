@@ -21,8 +21,6 @@
 /* End PBXAggregateTarget section */
 
 /* Begin PBXBuildFile section */
-		048E1A0C2EAC052D00A28687 /* FlutterMacOS.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 048E1A0B2EAC052D00A28687 /* FlutterMacOS.xcframework */; };
-		048E1A0D2EAC052D00A28687 /* FlutterMacOS.xcframework in Bundle Framework */ = {isa = PBXBuildFile; fileRef = 048E1A0B2EAC052D00A28687 /* FlutterMacOS.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		096041FC9E83D2309F95785E /* Pods_Runner.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0549591EDAF6A2F51ABCA4FF /* Pods_Runner.framework */; };
 		335BBD1B22A9A15E00E9071D /* GeneratedPluginRegistrant.swift in Sources */ = {isa = PBXBuildFile; fileRef = 335BBD1A22A9A15E00E9071D /* GeneratedPluginRegistrant.swift */; };
 		33CC10F12044A3C60003C045 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33CC10F02044A3C60003C045 /* AppDelegate.swift */; };
@@ -41,20 +39,6 @@
 			remoteInfo = FLX;
 		};
 /* End PBXContainerItemProxy section */
-
-/* Begin PBXCopyFilesBuildPhase section */
-		33CC110E2044A8840003C045 /* Bundle Framework */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = "";
-			dstSubfolderSpec = 10;
-			files = (
-				048E1A0D2EAC052D00A28687 /* FlutterMacOS.xcframework in Bundle Framework */,
-			);
-			name = "Bundle Framework";
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		048E1A0B2EAC052D00A28687 /* FlutterMacOS.xcframework */ = {isa = PBXFileReference; expectedSignature = "AppleDeveloperProgram:S8QB4VV633:FLUTTER.IO LLC"; lastKnownFileType = wrapper.xcframework; name = FlutterMacOS.xcframework; path = "../../../fvm/versions/stable/bin/cache/artifacts/engine/darwin-x64/FlutterMacOS.xcframework"; sourceTree = "<group>"; };
@@ -86,7 +70,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				048E1A0C2EAC052D00A28687 /* FlutterMacOS.xcframework in Frameworks */,
 				096041FC9E83D2309F95785E /* Pods_Runner.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -190,7 +173,6 @@
 				33CC10E92044A3C60003C045 /* Sources */,
 				33CC10EA2044A3C60003C045 /* Frameworks */,
 				33CC10EB2044A3C60003C045 /* Resources */,
-				33CC110E2044A8840003C045 /* Bundle Framework */,
 				3399D490228B24CF009A79C7 /* ShellScript */,
 				30FDE0BE1F10F95664895420 /* [CP] Embed Pods Frameworks */,
 			);
