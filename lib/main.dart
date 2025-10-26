@@ -672,8 +672,7 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
                         }
                         //Main row that holds the text columns
                         else {
-                          List<Collection> collections =
-                              snapshot.data as List<Collection>;
+                          collections = snapshot.data as List<Collection>;
                           //Sets a default in case there is no RTL below
                           late String comboBoxFont =
                               collections.first.fonts.first.fontFamily;
@@ -702,7 +701,7 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
                   //Search
 
                   RunFunctionPaneItemAction(
-                      body: const About(),
+                      body: About(),
                       title: Text(Provider.of<UserPrefs>(context, listen: true)
                           .currentTranslation
                           .search),

@@ -286,7 +286,7 @@ Kàddug Yàlla+ app code © 2025 Foundational LLC.
               // assert(useRootNavigator != null);
               Navigator.of(context, rootNavigator: false)
                   .push(material.MaterialPageRoute<void>(
-                builder: (BuildContext licenseContext) => material.Theme(
+                builder: (BuildContext context) => material.Theme(
                   //Here after Flutter 3 the theming wouldn't work right -
                   //wrap the License Page in its own Material theme,
                   //getting the imporant components from the saved theme

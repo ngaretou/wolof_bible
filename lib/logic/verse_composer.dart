@@ -24,7 +24,7 @@ ComposedVerses verseComposer(
     TextStyle? computedTextStyle,
     required bool includeFootnotes,
     Function? tileOnTap,
-    required BuildContext context,
+    BuildContext? context,
     bool firstLineOfParagraph = false}) {
   List<InlineSpan> spansToReturn = [];
   String textToReturn = '';
@@ -101,7 +101,7 @@ ComposedVerses verseComposer(
 
     //if includeFootnotes is true, this is for screen display (not string copy) so add it to the spans to return.
     //Otherwise the footnotes are thrown away as there's no else
-    if (includeFootnotes) {
+    if (includeFootnotes && context != null) {
       spansToReturn.add(
         WidgetSpan(
           child: SelectionContainer.disabled(
@@ -127,12 +127,12 @@ ComposedVerses verseComposer(
   void pairedUsfmFindingAndFormatting(String text) {
     //Here begins the character style searching
     Iterable<RegExpMatch>? allPairedUsfmMarkers =
-        RegExp(r'(\\)(\w+)(.*?)(\\\w+\*)').allMatches(line.verseText);
+        RegExp(r'(\\)(\w+)(.*?)(\\\w+\*)').allMatches(text);
 
     //first step - if no slashes, just add the whole line
     if (allPairedUsfmMarkers.isEmpty) {
-      addThisString(line.verseText);
-      dealtWithSoFar = line.verseText.length;
+      addThisString(text);
+      dealtWithSoFar = text.length;
     } else {
       //dealthWithSofar is a little error checking and progress caching, making sure we're dealing with all the text
 
@@ -140,7 +140,7 @@ ComposedVerses verseComposer(
       //We know how many paired usfm markers we found (allPairedUsfmMarkers is an Iterable of matches), so we can search for them one at a time.
       for (var i = 0; i < allPairedUsfmMarkers.length; i++) {
         //First let's not deal with the whole line, but what we've not dealt with so far - so 'first' becomes 'next' below
-        String leftToDealWith = line.verseText.substring(dealtWithSoFar);
+        String leftToDealWith = text.substring(dealtWithSoFar);
 
         //Now get the first bit of the string + pre-usfm pair -
         //note the \3 matches the third group, so this ensures we have a matched pair
@@ -224,7 +224,7 @@ ComposedVerses verseComposer(
       } //for loop
 
       //That's the paired usfm...the verse could end with a footnote or could end with more text.
-      leftToDealWith = line.verseText.substring(dealtWithSoFar);
+      leftToDealWith = text.substring(dealtWithSoFar);
       RegExpMatch? match = RegExp(r'(.*)').firstMatch(leftToDealWith);
 
       //Is there something?
