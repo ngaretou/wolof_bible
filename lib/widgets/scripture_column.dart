@@ -276,7 +276,7 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
 
   Future<void> _fetchNextChapter() async {
     if (versesInMemory.isEmpty || _isFetchingNext) return;
-    print('fetching next chapter');
+    // print('fetching next chapter');
 
     setState(() {
       _isFetchingNext = true;
@@ -882,8 +882,8 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
   Widget build(BuildContext context) {
     final translation =
         Provider.of<UserPrefs>(context, listen: true).currentTranslation;
-    print(
-        'scripture column build: columnIndex: ${widget.bibleReference.columnIndex}; collection: ${widget.bibleReference.collectionID}; key: ${widget.key}');
+    // print(
+    //     'scripture column build: columnIndex: ${widget.bibleReference.columnIndex}; collection: ${widget.bibleReference.collectionID}; key: ${widget.key}');
 
     //Couple of things to get to pass in to the Paragraph Builder
 

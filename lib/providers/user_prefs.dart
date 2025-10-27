@@ -76,7 +76,7 @@ class UserPrefs with ChangeNotifier {
         initializePrefs(collections);
       } else {
         try {
-          print('loading usercolumns from userColumnsBox');
+          // print('loading usercolumns from userColumnsBox');
 
           for (var i = 0; i < main.userColumnsBox.length; i++) {
             Key newKeyForSession = UniqueKey();
