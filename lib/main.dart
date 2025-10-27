@@ -19,6 +19,7 @@ import 'package:pwa_install/pwa_install.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'dart:io';
+import 'package:macos_window_utils/macos_window_utils.dart';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
@@ -125,37 +126,47 @@ void main() async {
     await analytics.logAppOpen();
   }
 
+  bool isMacos = false;
+
   if (isDesktop) {
-    await flutter_acrylic.Window.initialize();
-    await WindowManager.instance.ensureInitialized();
+    if (Platform.isWindows) {
+      await flutter_acrylic.Window.initialize();
+      await WindowManager.instance.ensureInitialized();
 
-    windowManager.waitUntilReadyToShow().then((_) async {
-      if (Platform.isWindows) {
-        await windowManager.setTitleBarStyle(
-          TitleBarStyle.hidden,
-          // windowButtonVisibility: true,
-        );
-      } else {
-        await windowManager.setTitleBarStyle(
-          TitleBarStyle.normal,
-          windowButtonVisibility: true,
-        );
-      }
+      windowManager.waitUntilReadyToShow().then((_) async {
+        if (Platform.isWindows) {
+          await windowManager.setTitleBarStyle(
+            TitleBarStyle.hidden,
+            // windowButtonVisibility: true,
+          );
+        } else {
+          await windowManager.setTitleBarStyle(
+            TitleBarStyle.normal,
+            windowButtonVisibility: true,
+          );
+        }
 
-      double? windowWidth = userPrefsBox.get('windowWidth');
-      double? windowHeight = userPrefsBox.get('windowHeight');
-      if (windowHeight == null || windowWidth == null) {
-        windowWidth = 1000;
-        windowHeight = 650;
-      }
+        double? windowWidth = userPrefsBox.get('windowWidth');
+        double? windowHeight = userPrefsBox.get('windowHeight');
+        if (windowHeight == null || windowWidth == null) {
+          windowWidth = 1000;
+          windowHeight = 650;
+        }
 
-      await windowManager.setSize(Size(windowWidth, windowHeight));
-      await windowManager.setMinimumSize(const Size(600, 650));
-      await windowManager.center();
-      await windowManager.show();
-      await windowManager.setPreventClose(false);
-      await windowManager.setSkipTaskbar(false);
-    });
+        await windowManager.setSize(Size(windowWidth, windowHeight));
+        await windowManager.setMinimumSize(const Size(600, 650));
+        await windowManager.center();
+        await windowManager.show();
+        await windowManager.setPreventClose(false);
+        await windowManager.setSkipTaskbar(false);
+      });
+    } else if (Platform.isMacOS) {
+      WidgetsFlutterBinding.ensureInitialized();
+      await WindowManipulator.initialize();
+      WindowManipulator.makeTitlebarTransparent();
+      WindowManipulator.enableFullSizeContentView();
+      isMacos = true;
+    }
   }
   if (kIsWeb) BrowserContextMenu.disableContextMenu();
   // print('runApp');
@@ -173,7 +184,11 @@ void main() async {
           create: (ctx) => ColumnManager(),
         ),
       ],
-      child: const MyApp(),
+      child: isMacos
+          ? TitlebarSafeArea(
+              child: const MyApp(),
+            )
+          : const MyApp(),
     ),
   );
 }
