@@ -72,5 +72,15 @@ to pre-process SAB data into assets
 
 * 2.0.3
   * Correction of footnote problems
+*  isMacos
+          ? macos.MacosTheme(
+              data: macos.MacosThemeData.light(),
+              child: macos.TitlebarSafeArea(
+                child: Directionality(
+                    textDirection: TextDirection.ltr,
+                    child: macos.MacosWindow(child: )),
+              ),
+            )
+          : 
 
 ## Status

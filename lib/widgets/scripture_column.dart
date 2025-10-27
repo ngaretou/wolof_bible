@@ -276,7 +276,7 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
 
   Future<void> _fetchNextChapter() async {
     if (versesInMemory.isEmpty || _isFetchingNext) return;
-    // print('fetching next chapter');
+    print('fetching next chapter');
 
     setState(() {
       _isFetchingNext = true;
@@ -379,9 +379,9 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
       bool jump = false}) async {
     if (_isScrolling) return; // Don't start a new scroll if one is in progress
 
-    setState(() {
-      _isScrolling = true;
-    });
+    // setState(() {
+    _isScrolling = true;
+    // });
 
     try {
       bool navMethod = jump;
@@ -450,9 +450,9 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
       }
     } finally {
       if (mounted) {
-        setState(() {
-          _isScrolling = false;
-        });
+        // setState(() {
+        _isScrolling = false;
+        // });
       }
     }
   }
@@ -882,8 +882,8 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
   Widget build(BuildContext context) {
     final translation =
         Provider.of<UserPrefs>(context, listen: true).currentTranslation;
-    // // print(
-    //     'scripture column build: columnIndex: ${widget.bibleReference.columnIndex}; collection: ${widget.bibleReference.collectionID}; key: ${widget.key}');
+    print(
+        'scripture column build: columnIndex: ${widget.bibleReference.columnIndex}; collection: ${widget.bibleReference.collectionID}; key: ${widget.key}');
 
     //Couple of things to get to pass in to the Paragraph Builder
 

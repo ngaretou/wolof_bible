@@ -19,7 +19,7 @@ import 'package:pwa_install/pwa_install.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'dart:io';
-import 'package:macos_window_utils/macos_window_utils.dart';
+import 'package:macos_window_utils/macos_window_utils.dart' as macos;
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
@@ -32,6 +32,7 @@ import 'screens/settings.dart';
 import 'widgets/onboarding_panel.dart';
 
 import 'theme.dart';
+import 'macos_window_delegate.dart';
 import 'logic/data_initializer.dart';
 
 import 'providers/user_prefs.dart';
@@ -39,7 +40,7 @@ import 'providers/column_manager.dart';
 
 import '../hive/user_columns_db.dart';
 
-String appTitle = '';
+const appTitle = 'Kàddug Yàlla+';
 
 /// Checks if the current environment is a desktop environment.
 bool get isDesktop {
@@ -117,7 +118,7 @@ void main() async {
   }
 
   setPathUrlStrategy();
-// No firebase for Windows yet so don't initialize it in that case, but do in other cases
+  // No firebase for Windows yet so don't initialize it in that case, but do in other cases
   if (kIsWeb || !Platform.isWindows) {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
@@ -126,46 +127,61 @@ void main() async {
     await analytics.logAppOpen();
   }
 
-  bool isMacos = false;
-
   if (isDesktop) {
+    // all desktop common settings
+    await WindowManager.instance.ensureInitialized();
+
+    windowManager.waitUntilReadyToShow().then((_) async {
+      double? windowWidth = userPrefsBox.get('windowWidth');
+      double? windowHeight = userPrefsBox.get('windowHeight');
+      if (windowHeight == null || windowWidth == null) {
+        windowWidth = 1000;
+        windowHeight = 650;
+      }
+
+      await windowManager.setSize(Size(windowWidth, windowHeight));
+      await windowManager.setMinimumSize(const Size(600, 650));
+      await windowManager.center();
+      await windowManager.show();
+      await windowManager.setPreventClose(false);
+      await windowManager.setSkipTaskbar(false);
+    });
+
+    // Windows and macos different settings
     if (Platform.isWindows) {
-      await flutter_acrylic.Window.initialize();
-      await WindowManager.instance.ensureInitialized();
-
-      windowManager.waitUntilReadyToShow().then((_) async {
-        if (Platform.isWindows) {
-          await windowManager.setTitleBarStyle(
-            TitleBarStyle.hidden,
-            // windowButtonVisibility: true,
-          );
-        } else {
-          await windowManager.setTitleBarStyle(
-            TitleBarStyle.normal,
-            windowButtonVisibility: true,
-          );
-        }
-
-        double? windowWidth = userPrefsBox.get('windowWidth');
-        double? windowHeight = userPrefsBox.get('windowHeight');
-        if (windowHeight == null || windowWidth == null) {
-          windowWidth = 1000;
-          windowHeight = 650;
-        }
-
-        await windowManager.setSize(Size(windowWidth, windowHeight));
-        await windowManager.setMinimumSize(const Size(600, 650));
-        await windowManager.center();
-        await windowManager.show();
-        await windowManager.setPreventClose(false);
-        await windowManager.setSkipTaskbar(false);
-      });
+      await windowManager.setTitleBarStyle(
+        TitleBarStyle.hidden,
+        // windowButtonVisibility: true,
+      );
+      // await flutter_acrylic.Window.initialize();
     } else if (Platform.isMacOS) {
+      // initialization of macos_window_utils
       WidgetsFlutterBinding.ensureInitialized();
-      await WindowManipulator.initialize();
-      WindowManipulator.makeTitlebarTransparent();
-      WindowManipulator.enableFullSizeContentView();
-      isMacos = true;
+      await macos.WindowManipulator.initialize(enableWindowDelegate: true);
+      macos.WindowManipulator.hideTitle();
+      macos.WindowManipulator.makeTitlebarTransparent();
+      macos.WindowManipulator.enableFullSizeContentView();
+      final delegate = MyDelegate();
+      macos.WindowManipulator.addNSWindowDelegate(delegate);
+
+      // Create macos.macos.NSAppPresentationOptions instance.
+      final options = macos.NSAppPresentationOptions.from({
+        // fullScreen needs to be present as a fullscreen presentation option at all
+        // times.
+        macos.NSAppPresentationOption.fullScreen,
+
+        // Hide the toolbar automatically in fullscreen mode.
+        macos.NSAppPresentationOption.autoHideToolbar,
+
+        // autoHideToolbar must be accompanied by autoHideMenuBar.
+        macos.NSAppPresentationOption.autoHideMenuBar,
+
+        // autoHideMenuBar must be accompanied by either autoHideDock or hideDock.
+        macos.NSAppPresentationOption.autoHideDock,
+      });
+
+      // Apply the options as fullscreen presentation options.
+      options.applyAsFullScreenPresentationOptions();
     }
   }
   if (kIsWeb) BrowserContextMenu.disableContextMenu();
@@ -183,12 +199,9 @@ void main() async {
         ChangeNotifierProvider(
           create: (ctx) => ColumnManager(),
         ),
+        // only macos
       ],
-      child: isMacos
-          ? TitlebarSafeArea(
-              child: const MyApp(),
-            )
-          : const MyApp(),
+      child: const MyApp(),
     ),
   );
 }
@@ -218,12 +231,6 @@ class MyApp extends StatelessWidget {
       hoveringPadding: EdgeInsets.all(0),
     );
 
-    Future<String> getAppTitle() async {
-      var response = await asyncGetProjectName(context);
-      return response;
-    }
-
-    late Future<String> initAppInfo = getAppTitle();
     // print('initAppInfo');
     return ChangeNotifierProvider.value(
       value: _appTheme,
@@ -239,58 +246,47 @@ class MyApp extends StatelessWidget {
 
         SystemChrome.setSystemUIOverlayStyle(style);
         // print('about to hit FutureBuilder line 191');
-        return FutureBuilder(
-            future: initAppInfo,
-            builder: (ctx, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const material.Center(
-                    child: material.CircularProgressIndicator());
-              } else {
-                // print(appTheme.color.toString());
-                appTitle = snapshot.data.toString();
-                return FluentApp(
-                  title: appTitle,
-                  themeMode: appTheme.mode,
-                  debugShowCheckedModeBanner: false,
-                  home: MyHomePage(
-                    appTheme: appTheme,
-                  ),
-                  color: appTheme.color,
-                  // color: Colors.black,
-                  darkTheme: FluentThemeData(
-                      brightness: Brightness.dark,
-                      accentColor: appTheme.color,
-                      visualDensity: VisualDensity.standard,
-                      // focusTheme: FocusThemeData(
-                      //   glowFactor: is10footScreen() ? 2.0 : 0.0,
-                      // ),
-                      scrollbarTheme: scrollBarTheme,
-                      selectionColor: appTheme.color.darkest),
-                  theme: FluentThemeData(
-                      accentColor: appTheme.color,
-                      visualDensity: VisualDensity.standard,
-                      // focusTheme: FocusThemeData(
-                      //   glowFactor: is10footScreen() ? 2.0 : 0.0,
-                      // ),
-                      scrollbarTheme: scrollBarTheme,
-                      selectionColor: appTheme.color.lightest),
-                  builder: (context, child) {
-                    return Directionality(
-                      textDirection: appTheme.textDirection,
-                      child: NavigationPaneTheme(
-                        data: NavigationPaneThemeData(
-                          backgroundColor: appTheme.windowEffect !=
-                                  flutter_acrylic.WindowEffect.disabled
-                              ? Colors.transparent
-                              : null,
-                        ),
-                        child: child!,
-                      ),
-                    );
-                  },
-                );
-              }
-            });
+        return FluentApp(
+          title: appTitle,
+          themeMode: appTheme.mode,
+          debugShowCheckedModeBanner: false,
+          home: MyHomePage(
+            appTheme: appTheme,
+          ),
+          color: appTheme.color,
+          // color: Colors.black,
+          darkTheme: FluentThemeData(
+              brightness: Brightness.dark,
+              accentColor: appTheme.color,
+              visualDensity: VisualDensity.standard,
+              // focusTheme: FocusThemeData(
+              //   glowFactor: is10footScreen() ? 2.0 : 0.0,
+              // ),
+              scrollbarTheme: scrollBarTheme,
+              selectionColor: appTheme.color.darkest),
+          theme: FluentThemeData(
+              accentColor: appTheme.color,
+              visualDensity: VisualDensity.standard,
+              // focusTheme: FocusThemeData(
+              //   glowFactor: is10footScreen() ? 2.0 : 0.0,
+              // ),
+              scrollbarTheme: scrollBarTheme,
+              selectionColor: appTheme.color.lightest),
+          builder: (context, child) {
+            return Directionality(
+              textDirection: appTheme.textDirection,
+              child: NavigationPaneTheme(
+                data: NavigationPaneThemeData(
+                  backgroundColor: appTheme.windowEffect !=
+                          flutter_acrylic.WindowEffect.disabled
+                      ? Colors.transparent
+                      : null,
+                ),
+                child: child!,
+              ),
+            );
+          },
+        );
       },
     );
   }
@@ -496,10 +492,10 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
 
             //Light Dark Toggle
             PaneItemAction(
-              icon: FluentTheme.of(context).brightness.isDark
+              icon: FluentTheme.of(context).brightness == Brightness.dark
                   ? const Icon(FluentIcons.sunny)
                   : const Icon(FluentIcons.clear_night),
-              title: FluentTheme.of(context).brightness.isDark
+              title: FluentTheme.of(context).brightness == Brightness.dark
                   ? Text(Provider.of<UserPrefs>(context, listen: true)
                       .currentTranslation
                       .lightTheme)
@@ -554,195 +550,222 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
           ];
 
           //Set up the navPaneItems - note that if the name of the wolof app gets changed by one char it will not work
-          if (appTitle == "Kàddug Yàlla") {
-            finalNavPaneItems.addAll(wolofWebOnlyNavPaneItems);
-            finalNavPaneItems.addAll(normalNavPaneItems);
-          } else {
-            finalNavPaneItems.addAll(normalNavPaneItems);
+
+          finalNavPaneItems.addAll(wolofWebOnlyNavPaneItems);
+          finalNavPaneItems.addAll(normalNavPaneItems);
+
+          NavigationAppBar? appBar({double height = 28}) {
+            if (!kIsWeb && Platform.isWindows) {
+              return NavigationAppBar(
+                  height: 30,
+                  automaticallyImplyLeading: false,
+                  title: () {
+                    if (kIsWeb) return Text(appTitle);
+                    return DragToMoveArea(
+                      child: Row(
+                        children: [
+                          const SizedBox(width: 15),
+                          Align(
+                            alignment: AlignmentDirectional.centerStart,
+                            child: Text(appTitle),
+                          ),
+                        ],
+                      ),
+                    );
+                  }(),
+                  actions: const Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      //     IconButton(
+                      //         icon: const Icon(FluentIcons.add),
+                      //         onPressed: () {
+                      //           numberOfColumns <= 3 //keep it to four columns
+                      //               ? changeNumberColumns(add: true)
+                      //               : null;
+
+                      //           // setState(() {});
+                      //         }),
+
+                      //     // Spacer(),
+
+                      WindowButtons()
+                    ],
+                  ));
+            } else if (!kIsWeb && Platform.isMacOS) {
+              return NavigationAppBar(
+                  automaticallyImplyLeading: false,
+                  height: height,
+                  title: height == 4
+                      ? null
+                      : material.Center(child: Text(appTitle)),
+                  actions: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.end,
+                  ));
+            } else {
+              return const NavigationAppBar(
+                  automaticallyImplyLeading: false, height: 4);
+            }
           }
 
-          return NavigationView(
-            key: viewKey,
-            //appBar is across top of the screen in place of normal OS specific title bar.
+          Widget appBody() {
+            return FutureBuilder(
+              future: initCollections,
+              builder: (ctx, snapshot) {
+                // Remove splash screen when bootstrap is complete
+                FlutterNativeSplash.remove();
 
-            appBar: !kIsWeb && Platform.isWindows
-                ? NavigationAppBar(
-                    height: 30,
-                    automaticallyImplyLeading: false,
-                    title: () {
-                      if (kIsWeb) return Text(appTitle);
-                      return DragToMoveArea(
-                        child: Row(
-                          children: [
-                            const SizedBox(width: 15),
-                            Align(
-                              alignment: AlignmentDirectional.centerStart,
-                              child: Text(appTitle),
-                            ),
-                          ],
-                        ),
-                      );
-                    }(),
-                    actions: const Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        //     IconButton(
-                        //         icon: const Icon(FluentIcons.add),
-                        //         onPressed: () {
-                        //           numberOfColumns <= 3 //keep it to four columns
-                        //               ? changeNumberColumns(add: true)
-                        //               : null;
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return ValueListenableBuilder<double>(
+                      valueListenable: myProgress,
+                      builder: (context, val, child) {
+                        if (val == 0) {
+                          return const Center(child: ProgressRing());
+                        } else {
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  ProgressRing(value: val),
+                                  if (val.ceil() != 100)
+                                    Text('${val.ceil().toString()}%',
+                                        style: const TextStyle(fontSize: 10))
+                                ],
+                              ),
+                              SizedBox(
+                                  height:
+                                      (MediaQuery.of(context).size.height / 2) -
+                                          70),
+                              if (kIsWeb && appTitle == "Kàddug Yàlla")
+                                Button(
+                                    onPressed: () async {
+                                      const url = 'https://kaddugyalla.com/av/';
+                                      if (await canLaunchUrl(Uri.parse(url))) {
+                                        await launchUrl(Uri.parse(url),
+                                            webOnlyWindowName: "_self");
+                                      } else {
+                                        throw 'Could not launch $url';
+                                      }
+                                    },
+                                    child: const Text(
+                                        'Dafa yeex ba ëpp, demal ci version bu weesu')),
+                              const SizedBox(
+                                height: 30,
+                              )
+                            ],
+                          );
+                        }
+                      });
+                }
+                //Main row that holds the text columns
+                else {
+                  collections = snapshot.data as List<Collection>;
+                  //Sets a default in case there is no RTL below
+                  late String comboBoxFont =
+                      collections.first.fonts.first.fontFamily;
+                  bool anyRTL = collections
+                      .any((element) => element.textDirection != 'LTR');
 
-                        //           // setState(() {});
-                        //         }),
-
-                        //     // Spacer(),
-
-                        WindowButtons()
-                      ],
-                    ),
-                  )
-                : const NavigationAppBar(
-                    automaticallyImplyLeading: false, height: 4),
-            //Main big row that holds the text columns
-            pane: NavigationPane(
-                selected: index,
-                onChanged: (i) => setState(() => index = i),
-                size: const NavigationPaneSize(
-                  openMinWidth: 250.0,
-                  openMaxWidth: 320.0,
-                ),
-                header: Container(
-                  height: kOneLineTileHeight,
-                  padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                ),
-                displayMode: widget.appTheme.displayMode,
-                indicator: () {
-                  switch (widget.appTheme.indicator) {
-                    case NavigationIndicators.end:
-                      return const EndNavigationIndicator();
-                    case NavigationIndicators.sticky:
+                  if (anyRTL) {
+                    String font = collections
+                        .firstWhere((element) => element.textDirection == 'RTL')
+                        .fonts
+                        .first
+                        .fontFamily;
+                    comboBoxFont = font;
                   }
-                }(),
-                items: [
-                  PaneItem(
-                    body: FutureBuilder(
-                      future: initCollections,
-                      builder: (ctx, snapshot) {
-                        // Remove splash screen when bootstrap is complete
-                        FlutterNativeSplash.remove();
 
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return ValueListenableBuilder<double>(
-                              valueListenable: myProgress,
-                              builder: (context, val, child) {
-                                if (val == 0) {
-                                  return const Center(child: ProgressRing());
-                                } else {
-                                  return Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.center,
-                                    mainAxisAlignment: MainAxisAlignment.end,
-                                    children: [
-                                      Stack(
-                                        alignment: Alignment.center,
-                                        children: [
-                                          ProgressRing(value: val),
-                                          if (val.ceil() != 100)
-                                            Text('${val.ceil().toString()}%',
-                                                style: const TextStyle(
-                                                    fontSize: 10))
-                                        ],
-                                      ),
-                                      SizedBox(
-                                          height: (MediaQuery.of(context)
-                                                      .size
-                                                      .height /
-                                                  2) -
-                                              70),
-                                      if (kIsWeb && appTitle == "Kàddug Yàlla")
-                                        Button(
-                                            onPressed: () async {
-                                              const url =
-                                                  'https://kaddugyalla.com/av/';
-                                              if (await canLaunchUrl(
-                                                  Uri.parse(url))) {
-                                                await launchUrl(Uri.parse(url),
-                                                    webOnlyWindowName: "_self");
-                                              } else {
-                                                throw 'Could not launch $url';
-                                              }
-                                            },
-                                            child: const Text(
-                                                'Dafa yeex ba ëpp, demal ci version bu weesu')),
-                                      const SizedBox(
-                                        height: 30,
-                                      )
-                                    ],
-                                  );
-                                }
-                              });
-                        }
-                        //Main row that holds the text columns
-                        else {
-                          collections = snapshot.data as List<Collection>;
-                          //Sets a default in case there is no RTL below
-                          late String comboBoxFont =
-                              collections.first.fonts.first.fontFamily;
-                          bool anyRTL = collections
-                              .any((element) => element.textDirection != 'LTR');
+                  return BibleView(
+                      collections: collections, comboBoxFont: comboBoxFont);
+                }
+              },
+            );
+          }
 
-                          if (anyRTL) {
-                            String font = collections
-                                .firstWhere(
-                                    (element) => element.textDirection == 'RTL')
-                                .fonts
-                                .first
-                                .fontFamily;
-                            comboBoxFont = font;
-                          }
+          return ValueListenableBuilder<Box?>(
+              valueListenable: userPrefsBox.listenable(keys: ['fullscreen']),
+              builder: (context, _, child) {
+                double height = 28;
+                bool? fullscreen = userPrefsBox.get('fullscreen');
+                if (fullscreen != null) {
+                  if (fullscreen) {
+                    height = 4;
+                  } else {
+                    height = 28;
+                  }
+                }
 
-                          return BibleView(
-                              collections: collections,
-                              comboBoxFont: comboBoxFont);
-                        }
-                      },
-                    ),
-                    icon: const Icon(FluentIcons.reading_mode),
-                    title: Text(appTitle),
-                  ),
-                  //Search
+                return NavigationView(
+                  key: viewKey,
+                  //appBar is across top of the screen in place of normal OS specific title bar.
 
-                  RunFunctionPaneItemAction(
-                      body: About(),
-                      title: Text(Provider.of<UserPrefs>(context, listen: true)
-                          .currentTranslation
-                          .search),
-                      icon: const Icon(FluentIcons.search),
-                      functionToRun: () {
-                        if (index == 0) {
-                          Provider.of<ColumnManager>(context, listen: false)
-                              .toggleSearch();
+                  appBar: appBar(height: height),
+                  //Main big row that holds the text columns
+                  pane: NavigationPane(
+                      selected: index,
+                      onChanged: (i) => setState(() => index = i),
+                      size: const NavigationPaneSize(
+                        openMinWidth: 250.0,
+                        openMaxWidth: 320.0,
+                      ),
+                      header: Container(
+                        height: kOneLineTileHeight,
+                        padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                      ),
+                      displayMode: widget.appTheme.displayMode,
+                      indicator: () {
+                        switch (widget.appTheme.indicator) {
+                          case NavigationIndicators.end:
+                            return const EndNavigationIndicator();
+                          case NavigationIndicators.sticky:
                         }
-                      }),
-                  //Add Column
-                  RunFunctionPaneItemAction(
-                      body: const About(),
-                      title: Text(Provider.of<UserPrefs>(context, listen: true)
-                          .currentTranslation
-                          .addColumn),
-                      icon: const Icon(FluentIcons.calculator_addition),
-                      functionToRun: () {
-                        if (index == 0) {
-                          Provider.of<ColumnManager>(context, listen: false)
-                              .addColumn();
-                        }
-                      }),
-                ],
-                footerItems: finalNavPaneItems),
-          );
+                      }(),
+                      items: [
+                        PaneItem(
+                          body: child!,
+                          icon: const Icon(FluentIcons.reading_mode),
+                          title: Text(appTitle),
+                        ),
+                        //Search
+
+                        RunFunctionPaneItemAction(
+                            body: About(),
+                            title: Text(
+                                Provider.of<UserPrefs>(context, listen: true)
+                                    .currentTranslation
+                                    .search),
+                            icon: const Icon(FluentIcons.search),
+                            functionToRun: () {
+                              if (index == 0) {
+                                Provider.of<ColumnManager>(context,
+                                        listen: false)
+                                    .toggleSearch();
+                              }
+                            }),
+                        //Add Column
+                        RunFunctionPaneItemAction(
+                            body: const About(),
+                            title: Text(
+                                Provider.of<UserPrefs>(context, listen: true)
+                                    .currentTranslation
+                                    .addColumn),
+                            icon: const Icon(FluentIcons.calculator_addition),
+                            functionToRun: () {
+                              if (index == 0) {
+                                Provider.of<ColumnManager>(context,
+                                        listen: false)
+                                    .addColumn();
+                              }
+                            }),
+                      ],
+                      footerItems: finalNavPaneItems),
+                );
+              },
+              child: appBody());
         }
       },
     );
