@@ -67,4 +67,7 @@ to pre-process SAB data into assets
     * ios - transparent single size @ 1024 with the core image @ 63% for ios 18 - to test with 26
     * macos - made with iconcomposer for macos 15 - to test with 26
 
+* 2.0.2
+  * Added bulk verse copy
+
 ## Status
