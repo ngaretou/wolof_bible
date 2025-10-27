@@ -70,4 +70,7 @@ to pre-process SAB data into assets
 * 2.0.2
   * Added bulk verse copy
 
+* 2.0.3
+  * Correction of footnote problems
+
 ## Status

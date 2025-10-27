@@ -64,6 +64,7 @@ dependencies:
   skeletonizer: ^2.1.0+1
   collection: ^1.19.1
   rxdart: ^0.28.0
+  macos_window_utils: ^1.9.0
 
 dev_dependencies:
   flutter_test:
