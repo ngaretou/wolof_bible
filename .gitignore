@@ -15,6 +15,9 @@ build/
 
 **/firebase_app_id_file.json
 **/firebase_options.dart
+**/firebase.json
+**generated_plugins.cmake
+
 
 
 **/GeneratedPluginRegistrant.*
