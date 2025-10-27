@@ -1,7 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:wolof_bible/main.dart';
+
+import '/main.dart';
 import '../logic/bible_abbreviations.dart';
 import '../logic/bulk_verse_copy_logic.dart';
 import '../logic/search_service.dart';
@@ -23,6 +24,7 @@ class _BulkVerseCopyState extends State<BulkVerseCopy> {
   Future<List<HydratedVerseResult>>? verses;
 
   String collectionId = collections.first.id;
+  bool includeVerseNumbers = false;
 
   final sampleText = '''Actes 22.3
 Colossiens 1:26
@@ -46,10 +48,15 @@ You can have : or . separators, you can do ranges (MAT 8.9-14) or whole chapters
 
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios),
-          onPressed: Navigator.of(context).pop,
-        ),
+        automaticallyImplyLeading: false,
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.close),
+            onPressed: Navigator.of(context).pop,
+          ),
+          SizedBox(width: 20)
+        ],
         title: Text('Bulk Verse Copy'),
       ),
       body: SingleChildScrollView(
@@ -59,13 +66,60 @@ You can have : or . separators, you can do ranges (MAT 8.9-14) or whole chapters
             mainAxisAlignment: MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              ExpansionTile(
+                initiallyExpanded: userPrefsBox.get('instructions') ?? true,
+                onExpansionChanged: (value) {
+                  userPrefsBox.put('instructions', value);
+                  setState(() {});
+                },
+                collapsedBackgroundColor:
+                    Theme.of(context).colorScheme.surfaceContainerHigh,
+                backgroundColor:
+                    Theme.of(context).colorScheme.surfaceContainerHigh,
+                title: Text('Instructions'),
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(18.0),
+                    child: Row(
+                      children: [
+                        Expanded(child: Text(instructions)),
+                        SizedBox(width: 20),
+                        ElevatedButton(
+                            onPressed: () {
+                              Navigator.of(context).push(MaterialPageRoute<
+                                      void>(
+                                  builder: (BuildContext licenseContext) =>
+                                      Theme(
+                                          //Here after Flutter 3 the theming wouldn't work right -
+                                          //wrap the License Page in its own Material theme,
+                                          //getting the imporant components from the saved theme
+                                          data: ThemeData(
+                                              useMaterial3: true, //important!
+                                              colorSchemeSeed: Theme.of(context)
+                                                  .primaryColor,
+                                              brightness:
+                                                  Theme.brightnessOf(context) ==
+                                                          Brightness.dark
+                                                      ? Brightness.dark
+                                                      : Brightness.light),
+                                          child: AbbreviationView())));
+                            },
+                            child: Text('See all abbreviations'))
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(
+                height: 20,
+              ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
-                  SizedBox(width: 8),
                   Text('Choose collection here:'),
                   SizedBox(width: 20),
-                  Expanded(
+                  SizedBox(
+                    width: 400,
                     child: DropdownButton(
                       isExpanded: true,
                       items: collections
@@ -86,50 +140,19 @@ You can have : or . separators, you can do ranges (MAT 8.9-14) or whole chapters
                       },
                     ),
                   ),
+                  SizedBox(width: 60),
+                  Text('Include verse numbers?'),
+                  SizedBox(width: 20),
+                  Switch(
+                      value: includeVerseNumbers,
+                      onChanged: (val) {
+                        setState(() {
+                          includeVerseNumbers = val;
+                        });
+                      }),
                 ],
               ),
-              ExpansionTile(
-                initiallyExpanded: userPrefsBox.get('instructions') ?? true,
-                onExpansionChanged: (value) {
-                  userPrefsBox.put('instructions', value);
-                  setState(() {});
-                },
-                collapsedBackgroundColor:
-                    Theme.of(context).colorScheme.surfaceContainerHigh,
-                title: Text('Instructions'),
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                          child: Card(
-                              child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Text(instructions),
-                      ))),
-                      SizedBox(width: 20),
-                      ElevatedButton(
-                          onPressed: () {
-                            Navigator.of(context).push(MaterialPageRoute<void>(
-                                builder: (BuildContext licenseContext) => Theme(
-                                    //Here after Flutter 3 the theming wouldn't work right -
-                                    //wrap the License Page in its own Material theme,
-                                    //getting the imporant components from the saved theme
-                                    data: ThemeData(
-                                        useMaterial3: true, //important!
-                                        colorSchemeSeed:
-                                            Theme.of(context).primaryColor,
-                                        brightness:
-                                            Theme.brightnessOf(context) ==
-                                                    Brightness.dark
-                                                ? Brightness.dark
-                                                : Brightness.light),
-                                    child: AbbreviationView())));
-                          },
-                          child: Text('See all abbreviations'))
-                    ],
-                  ),
-                ],
-              ),
+              SizedBox(height: 20),
 
               SizedBox(
                 height: 20,
@@ -187,7 +210,8 @@ You can have : or . separators, you can do ranges (MAT 8.9-14) or whole chapters
                             verses = SearchService().getVerseRanges(
                                 collectionId: collectionId,
                                 verseRanges: results.ranges,
-                                collections: collections);
+                                collections: collections,
+                                includeVerseNumbers: includeVerseNumbers);
                           });
 
                           // give user feedback on ones that didn't work
@@ -336,7 +360,18 @@ class AbbreviationView extends StatelessWidget {
         BibleAbbreviations.abbreviations.keys.toList();
 
     return Scaffold(
-      appBar: AppBar(title: Text('Abbreviations')),
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.close),
+            onPressed: Navigator.of(context).pop,
+          ),
+          SizedBox(width: 20)
+        ],
+        title: Text('Abbreviations'),
+      ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8.0),
         child: GridView.builder(
