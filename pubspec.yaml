@@ -65,6 +65,7 @@ dependencies:
   collection: ^1.19.1
   rxdart: ^0.28.0
   macos_window_utils: ^1.9.0
+  macos_ui: ^2.2.2
 
 dev_dependencies:
   flutter_test:

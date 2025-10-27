@@ -146,22 +146,7 @@ List<Collection> collections = [];
 List<Font> allFonts = [];
 List<Translation> translations = [];
 
-Future<String> asyncGetProjectName(BuildContext context) async {
-  AssetBundle assetBundle = DefaultAssetBundle.of(context);
 
-  //get the appDef xml from outside the flutter project
-  String appDefLocation = 'assets/json/appDef.appDef';
-  String xmlFileString = await assetBundle.loadString(appDefLocation);
-  //get the document into a usable iterable
-  final document = XmlDocument.parse(xmlFileString);
-  //This is the overall app name
-  final projectName = document
-      .getElement('app-definition')!
-      .getElement('app-name')!
-      .innerText
-      .toString(); // e.g. Kaddug Yalla
-  return projectName;
-}
 
 Future<void> asyncGetTranslations(BuildContext context) async {
   //Stuff for supplemental translations
