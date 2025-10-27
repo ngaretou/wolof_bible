@@ -93,8 +93,9 @@ ComposedVerses verseComposer(
       //This is a hack as the message cannot be a list of inline spans (which we need to do character level formatting)
       //but just a string or one inline span (with one style).
       //Would need to extend ToolTip to alllow List<InlineSpan>, which I'm not up to right now.
-      cleanedText = cleanedText.replaceAll(RegExp(r'\\\w+\*\s*'), '');
-      cleanedText = cleanedText.replaceAll(RegExp(r'\\\w+\s*'), '');
+      cleanedText = cleanedText.replaceAll(RegExp(r'\\\w+\*'), '');
+      cleanedText = cleanedText.replaceAll(RegExp(r'\\\w+\s?'), '');
+      cleanedText = cleanedText.replaceAll(RegExp(r'\\\+\w+'), '');
 
       return cleanedText;
     }
