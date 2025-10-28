@@ -66,21 +66,17 @@ to pre-process SAB data into assets
   * new icons for macos and ios
     * ios - transparent single size @ 1024 with the core image @ 63% for ios 18 - to test with 26
     * macos - made with iconcomposer for macos 15 - to test with 26
-
 * 2.0.2
   * Added bulk verse copy
-
 * 2.0.3
   * Correction of footnote problems
-*  isMacos
-          ? macos.MacosTheme(
-              data: macos.MacosThemeData.light(),
-              child: macos.TitlebarSafeArea(
-                child: Directionality(
-                    textDirection: TextDirection.ltr,
-                    child: macos.MacosWindow(child: )),
-              ),
-            )
-          : 
+  * more new icons for ios
+*  2.0.4
+   * 'unfocus after input' after search and after bulk verse copy input
+   * adapting bulk verse copy "ready to copy" user feedback to touch screen
+   * pre-processing fixes for ~ as thousands separator
+   * UI for bulk verse copy changes
+
+
 
 ## Status

@@ -29,13 +29,32 @@
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="favicon.png" />
 
-    <title>wolof_bible</title>
+    <title>Kàddug Yàlla</title>
     <link rel="manifest" href="manifest.json" />
 
     <!-- stop native right click in favor of the app's  -->
+    <style>
+      /* Disable iOS Safari callout and text selection */
+      *:not(input):not(textarea) {
+        -webkit-user-select: none; /* disable text selection */
+        user-select: none;
+        -webkit-touch-callout: none; /* disable long-press menu */
+      }
+    </style>
+    <!-- desktop -->
     <script>
       document.addEventListener("contextmenu", function (e) {
         e.preventDefault();
+      });
+      document.addEventListener("touchstart", function (e) {
+        // Detect long press manually
+        this.longPressTimer = setTimeout(() => {
+          e.preventDefault();
+        }, 500); // 500ms threshold
+      });
+
+      document.addEventListener("touchend", function () {
+        clearTimeout(this.longPressTimer);
       });
     </script>
 

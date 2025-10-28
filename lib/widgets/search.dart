@@ -45,6 +45,8 @@ class _SearchWidgetState extends State<SearchWidget> {
   }
 
   void searchFunction(String searchRequest) {
+    FocusManager.instance.primaryFocus?.unfocus();
+
     if (searchRequest.trim().isEmpty) {
       setState(() {
         _resultsStream = null;
