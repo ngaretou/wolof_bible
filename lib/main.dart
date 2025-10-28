@@ -740,11 +740,13 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
                                     .search),
                             icon: const Icon(FluentIcons.search),
                             functionToRun: () {
-                              if (index == 0) {
-                                Provider.of<ColumnManager>(context,
-                                        listen: false)
-                                    .toggleSearch();
+                              if (index != 0) {
+                                setState(() {
+                                  index = 0;
+                                });
                               }
+                              Provider.of<ColumnManager>(context, listen: false)
+                                  .toggleSearch();
                             }),
                         //Add Column
                         RunFunctionPaneItemAction(
@@ -755,11 +757,13 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
                                     .addColumn),
                             icon: const Icon(FluentIcons.calculator_addition),
                             functionToRun: () {
-                              if (index == 0) {
-                                Provider.of<ColumnManager>(context,
-                                        listen: false)
-                                    .addColumn();
+                              if (index != 0) {
+                                setState(() {
+                                  index = 0;
+                                });
                               }
+                              Provider.of<ColumnManager>(context, listen: false)
+                                  .addColumn();
                             }),
                       ],
                       footerItems: finalNavPaneItems),

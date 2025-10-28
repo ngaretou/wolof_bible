@@ -53,7 +53,7 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
   ParsedLine? copyStartLine;
   ParsedLine? copyEndLine;
   int? buttonPressed;
-  late bool isTouch;
+  bool isTouch = true;
 
   late ItemScrollController itemScrollController;
   late ScrollGroup _scrollGroup;
@@ -142,6 +142,13 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
 
   @override
   void initState() {
+    if (kIsWeb) {
+      isTouch = isTouchWebDevice();
+    } else if (Platform.isAndroid || Platform.isIOS) {
+      isTouch = true;
+    } else {
+      isTouch = false;
+    }
     // Set the initial collection and populate the book list for the UI.
     currentCollection.value = widget.bibleReference.collectionID;
     currentCollectionBooks = widget.collections
@@ -887,14 +894,6 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
 
     //Couple of things to get to pass in to the Paragraph Builder
 
-    if (kIsWeb) {
-      isTouch = isTouchWebDevice();
-    } else if (Platform.isAndroid || Platform.isIOS) {
-      isTouch = true;
-    } else {
-      isTouch = false;
-    }
-
     Collection thisCollection = collections
         .firstWhere((element) => element.id == currentCollection.value);
 
@@ -1254,7 +1253,8 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
                         child: SelectionArea(
                           contextMenuBuilder: (BuildContext context,
                               SelectableRegionState regionState) {
-                            // This is the way to grab the end of the selection on touchscreen
+                            // This is the way to grab the end of the selection on touchscreen 💪
+                            
                             if (isTouch) {
                               final pos = regionState
                                   .contextMenuAnchors.secondaryAnchor;

@@ -125,6 +125,13 @@ void sfmToJson() async {
           bookText = bookText.replaceAll(RegExp(findString), changes[k]!);
         }
 
+        // change ~ to no-break space when surrounded by digits
+        final regex = RegExp(r'(\d)~(?=\d)');
+        bookText = bookText.replaceAllMapped(regex, (match) {
+          // Group(1) is the digit before the tilde
+          return '${match.group(1)}\u202f';
+        });
+
         final chapters = bookText.split(r'\c ');
         // chapters.removeAt(0);
 
