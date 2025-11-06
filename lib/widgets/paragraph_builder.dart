@@ -6,7 +6,6 @@ import '../logic/data_initializer.dart';
 import '../logic/verse_composer.dart';
 import '../logic/text_utils.dart';
 
-
 // Data class to hold the calculated layout information for a verse.
 class VerseOffset {
   final ParsedLine line;
@@ -192,7 +191,10 @@ class _ParagraphBuilderState extends State<ParagraphBuilder> {
           includeFootnotes: true,
           context: context,
           tileOnTap: () {
-            // in case of future features keeping this function
+            print('tileOnTap');
+          },
+          tileOnTapUp: () {
+            print('tileOnTapUP');
           });
 
       plainTextBuffer.write(composed.versesAsString);

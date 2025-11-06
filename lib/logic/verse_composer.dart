@@ -1,7 +1,7 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'dart:core';
 import 'data_initializer.dart';
-// import 'package:flutter/gestures.dart'; // if in the future we need TextSpan recognizer
+import 'package:flutter/gestures.dart'; // if in the future we need TextSpan recognizer
 
 /* this class and associated verseComposer function is exposed as we have to use it several different places. 
 It gets confusing but it is this way to avoid code duplication. Sometimes we need the verses composed 
@@ -24,6 +24,7 @@ ComposedVerses verseComposer(
     TextStyle? computedTextStyle,
     required bool includeFootnotes,
     Function? tileOnTap,
+    Function? tileOnTapUp,
     BuildContext? context,
     bool firstLineOfParagraph = false}) {
   List<InlineSpan> spansToReturn = [];
@@ -45,24 +46,31 @@ ComposedVerses verseComposer(
       }
 
       //if there is no function incoming - a heading etc
-      if (tileOnTap == null) {
-        spansToReturn.add(TextSpan(
-          text: thisString,
-          style: textStyle ?? computedTextStyle,
-        ));
-      } else {
-        //TO DO can we split paragraphs?
-        //if there is a function (this is when there is a verse you can copy)
-        // totalCharacters = totalCharacters + thisString.length;
-        // if (totalCharacters > 75 && thisString.endsWith('.')) {
-        //   thisString = '$thisString \n';
-        // }
+      // if (tileOnTap == null) {
+      //   spansToReturn.add(TextSpan(
+      //     text: thisString,
+      //     style: textStyle ?? computedTextStyle,
+      //   ));
+      // } else {
+      //TO DO can we split paragraphs?
+      //if there is a function (this is when there is a verse you can copy)
+      // totalCharacters = totalCharacters + thisString.length;
+      // if (totalCharacters > 75 && thisString.endsWith('.')) {
+      //   thisString = '$thisString \n';
+      // }
 
-        spansToReturn.add(TextSpan(
+      spansToReturn.add(TextSpan(
           text: thisString,
           style: textStyle ?? computedTextStyle,
-        ));
-      }
+          mouseCursor: SystemMouseCursors.basic,
+          recognizer: TapGestureRecognizer()
+            ..onTapDown = (_) {
+              tileOnTap != null ? tileOnTap() : () {};
+            }
+            ..onTapUp = (_) {
+              tileOnTapUp != null ? tileOnTapUp() : () {};
+            }));
+      // }
       textToReturn = '$textToReturn$thisString';
     } //end stringIsCleanAddIt
 
