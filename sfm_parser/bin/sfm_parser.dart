@@ -4,6 +4,8 @@ import 'package:xml/xml.dart';
 import 'stopwords.dart';
 import 'package:snowball_stemmer/snowball_stemmer.dart';
 
+import 'text_utils.dart';
+
 // Note: This script is intended to be run from the root of the `sfm_parser` directory.
 
 void sfmToJson() async {
@@ -162,7 +164,8 @@ void sfmToJson() async {
             chapterData.add({'style': 'mt1', 'text': bookName});
           }
 
-          for (var line in lines) {
+          for (int i = 0; i < lines.length; i++) {
+            final line = lines[i];
             if (line.trim().isEmpty) continue;
 
             final lineMatch = RegExp(r'\\(\w+)\s*(.*)').firstMatch(line);
@@ -176,26 +179,55 @@ void sfmToJson() async {
             if (style.contains('toc')) continue;
             if (style.contains('h')) continue;
 
+            String verseForLine = currentVerseNumber;
+
+            // Reset verse number for headers, otherwise carry it forward
+
+            if (isHeader(style)) {
+              currentVerseNumber = '';
+              verseForLine = '';
+            }
+
             if (style == 'v') {
               final verseMatch = RegExp(r'([\w-]+)\s+(.*)').firstMatch(text);
               if (verseMatch != null) {
                 currentVerseNumber = verseMatch.group(1)!;
                 lastVerseLabel = currentVerseNumber;
                 text = verseMatch.group(2)!;
+                verseForLine = currentVerseNumber;
               }
-            } else {
-              currentVerseNumber = '';
+            } else if (isParagraph(style) && text.trim().isEmpty) {
+              // Look ahead for the next verse number.
+              String? nextVerse;
+              for (int j = i + 1; j < lines.length; j++) {
+                final nextLine = lines[j];
+                if (nextLine.trim().startsWith(r'\v')) {
+                  final nextVerseMatch = RegExp(
+                    r'\\v\s+([\w-]+)',
+                  ).firstMatch(nextLine);
+                  if (nextVerseMatch != null) {
+                    nextVerse = nextVerseMatch.group(1);
+                    break;
+                  }
+                }
+              }
+              if (nextVerse != null) {
+                verseForLine = nextVerse;
+              } else {
+                // end of chapter, use current
+                verseForLine = currentVerseNumber;
+              }
             }
 
             chapterData.add({
               'style': style,
-              'verse': currentVerseNumber,
+              'verse': verseForLine,
               'text': text,
             });
 
             // currentVerseNumber != '' = if the match does not have a verse number it's a header or other non-text - throw it away
             if (text.isNotEmpty &&
-                currentVerseNumber != '' &&
+                verseForLine != '' &&
                 chapterNumber != 0 &&
                 !{'mt1', 'h', 'toc1', 'toc2', 'toc3'}.contains(style)) {
               final tokens = text.toLowerCase().split(
@@ -205,7 +237,7 @@ void sfmToJson() async {
                 if (token.isEmpty || stopWords.contains(token)) continue;
 
                 final processedToken = stemmer?.stem(token) ?? token;
-                final location = [bookId, chapterNumber, currentVerseNumber];
+                final location = [bookId, chapterNumber, verseForLine];
                 final locations = invertedIndex.putIfAbsent(
                   processedToken,
                   () => [],
@@ -253,7 +285,7 @@ void sfmToJson() async {
     if (collectionId != null) {
       final tocDir = Directory('../assets/json/');
       assetPaths.add('assets/json/'); // Add path to set
-      final tocFile = File('${tocDir.path}/${collectionId}_toc.json');
+      final tocFile = File('${tocDir.path}${collectionId}_toc.json');
       await tocFile.writeAsString(json.encode(collectionToc));
       print('Generated TOC for $collectionId at ${tocFile.path}');
 

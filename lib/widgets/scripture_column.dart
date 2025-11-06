@@ -10,6 +10,7 @@ import 'package:skeletonizer/skeletonizer.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/services.dart';
 import 'package:collection/collection.dart';
+// import 'package:wolof_bible/logic/bulk_verse_copy_logic.dart';
 
 import '../logic/data_initializer.dart';
 import '../logic/chapter_fetch_service.dart';
@@ -630,7 +631,7 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
 
     for (var i = 0; i < lines.length; i++) {
       //If it is a new paragraph marker, add the existing verses to the big list, and start over with a new paragraph
-      if (isParagraph(lines[i])) {
+      if (isParagraph(lines[i].verseStyle)) {
         if (currentParagraph.isNotEmpty) paragraphs.add(currentParagraph);
         currentParagraph = [lines[i]];
         //If it's a one line paragraph
@@ -715,46 +716,101 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
     }
   }
 
+  // TODO ? this is really very similar in function to getVerseRange in search_service.dart.
+  // the difference is that this one goes over a chapter break. This may be a mistake to make two
+  // functions that essentially do the same thing - perhaps in the future extend the search_service
+  // function to take into account going over chapter breaks, but I'm sticking with it right now.
   String _composeVersesInRange(ParsedLine firstLine, ParsedLine lastLine,
       {required bool includeVerseNumbers}) {
-    final StringBuffer buffer = StringBuffer();
+    String returnMe = '';
+    try {
+      final StringBuffer buffer = StringBuffer();
 
-    final startIndex = versesInMemory.indexOf(firstLine);
-
-    final endIndex = versesInMemory.indexOf(lastLine);
-
-    if (startIndex == -1 || endIndex == -1) {
-      return '';
-    }
-
-    for (int i = startIndex; i <= endIndex; i++) {
-      final line = versesInMemory[i];
-
-      if (isHeader(line)) continue;
-
-      if (isParagraph(line)) {
-        buffer.write('\n    ');
-      }
-      String composedText = verseComposer(
-        line: line,
-        includeFootnotes: false,
-        context: context,
-      ).versesAsString.trim();
-
-      if (includeVerseNumbers && line.verse.isNotEmpty && line.verse != '0') {
-        buffer.write('${toSuperscript(line.verse)}\u202f');
+      int initialStartIndex = versesInMemory.indexOf(firstLine);
+      if (initialStartIndex == -1) {
+        return '';
       }
 
-      buffer.write('$composedText ');
+      // Find the actual first line of the starting verse.
+      int finalStartIndex = initialStartIndex;
+      if (firstLine.verse.isNotEmpty) {
+        for (int i = initialStartIndex - 1; i >= 0; i--) {
+          final prevLine = versesInMemory[i];
+          // If we are still on the same verse, keep going back.
+          if (prevLine.book == firstLine.book &&
+              prevLine.chapter == firstLine.chapter &&
+              prevLine.verse == firstLine.verse) {
+            finalStartIndex = i;
+          } else {
+            // We've reached a different verse/chapter/book, so the previous 'i' was the start.
+            break;
+          }
+        }
+      }
+
+      final startIndex = finalStartIndex;
+      final initialEndIndex = versesInMemory.indexOf(lastLine);
+
+      if (initialEndIndex == -1) {
+        return '';
+      }
+
+      // Find the actual last line of the ending verse.
+      int finalEndIndex = initialEndIndex;
+      if (lastLine.verse.isNotEmpty) {
+        for (int i = initialEndIndex + 1; i < versesInMemory.length; i++) {
+          final nextLine = versesInMemory[i];
+          // If we are still on the same verse, keep going forward.
+          if (nextLine.book == lastLine.book &&
+              nextLine.chapter == lastLine.chapter &&
+              nextLine.verse == lastLine.verse) {
+            finalEndIndex = i;
+          } else {
+            // We've reached a different verse/chapter/book, so the previous 'i' was the end.
+            break;
+          }
+        }
+      }
+      final endIndex = finalEndIndex;
+
+      for (int i = startIndex; i <= endIndex; i++) {
+        final line = versesInMemory[i];
+
+        // don't include headers in the copied verses
+        if (isHeader(line.verseStyle)) {
+          continue;
+        }
+
+        if (isParagraph(line.verseStyle)) {
+          buffer.write('\n    ');
+        }
+        String composedText = verseComposer(
+          line: line,
+          includeFootnotes: false,
+          context: context,
+        ).versesAsString.trim();
+
+        if (includeVerseNumbers &&
+            line.verse.isNotEmpty &&
+            line.verse != '0' &&
+            line.verseStyle == 'v') {
+          buffer.write('${toSuperscript(line.verse)}\u202f');
+        }
+
+        buffer.write('$composedText ');
+      }
+
+      final reference = _getFormattedReferenceString(firstLine, lastLine);
+
+      if (reference.isNotEmpty) {
+        buffer.write('\n\n$reference');
+      }
+      return buffer.toString().trim();
+    } catch (e) {
+      debugPrint(e.toString());
+      //TODO fallback to getting it from search service?
     }
-
-    final reference = _getFormattedReferenceString(firstLine, lastLine);
-
-    if (reference.isNotEmpty) {
-      buffer.write('\n\n$reference');
-    }
-
-    return buffer.toString().trim();
+    return returnMe;
   }
 
   String _getFormattedReferenceString(
@@ -859,6 +915,7 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
     // Global position of the pointer when drag starts
     copyEndLine = null;
     copyStartLine = _getLineAtOffset(position);
+    debugPrint(copyStartLine.toString());
   }
 
   void _onDragEnd(Offset position) {
@@ -891,6 +948,13 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
         Provider.of<UserPrefs>(context, listen: true).currentTranslation;
     // print(
     //     'scripture column build: columnIndex: ${widget.bibleReference.columnIndex}; collection: ${widget.bibleReference.collectionID}; key: ${widget.key}');
+
+    final collectionExists = widget.collections
+        .any((element) => element.id == currentCollection.value);
+
+    if (!collectionExists) {
+      return const Expanded(child: Center(child: ProgressRing()));
+    }
 
     //Couple of things to get to pass in to the Paragraph Builder
 
@@ -1254,7 +1318,7 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
                           contextMenuBuilder: (BuildContext context,
                               SelectableRegionState regionState) {
                             // This is the way to grab the end of the selection on touchscreen 💪
-                            
+
                             if (isTouch) {
                               final pos = regionState
                                   .contextMenuAnchors.secondaryAnchor;
@@ -1264,13 +1328,20 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
                               }
                             }
 
+                            void resetSelection() {
+                              ContextMenuController.removeAny();
+                              regionState.clearSelection();
+                              copyEndLine = null;
+                              copyStartLine = null;
+                            }
+
                             // just grab the selection
                             Future<void> simpleCopy() async {
                               final selected = _lastSelectedText;
                               await Clipboard.setData(
                                 ClipboardData(text: selected),
                               );
-                              ContextMenuController.removeAny();
+                              resetSelection();
                             }
 
                             // compose the verses nicely
@@ -1295,6 +1366,7 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
                                   final textToCopy = _composeVersesInRange(
                                       startLine, endLine,
                                       includeVerseNumbers: withVerses);
+
                                   Clipboard.setData(
                                       ClipboardData(text: textToCopy));
                                 } else {
@@ -1306,7 +1378,7 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
                                 simpleCopy();
                               }
 
-                              ContextMenuController.removeAny();
+                              resetSelection();
                             }
                             // the defaults
                             // final buttonItems =
@@ -1465,15 +1537,4 @@ String getLastOfDashedVerses(String vs) {
 // send the cleaned verse number or as fallback send the current Verse
   final verseno = match?.group(2) ?? vs;
   return verseno;
-}
-
-bool isParagraph(ParsedLine line) {
-  // based on verseStyle, is this a new paragraph?
-  return line.verseStyle.contains(RegExp(
-      r'[p,po,pr,cls,pmo,pm,pmc,pmr,pi\d,mi,nb,pc,ph\d,b,mt\d,mte\d,ms\d,mr,s\d*,sr,sp,sd\d,q,q1,q2,qr,qc,qa,qm\d,qd,lh,li\d,lf,lim\d,ip,im,ie,ili]'));
-}
-
-bool isHeader(ParsedLine line) {
-  // based on verseStyle, is this a new paragraph?
-  return line.verseStyle.contains(RegExp(r'[s\d*,mt\d*,mr,ms\d*,]'));
 }

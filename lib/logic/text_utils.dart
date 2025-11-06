@@ -18,3 +18,14 @@ const Map<String, String> supMap = {
 String toSuperscript(String input) =>
     input.split('').map((c) => supMap[c] ?? c).join();
 
+
+bool isParagraph(String style) {
+  // based on verseStyle, is this a new paragraph?
+  return style.contains(RegExp(
+      r'[p,po,pr,cls,pmo,pm,pmc,pmr,pi\d,mi,nb,pc,ph\d,b,mt\d,mte\d,ms\d,mr,s\d*,sr,sp,sd\d,q,q1,q2,qr,qc,qa,qm\d,qd,lh,li\d,lf,lim\d,ip,im,ie,ili]'));
+}
+
+bool isHeader(String style) {
+  // based on verseStyle, is this a new paragraph?
+  return style.contains(RegExp(r'(s\d*|mt\d*|mr|ms\d*)'));
+}

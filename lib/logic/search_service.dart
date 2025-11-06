@@ -121,6 +121,7 @@ class SearchService {
     yield* _hydrateResults(finalLocations.toList());
   }
 
+  /// 
   Future<List<HydratedVerseResult>> getVerseRanges({
     required String collectionId,
     required List<VerseRange> verseRanges,

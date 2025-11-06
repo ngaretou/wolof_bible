@@ -1,62 +1,62 @@
 PODS:
   - appkit_ui_element_colors (1.0.0):
     - FlutterMacOS
-  - Firebase/CoreOnly (12.2.0):
-    - FirebaseCore (~> 12.2.0)
-  - firebase_analytics (12.0.2):
+  - Firebase/CoreOnly (12.4.0):
+    - FirebaseCore (~> 12.4.0)
+  - firebase_analytics (12.0.4):
     - firebase_core
-    - FirebaseAnalytics (= 12.2.0)
+    - FirebaseAnalytics (= 12.4.0)
     - FlutterMacOS
-  - firebase_core (4.1.1):
-    - Firebase/CoreOnly (~> 12.2.0)
+  - firebase_core (4.2.1):
+    - Firebase/CoreOnly (~> 12.4.0)
     - FlutterMacOS
-  - FirebaseAnalytics (12.2.0):
-    - FirebaseAnalytics/Default (= 12.2.0)
-    - FirebaseCore (~> 12.2.0)
-    - FirebaseInstallations (~> 12.2.0)
+  - FirebaseAnalytics (12.4.0):
+    - FirebaseAnalytics/Default (= 12.4.0)
+    - FirebaseCore (~> 12.4.0)
+    - FirebaseInstallations (~> 12.4.0)
     - GoogleUtilities/AppDelegateSwizzler (~> 8.1)
     - GoogleUtilities/MethodSwizzler (~> 8.1)
     - GoogleUtilities/Network (~> 8.1)
     - "GoogleUtilities/NSData+zlib (~> 8.1)"
     - nanopb (~> 3.30910.0)
-  - FirebaseAnalytics/Default (12.2.0):
-    - FirebaseCore (~> 12.2.0)
-    - FirebaseInstallations (~> 12.2.0)
-    - GoogleAppMeasurement/Default (= 12.2.0)
+  - FirebaseAnalytics/Default (12.4.0):
+    - FirebaseCore (~> 12.4.0)
+    - FirebaseInstallations (~> 12.4.0)
+    - GoogleAppMeasurement/Default (= 12.4.0)
     - GoogleUtilities/AppDelegateSwizzler (~> 8.1)
     - GoogleUtilities/MethodSwizzler (~> 8.1)
     - GoogleUtilities/Network (~> 8.1)
     - "GoogleUtilities/NSData+zlib (~> 8.1)"
     - nanopb (~> 3.30910.0)
-  - FirebaseCore (12.2.0):
-    - FirebaseCoreInternal (~> 12.2.0)
+  - FirebaseCore (12.4.0):
+    - FirebaseCoreInternal (~> 12.4.0)
     - GoogleUtilities/Environment (~> 8.1)
     - GoogleUtilities/Logger (~> 8.1)
-  - FirebaseCoreInternal (12.2.0):
+  - FirebaseCoreInternal (12.4.0):
     - "GoogleUtilities/NSData+zlib (~> 8.1)"
-  - FirebaseInstallations (12.2.0):
-    - FirebaseCore (~> 12.2.0)
+  - FirebaseInstallations (12.4.0):
+    - FirebaseCore (~> 12.4.0)
     - GoogleUtilities/Environment (~> 8.1)
     - GoogleUtilities/UserDefaults (~> 8.1)
     - PromisesObjC (~> 2.4)
   - FlutterMacOS (1.0.0)
-  - GoogleAppMeasurement/Core (12.2.0):
+  - GoogleAppMeasurement/Core (12.4.0):
     - GoogleUtilities/AppDelegateSwizzler (~> 8.1)
     - GoogleUtilities/MethodSwizzler (~> 8.1)
     - GoogleUtilities/Network (~> 8.1)
     - "GoogleUtilities/NSData+zlib (~> 8.1)"
     - nanopb (~> 3.30910.0)
-  - GoogleAppMeasurement/Default (12.2.0):
-    - GoogleAdsOnDeviceConversion (= 2.3.0)
-    - GoogleAppMeasurement/Core (= 12.2.0)
-    - GoogleAppMeasurement/IdentitySupport (= 12.2.0)
+  - GoogleAppMeasurement/Default (12.4.0):
+    - GoogleAdsOnDeviceConversion (~> 3.1.0)
+    - GoogleAppMeasurement/Core (= 12.4.0)
+    - GoogleAppMeasurement/IdentitySupport (= 12.4.0)
     - GoogleUtilities/AppDelegateSwizzler (~> 8.1)
     - GoogleUtilities/MethodSwizzler (~> 8.1)
     - GoogleUtilities/Network (~> 8.1)
     - "GoogleUtilities/NSData+zlib (~> 8.1)"
     - nanopb (~> 3.30910.0)
-  - GoogleAppMeasurement/IdentitySupport (12.2.0):
-    - GoogleAppMeasurement/Core (= 12.2.0)
+  - GoogleAppMeasurement/IdentitySupport (12.4.0):
+    - GoogleAppMeasurement/Core (= 12.4.0)
     - GoogleUtilities/AppDelegateSwizzler (~> 8.1)
     - GoogleUtilities/MethodSwizzler (~> 8.1)
     - GoogleUtilities/Network (~> 8.1)
@@ -172,26 +172,26 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   appkit_ui_element_colors: c8e13c23cbd781e0f5d9b75cad686e6a4bb958da
-  Firebase: 26f6f8d460603af3df970ad505b16b15f5e2e9a1
-  firebase_analytics: 26346c2ccb9ba410c2f33d5d34c62e6369cbbf29
-  firebase_core: 54fd706197e1779d510b297548eee74d3b39577c
-  FirebaseAnalytics: e04e23bc070e3014aa5cf4980f9df7ce5cd79ec8
-  FirebaseCore: 311c48a147ad4a0ab7febbaed89e8025c67510cd
-  FirebaseCoreInternal: 56ea29f3dad2894f81b060f706f9d53509b6ed3b
-  FirebaseInstallations: 3e884b01feabdf67582a80f3250425a00979b4ed
+  Firebase: f07b15ae5a6ec0f93713e30b923d9970d144af3e
+  firebase_analytics: 09241c4796c1c42a02349ef8bf30025f5b640f0e
+  firebase_core: e054894ab56033ef9bcbe2d9eac9395e5306e2fc
+  FirebaseAnalytics: 0fc2b20091f0ddd21bf73397cf8f0eb5346dc24f
+  FirebaseCore: bb595f3114953664e3c1dc032f008a244147cfd3
+  FirebaseCoreInternal: d7f5a043c2cd01a08103ab586587c1468047bca6
+  FirebaseInstallations: ae9f4902cb5bf1d0c5eaa31ec1f4e5495a0714e2
   FlutterMacOS: d0db08ddef1a9af05a5ec4b724367152bb0500b1
-  GoogleAppMeasurement: 09f341dfa8527d1612a09cbfe809a242c0b737af
+  GoogleAppMeasurement: 1e718274b7e015cefd846ac1fcf7820c70dc017d
   GoogleUtilities: 00c88b9a86066ef77f0da2fab05f65d7768ed8e1
   macos_ui: ff29104a215c2e1b76f37aacdcbba648abb25faa
   macos_window_utils: 23f54331a0fd51eea9e0ed347253bf48fd379d1d
   nanopb: fad817b59e0457d11a5dfbde799381cd727c1275
   package_info_plus: f0052d280d17aa382b932f399edf32507174e870
-  path_provider_foundation: 080d55be775b7414fd5a5ef3ac137b97b097e564
+  path_provider_foundation: bb55f6dbba17d0dccd6737fe6f7f34fbd0376880
   PromisesObjC: f5707f49cb48b9636751c5b2e7d227e43fba9f47
   screen_retriever_macos: 452e51764a9e1cdb74b3c541238795849f21557f
   share_plus: 510bf0af1a42cd602274b4629920c9649c52f4cc
   system_theme: ed74293ad07d3a05e3e2d0059ff342360346f1a0
-  url_launcher_macos: 0fba8ddabfc33ce0a9afe7c5fef5aab3d8d2d673
+  url_launcher_macos: f87a979182d112f911de6820aefddaf56ee9fbfd
   window_manager: b729e31d38fb04905235df9ea896128991cad99e
 
 PODFILE CHECKSUM: 70a7731451c5940006c23c9e48b0282d4b139ab3
