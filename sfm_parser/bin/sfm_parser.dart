@@ -229,8 +229,17 @@ void sfmToJson() async {
             if (text.isNotEmpty &&
                 verseForLine != '' &&
                 chapterNumber != 0 &&
-                !{'mt1', 'h', 'toc1', 'toc2', 'toc3'}.contains(style)) {
-              final tokens = text.toLowerCase().split(
+                !isHeader(style)) {
+              
+              // don't include footnote text in the index \f...\f* and \ef...\ef*
+              final footnotePattern = RegExp(
+                r'\\f.*?\\f\*|\\ef.*?\\ef\*',
+                dotAll: true,
+              );
+              text = text.replaceAll(footnotePattern, '');
+
+              // now get each word separately
+              final List<String> tokens = text.toLowerCase().split(
                 RegExp(r'[^\p{L}\p{N}]+', unicode: true),
               );
               for (var token in tokens) {

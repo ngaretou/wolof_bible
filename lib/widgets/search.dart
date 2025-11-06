@@ -27,6 +27,7 @@ class _SearchWidgetState extends State<SearchWidget> {
   final _searchController = TextEditingController();
   final _expanderKey = GlobalKey<ExpanderState>();
   final _searchService = SearchService();
+  final ValueNotifier<int> _resultCountNotifier = ValueNotifier(0);
 
   List<String> _collectionsToSearch = [];
   Stream<List<SearchResult>>? _resultsStream;
@@ -41,11 +42,13 @@ class _SearchWidgetState extends State<SearchWidget> {
   @override
   void dispose() {
     _searchController.dispose();
+    _resultCountNotifier.dispose();
     super.dispose();
   }
 
   void searchFunction(String searchRequest) {
     FocusManager.instance.primaryFocus?.unfocus();
+    _resultCountNotifier.value = 0;
 
     if (searchRequest.trim().isEmpty) {
       setState(() {
@@ -68,7 +71,10 @@ class _SearchWidgetState extends State<SearchWidget> {
         query: searchRequest,
         collectionLanguages: collectionLanguages,
       )
-          .scan<List<SearchResult>>((acc, value, _) => acc..add(value), []);
+          .scan<List<SearchResult>>(
+              (acc, value, _) => acc..add(value), []).doOnData((results) {
+        _resultCountNotifier.value = results.length;
+      });
     });
   }
 
@@ -134,15 +140,42 @@ class _SearchWidgetState extends State<SearchWidget> {
                                   controller: _searchController,
                                   suffixMode: OverlayVisibilityMode.always,
                                   expands: false,
-                                  suffix: _searchController.text.isEmpty
-                                      ? null
-                                      : IconButton(
+                                  suffix: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
+                                    children: [
+                                      ValueListenableBuilder<int>(
+                                        valueListenable: _resultCountNotifier,
+                                        builder: (context, count, child) {
+                                          if (count == 0) {
+                                            return const SizedBox.shrink();
+                                          }
+                                          return Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 8.0),
+                                            child: Text(
+                                              count.toString(),
+                                              style: TextStyle(
+                                                  color: Colors.grey[100]),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                      if (_searchController.text.isNotEmpty)
+                                        IconButton(
                                           icon: const Icon(
                                               material.Icons.backspace),
                                           onPressed: () {
                                             _searchController.clear();
+                                            setState(() {
+                                              _resultsStream = null;
+                                              _resultCountNotifier.value = 0;
+                                            });
                                           },
                                         ),
+                                    ],
+                                  ),
                                   placeholder: Provider.of<UserPrefs>(context,
                                           listen: false)
                                       .currentTranslation

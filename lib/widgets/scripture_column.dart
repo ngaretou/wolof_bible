@@ -1,5 +1,4 @@
 import 'dart:ui' as ui;
-import 'dart:io';
 import 'dart:async';
 import 'dart:convert';
 
@@ -54,7 +53,7 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
   ParsedLine? copyStartLine;
   ParsedLine? copyEndLine;
   int? buttonPressed;
-  bool isTouch = true;
+  bool isTouchWeb = true;
 
   late ItemScrollController itemScrollController;
   late ScrollGroup _scrollGroup;
@@ -144,11 +143,13 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
   @override
   void initState() {
     if (kIsWeb) {
-      isTouch = isTouchWebDevice();
-    } else if (Platform.isAndroid || Platform.isIOS) {
-      isTouch = true;
-    } else {
-      isTouch = false;
+      isTouchWeb = isTouchWebDevice();
+    }
+    // else if (Platform.isAndroid || Platform.isIOS) {
+    //   isTouch = true;
+    // }
+    else {
+      isTouchWeb = false;
     }
     // Set the initial collection and populate the book list for the UI.
     currentCollection.value = widget.bibleReference.collectionID;
@@ -913,12 +914,13 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
 
   void _onDragStart(Offset position) {
     // Global position of the pointer when drag starts
+    print('on drag start');
     copyEndLine = null;
     copyStartLine = _getLineAtOffset(position);
-    debugPrint(copyStartLine.toString());
   }
 
   void _onDragEnd(Offset position) {
+    print('on drag end');
     copyEndLine = _getLineAtOffset(position);
   }
 
@@ -1301,6 +1303,8 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
 
                       return Listener(
                         onPointerDown: (event) {
+                          // this works on touch and mouse
+                          print('onpointerdown');
                           buttonPressed = event.buttons;
                           // Primary mouse button
                           if (event.buttons == 1 && _lastSelectedText == '') {
@@ -1308,6 +1312,7 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
                           }
                         },
                         onPointerUp: (event) {
+                          print('onpointerup');
                           if (buttonPressed == 1) {
                             // This is the way to grab the end of the selection on pointer device
                             _onDragEnd(event.position);
@@ -1317,9 +1322,10 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
                         child: SelectionArea(
                           contextMenuBuilder: (BuildContext context,
                               SelectableRegionState regionState) {
-                            // This is the way to grab the end of the selection on touchscreen 💪
-
-                            if (isTouch) {
+                            // This is the way to grab the *end* of the selection on touchscreen on web
+                            // i.e. iPad on web 💪
+                            // iPadOS native app works without this.
+                            if (isTouchWeb) {
                               final pos = regionState
                                   .contextMenuAnchors.secondaryAnchor;
                               if (pos != null) {
@@ -1500,17 +1506,6 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
                               }),
                         ),
                       );
-
-                      // if (kIsWeb) {
-                      //   // On web choose between pointer and touch behavior using media query.
-                      //   return isTouchWebDevice()
-                      //       ? touchVersion(selectionArea())
-                      //       : pointerVersion(selectionArea());
-                      // } else if (Platform.isAndroid || Platform.isIOS) {
-                      // return touchVersion(selectionArea());
-                      // // } else {
-
-                      // }
                     }),
                   ),
                 ),

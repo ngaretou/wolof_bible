@@ -1,7 +1,7 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'dart:core';
 import 'data_initializer.dart';
-import 'package:flutter/gestures.dart'; // if in the future we need TextSpan recognizer
+// import 'package:flutter/gestures.dart'; // if in the future we need TextSpan recognizer
 
 /* this class and associated verseComposer function is exposed as we have to use it several different places. 
 It gets confusing but it is this way to avoid code duplication. Sometimes we need the verses composed 
@@ -60,16 +60,19 @@ ComposedVerses verseComposer(
       // }
 
       spansToReturn.add(TextSpan(
-          text: thisString,
-          style: textStyle ?? computedTextStyle,
-          mouseCursor: SystemMouseCursors.basic,
-          recognizer: TapGestureRecognizer()
-            ..onTapDown = (_) {
-              tileOnTap != null ? tileOnTap() : () {};
-            }
-            ..onTapUp = (_) {
-              tileOnTapUp != null ? tileOnTapUp() : () {};
-            }));
+        text: thisString,
+        style: textStyle ?? computedTextStyle,
+        // mouseCursor: SystemMouseCursors.basic,
+        // this recognizer works almost everywhere but on web at times if the user slides quickly.
+        // the real problem is that the onTapUp doesn't work in case of selection in any platform.
+        // recognizer: TapGestureRecognizer()
+        //   ..onTapDown = (_) {
+        //     tileOnTap != null ? tileOnTap() : () {};
+        //   }
+        //   ..onTapUp = (_) {
+        //     tileOnTapUp != null ? tileOnTapUp() : () {};
+        //   }
+      ));
       // }
       textToReturn = '$textToReturn$thisString';
     } //end stringIsCleanAddIt

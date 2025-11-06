@@ -121,7 +121,7 @@ class SearchService {
     yield* _hydrateResults(finalLocations.toList());
   }
 
-  /// 
+  ///
   Future<List<HydratedVerseResult>> getVerseRanges({
     required String collectionId,
     required List<VerseRange> verseRanges,
@@ -181,15 +181,16 @@ class SearchService {
       // whole chapter(s)
       selectedLines = verseLines;
     } else {
+      final int startVerse = vRange.startVerse!;
+      final endVerse = vRange.endingVerse ?? startVerse;
+
       selectedLines = verseLines.where((line) {
-        final verseStr = line.verse;
+        final verseStr = line.verse; // verse number as string
         if (verseStr.isEmpty) return false;
 
+        // in case we're dealing with a verse number that looks like "15-17"
         final firstVerseInLine = int.parse(_getFirstOfDashedVerses(verseStr));
         final lastVerseInLine = int.parse(_getLastOfDashedVerses(verseStr));
-
-        final startVerse = vRange.startVerse!;
-        final endVerse = vRange.endingVerse ?? startVerse;
 
         final lineChapter = int.parse(line.chapter);
 
@@ -210,12 +211,35 @@ class SearchService {
       }).toList();
     }
 
+    // Ensure that if the selection ends mid-verse, the entire verse is included.
+    // if (selectedLines.isNotEmpty) {
+    //   final lastLineInSelection = selectedLines.last;
+    //   final originalIndexInVerseLines = verseLines.indexOf(lastLineInSelection);
+
+    //   if (originalIndexInVerseLines != -1) {
+    //     for (int i = originalIndexInVerseLines + 1;
+    //         i < verseLines.length;
+    //         i++) {
+    //       final currentLine = verseLines[i];
+    //       // Check if the current line belongs to the same verse as the last line in selection
+    //       if (currentLine.book == lastLineInSelection.book &&
+    //           currentLine.chapter == lastLineInSelection.chapter &&
+    //           currentLine.verse == lastLineInSelection.verse) {
+    //         selectedLines.add(currentLine);
+    //       } else {
+    //         // We've reached a different verse/chapter/book, so stop.
+    //         break;
+    //       }
+    //     }
+    //   }
+    // }
+
     // Now compose text
     final StringBuffer buffer = StringBuffer();
     for (final line in selectedLines) {
-      if (_isHeader(line)) continue;
+      if (isHeader(line.verseStyle)) continue;
 
-      if (_isParagraph(line)) {
+      if (isParagraph(line.verseStyle)) {
         buffer.write('\n    ');
       }
       String composedText = verseComposer(
@@ -223,7 +247,10 @@ class SearchService {
         includeFootnotes: false,
       ).versesAsString.trim();
 
-      if (includeVerseNumbers && line.verse.isNotEmpty && line.verse != '0') {
+      if (includeVerseNumbers &&
+          line.verse.isNotEmpty &&
+          line.verse != '0' &&
+          line.verseStyle == 'v') {
         buffer.write('${toSuperscript(line.verse)}\u202f');
       }
 
@@ -305,20 +332,27 @@ class SearchService {
 
         final versesInChapter = entry.value;
         for (final loc in versesInChapter) {
-          // Find the specific verse line within the chapter data
-          final verseLine = chapterData.firstWhere(
-            (line) => line['verse']?.toString() == loc.verse,
-            orElse: () => null,
-          );
+          // Find all lines for the specific verse to handle multi-line verses
+          final verseLines = chapterData
+              .where((line) => line['verse']?.toString() == loc.verse)
+              .toList();
 
-          if (verseLine != null) {
-            yield SearchResult(
-              text: verseLine['text'] ?? '',
-              collection: loc.collectionId,
-              book: loc.bookId,
-              chapter: loc.chapter.toString(),
-              verse: loc.verse,
-            );
+          if (verseLines.isNotEmpty) {
+            // Assemble the full text from all parts of the verse, ignoring empty lines (like paragraph markers)
+            final composedText = verseLines
+                .map((line) => line['text']?.toString() ?? '')
+                .where((text) => text.isNotEmpty)
+                .join(' '); // Join with a space for a clean, readable preview
+
+            if (composedText.isNotEmpty) {
+              yield SearchResult(
+                text: composedText,
+                collection: loc.collectionId,
+                book: loc.bookId,
+                chapter: loc.chapter.toString(),
+                verse: loc.verse,
+              );
+            }
           }
         }
       } catch (e) {
@@ -336,15 +370,4 @@ String _getFirstOfDashedVerses(String vs) {
 String _getLastOfDashedVerses(String vs) {
   RegExpMatch? match = RegExp(r'(\d+)$').firstMatch(vs);
   return match?.group(1) ?? vs;
-}
-
-bool _isParagraph(ParsedLine line) {
-  // based on verseStyle, is this a new paragraph?
-  return line.verseStyle.contains(RegExp(
-      r'[p,po,pr,cls,pmo,pm,pmc,pmr,pi\d,mi,nb,pc,ph\d,b,mt\d,mte\d,ms\d,mr,s\d*,sr,sp,sd\d,q,q1,q2,qr,qc,qa,qm\d,qd,lh,li\d,lf,lim\d,ip,im,ie,ili]'));
-}
-
-bool _isHeader(ParsedLine line) {
-  // based on verseStyle, is this a new paragraph?
-  return line.verseStyle.contains(RegExp(r'[s\d*,mt\d*,mr,ms\d*,]'));
 }

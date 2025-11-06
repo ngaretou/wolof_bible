@@ -181,21 +181,12 @@ class _ParagraphBuilderState extends State<ParagraphBuilder> {
         characterIndexToVerseMap[plainTextBuffer.length] = line;
       }
 
-      // void tileOnTap() {
-      //   print(line.toString());
-      // }
-
       final composed = verseComposer(
           line: line,
           computedTextStyle: computedTextStyle,
           includeFootnotes: true,
           context: context,
-          tileOnTap: () {
-            print('tileOnTap');
-          },
-          tileOnTapUp: () {
-            print('tileOnTapUP');
-          });
+          tileOnTap: () {});
 
       plainTextBuffer.write(composed.versesAsString);
       return composed.versesAsSpans;
