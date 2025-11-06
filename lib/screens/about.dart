@@ -1,15 +1,12 @@
-import 'package:flutter/material.dart' as material;
 import 'package:provider/provider.dart';
 import 'package:fluent_ui/fluent_ui.dart';
-// import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:wolof_bible/screens/bulk_verse_copy.dart';
 import '../logic/data_initializer.dart';
 import 'package:xml/xml.dart';
-
-import '../main.dart';
 
 import '../providers/user_prefs.dart';
 
@@ -200,114 +197,49 @@ Kàddug Yàlla+ app code © 2025 Foundational LLC.
                       return const Center(child: OnboardingPanel());
                     });
               },
-              icon: const Icon(FluentIcons.onboarding))
+              icon: const Icon(FluentIcons.info))
         ],
       ),
       htmlToDisplay(),
-      // Wrap(
-      //   alignment: WrapAlignment.end,
-      //   children: [
-      //     Text('wasm info'),
-      //     if (kIsWasm) Text('wasm'),
-      //     if (isRunningWithWasm) Text('isRunningWithWasm'),
-      //   ],
-      // ),
       Button(
           onPressed: () {
-            //Here we're transforming the saved theme to the Material theme just by grabbing
-            //the brightness and seed color
-            String themeMode =
-                userPrefsBox.get('themeMode') ?? 'ThemeMode.dark';
-            Color colorToReturn = Colors.teal;
-            int? savedColorIndex = userPrefsBox.get('colorIndex');
-            if (savedColorIndex != null) {
-              colorToReturn = Colors.accentColors[savedColorIndex];
-            }
-
-            void showLicensePage({
-              required BuildContext context,
-              String? applicationName,
-              String? applicationVersion,
-              Widget? applicationIcon,
-              String? applicationLegalese,
-              bool useRootNavigator = false,
-            }) {
-              // assert(context != null);
-              // assert(useRootNavigator != null);
-              Navigator.of(context, rootNavigator: useRootNavigator)
-                  .push(material.MaterialPageRoute<void>(
-                builder: (BuildContext licenseContext) => material.Theme(
-                  //Here after Flutter 3 the theming wouldn't work right -
-                  //wrap the License Page in its own Material theme,
-                  //getting the imporant components from the saved theme
-                  data: material.ThemeData(
-                      useMaterial3: true, //important!
-                      colorSchemeSeed: colorToReturn,
-                      brightness: themeMode == 'ThemeMode.dark'
-                          ? Brightness.dark
-                          : Brightness.light),
-                  child: material.LicensePage(
-                    applicationName: applicationName,
-                    applicationVersion: applicationVersion,
-                    applicationIcon: applicationIcon,
-                    applicationLegalese: applicationLegalese,
-                  ),
-                ),
-              ));
-            }
-
-            showLicensePage(
-                context: context,
-                applicationName: 'wolof_bible',
-                useRootNavigator: false);
+            showDialog(
+              context: context,
+              builder: (context) {
+                return ContentDialog(
+                  constraints: BoxConstraints(maxWidth: 800, maxHeight: 600),
+                  title: const Text('Licenses'),
+                  content: const FluentLicensePage(),
+                  actions: [
+                    Button(
+                      child: const Text('Close'),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                );
+              },
+            );
           },
           child: const Text('Licenses')),
-      SizedBox(height: 20),
+      const SizedBox(height: 20),
       Button(
           onPressed: () {
-            //Here we're transforming the saved theme to the Material theme just by grabbing
-            //the brightness and seed color
-            String themeMode =
-                userPrefsBox.get('themeMode') ?? 'ThemeMode.dark';
-            Color colorToReturn = Colors.teal;
-            int? savedColorIndex = userPrefsBox.get('colorIndex');
-            if (savedColorIndex != null) {
-              colorToReturn = Colors.accentColors[savedColorIndex];
-            }
-
-            void showBulkCopy({
-              required BuildContext context,
-              String? applicationName,
-              String? applicationVersion,
-              Widget? applicationIcon,
-              String? applicationLegalese,
-            }) {
-              // assert(context != null);
-              // assert(useRootNavigator != null);
-              Navigator.of(context, rootNavigator: false)
-                  .push(material.MaterialPageRoute<void>(
-                builder: (BuildContext context) => material.Theme(
-                  //Here after Flutter 3 the theming wouldn't work right -
-                  //wrap the License Page in its own Material theme,
-                  //getting the imporant components from the saved theme
-                  data: material.ThemeData(
-                      useMaterial3: true, //important!
-                      colorSchemeSeed: colorToReturn,
-                      brightness: themeMode == 'ThemeMode.dark'
-                          ? Brightness.dark
-                          : Brightness.light),
-                  child: BulkVerseCopy(),
-                ),
-              ));
-            }
-
-
-
-            // showBulkCopy(
-            //   context: context,
-            // );
-
-            
+            showDialog(
+                context: context,
+                builder: (context) {
+                  return ContentDialog(
+                    constraints: BoxConstraints(
+                        maxWidth: double.infinity, maxHeight: double.infinity),
+                    title: const Text('Bulk Verse Copy'),
+                    content: const BulkVerseCopy(),
+                    actions: [
+                      Button(
+                        child: const Text('Close'),
+                        onPressed: () => Navigator.pop(context),
+                      )
+                    ],
+                  );
+                });
           },
           child: const Text('Bulk Verse Copy')),
     ];
@@ -319,5 +251,49 @@ Kàddug Yàlla+ app code © 2025 Foundational LLC.
               .about),
         ),
         children: pageContent);
+  }
+}
+
+class FluentLicensePage extends StatefulWidget {
+  const FluentLicensePage({super.key});
+
+  @override
+  State<FluentLicensePage> createState() => _FluentLicensePageState();
+}
+
+class _FluentLicensePageState extends State<FluentLicensePage> {
+  Future<List<LicenseEntry>>? _licenses;
+
+  @override
+  void initState() {
+    super.initState();
+    _licenses = LicenseRegistry.licenses.toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<List<LicenseEntry>>(
+      future: _licenses,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const ProgressRing();
+        }
+        if (snapshot.hasError || !snapshot.hasData) {
+          return const Text('Could not load licenses.');
+        }
+        final licenses = snapshot.data!;
+        return ListView.builder(
+          itemCount: licenses.length,
+          itemBuilder: (context, index) {
+            final license = licenses[index];
+            return Expander(
+              header: Text(license.packages.join(', ')),
+              content: SelectableText(
+                  license.paragraphs.map((p) => p.text).join('\n\n')),
+            );
+          },
+        );
+      },
+    );
   }
 }
