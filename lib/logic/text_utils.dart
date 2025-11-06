@@ -18,6 +18,20 @@ const Map<String, String> supMap = {
 String toSuperscript(String input) =>
     input.split('').map((c) => supMap[c] ?? c).join();
 
+String removeDiacritics(String str) {
+    var withDia =
+        'ÀÁÂÃÄÅàáâãäåÒÓÔÕÕÖØòóôõöøÈÉÊËèéêëðÇçÐÌÍÎÏìíîïÙÚÛÜùúûüÑñŠšŸÿýŽž';
+    var withoutDia =
+        'AAAAAAaaaaaaOOOOOOOooooooEEEEeeeeeCcDIIIIiiiiUUUUuuuuNnSsYyyZz';
+
+    for (int i = 0; i < withDia.length; i++) {
+      str = str.replaceAll(withDia[i], withoutDia[i]);
+    }
+
+    return str;
+  }
+
+
 bool isParagraph(String style) {
   // based on verseStyle, is this a new paragraph?
   return style.contains(

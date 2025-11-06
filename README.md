@@ -77,10 +77,12 @@ to pre-process SAB data into assets
    * pre-processing fixes for ~ as thousands separator
    * UI for bulk verse copy changes
 * 2.0.5
-   * refining selection logic & bulk verse copy logic along with pre-processing - fixed bug where poetry (i.e. multiline verses) wasn't handled correctly
+   * fixed bug where poetry (i.e. multiline verses) wasn't handled correctly: refined selection logic & bulk verse copy logic & search logic along with pre-processing
    * refined selection logic - explictly clearing start/end points of selection on context menu tap to avoid unwanted anchoring of selection
    * fixed dashed verses not showing correctly in UI
-   * fixed 
+   * added a new strict and fuzzy search capability
+   * reporting how many results are found in search box 
+   * for macOS, double clicking title bar goes 
 
 
 

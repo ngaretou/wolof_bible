@@ -301,9 +301,13 @@ Kàddug Yàlla+ app code © 2025 Foundational LLC.
               ));
             }
 
-            showBulkCopy(
-              context: context,
-            );
+
+
+            // showBulkCopy(
+            //   context: context,
+            // );
+
+            
           },
           child: const Text('Bulk Verse Copy')),
     ];

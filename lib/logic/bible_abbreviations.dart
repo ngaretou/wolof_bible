@@ -1,3 +1,5 @@
+import 'text_utils.dart';
+
 /// BibleAbbreviations helper
 /// - Maintains canonical → variants
 /// - Builds fast lookup map
@@ -363,22 +365,11 @@ class BibleAbbreviations {
   /// Flat lookup map: variant → canonical
   static final Map<String, String> _lookup = _buildLookup();
 
-  static String _removeDiacritics(String str) {
-    var withDia =
-        'ÀÁÂÃÄÅàáâãäåÒÓÔÕÕÖØòóôõöøÈÉÊËèéêëðÇçÐÌÍÎÏìíîïÙÚÛÜùúûüÑñŠšŸÿýŽž';
-    var withoutDia =
-        'AAAAAAaaaaaaOOOOOOOooooooEEEEeeeeeCcDIIIIiiiiUUUUuuuuNnSsYyyZz';
-
-    for (int i = 0; i < withDia.length; i++) {
-      str = str.replaceAll(withDia[i], withoutDia[i]);
-    }
-
-    return str;
-  }
+  
 
   /// Normalize input: lowercase, strip punctuation/whitespace
   static String _normalize(String input) {
-    return _removeDiacritics(input)
+    return removeDiacritics(input)
         .toLowerCase()
         .replaceAll(RegExp(r'[^a-z0-9]'), ''); // keep only alphanumerics
   }

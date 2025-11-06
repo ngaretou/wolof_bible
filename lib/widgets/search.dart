@@ -28,7 +28,7 @@ class _SearchWidgetState extends State<SearchWidget> {
   final _expanderKey = GlobalKey<ExpanderState>();
   final _searchService = SearchService();
   final ValueNotifier<int> _resultCountNotifier = ValueNotifier(0);
-
+  bool fuzzy = true;
   List<String> _collectionsToSearch = [];
   Stream<List<SearchResult>>? _resultsStream;
   Key _streamBuilderKey = UniqueKey();
@@ -70,6 +70,7 @@ class _SearchWidgetState extends State<SearchWidget> {
         collectionIds: _collectionsToSearch,
         query: searchRequest,
         collectionLanguages: collectionLanguages,
+        isFuzzySearch: fuzzy,
       )
           .scan<List<SearchResult>>(
               (acc, value, _) => acc..add(value), []).doOnData((results) {
@@ -101,6 +102,35 @@ class _SearchWidgetState extends State<SearchWidget> {
         content: Text(collections[i].name, style: searchControlsStyle),
       );
     });
+
+    final searchKind = [
+      Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Divider(),
+      ),
+      RadioButton(
+          checked: fuzzy,
+          onChanged: (val) {
+            setState(() {
+              fuzzy = true;
+            });
+          },
+          content: Text(Provider.of<UserPrefs>(context, listen: false)
+              .currentTranslation
+              .fuzzySearch)),
+      SizedBox(height: 8),
+      RadioButton(
+        checked: !fuzzy,
+        onChanged: (val) {
+          setState(() {
+            fuzzy = false;
+          });
+        },
+        content: Text(Provider.of<UserPrefs>(context, listen: false)
+            .currentTranslation
+            .strictSearch),
+      )
+    ];
 
     return SizedBox(
         width: 300,
@@ -193,20 +223,24 @@ class _SearchWidgetState extends State<SearchWidget> {
                           const SizedBox(height: 8),
                           Expander(
                             key: _expanderKey,
-                            leading: Button(
-                              child: Text(
-                                  Provider.of<UserPrefs>(context, listen: false)
-                                      .currentTranslation
-                                      .search,
-                                  style: searchControlsStyle),
-                              onPressed: () =>
-                                  searchFunction(_searchController.value.text),
+                            leading: Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(vertical: 8.0),
+                              child: Button(
+                                child: Text(
+                                    Provider.of<UserPrefs>(context,
+                                            listen: false)
+                                        .currentTranslation
+                                        .search,
+                                    style: searchControlsStyle),
+                                onPressed: () => searchFunction(
+                                    _searchController.value.text),
+                              ),
                             ),
                             header: const Text(''),
                             content: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: checkBoxes,
-                            ),
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [...checkBoxes, ...searchKind]),
                           ),
                         ],
                       ),
