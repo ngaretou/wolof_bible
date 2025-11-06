@@ -66,6 +66,7 @@ class SearchService {
     required List<String> collectionIds,
     required String query,
     required Map<String, String> collectionLanguages,
+    required bool isFuzzySearch,
   }) async* {
     if (query.trim().isEmpty) return;
 
@@ -82,26 +83,54 @@ class SearchService {
       Set<_VerseLocation>? collectionResults;
 
       for (final term in processedQuery) {
-        final firstLetter = term[0];
-        final indexShard = await _getIndexShard(collectionId, firstLetter);
+        Set<_VerseLocation> locationsForTerm;
 
-        if (indexShard.containsKey(term)) {
-          final locationsForTerm =
-              (indexShard[term] as List<dynamic>).map((loc) {
-            return _VerseLocation(
-                collectionId, loc[0], loc[1], loc[2].toString());
-          }).toSet();
-
-          if (collectionResults == null) {
-            collectionResults = locationsForTerm;
+        if (!isFuzzySearch) {
+          // Strict Search
+          final firstLetter = term[0];
+          final indexShard = await _getIndexShard(collectionId, firstLetter);
+          if (indexShard.containsKey(term)) {
+            locationsForTerm =
+                (indexShard[term] as List<dynamic>).map((loc) {
+              return _VerseLocation(
+                  collectionId, loc[0], loc[1], loc[2].toString());
+            }).toSet();
           } else {
-            // Intersect results for an "AND" search
-            collectionResults.retainAll(locationsForTerm);
+            locationsForTerm = {};
           }
         } else {
-          // If any term is not found, this collection has no results for the full query
-          collectionResults = {};
-          break;
+          // Fuzzy Search
+          final accentStrippedTerm = removeDiacritics(term);
+          if (accentStrippedTerm.isEmpty) {
+            locationsForTerm = {};
+          } else {
+            final firstLetter = accentStrippedTerm[0];
+            final indexShard = await _getIndexShard(collectionId, firstLetter);
+
+            locationsForTerm = {};
+
+            for (final indexKey in indexShard.keys) {
+              final accentStrippedIndexKey = removeDiacritics(indexKey);
+              if (accentStrippedIndexKey.startsWith(accentStrippedTerm)) {
+                final locations =
+                    (indexShard[indexKey] as List<dynamic>).map((loc) {
+                  return _VerseLocation(
+                      collectionId, loc[0], loc[1], loc[2].toString());
+                }).toSet();
+                locationsForTerm.addAll(locations);
+              }
+            }
+          }
+        }
+
+        if (collectionResults == null) {
+          collectionResults = locationsForTerm;
+        } else {
+          // Intersect results for an "AND" search
+          collectionResults.retainAll(locationsForTerm);
+        }
+        if (collectionResults.isEmpty) {
+          break; // No need to check other terms if one fails to match
         }
       }
 

@@ -7,7 +7,9 @@
     "lightTheme": "Light Theme",
     "darkTheme": "Dark Theme",
     "copyWithNumbers": "Copy with numbers",
-    "copyWithoutNumbers": "Copy without numbers"
+    "copyWithoutNumbers": "Copy without numbers",
+    "strictSearch": "strict search",
+    "fuzzySearch": "fuzzy search"
   },
   {
     "langCode": "fr",
@@ -17,7 +19,9 @@
     "lightTheme": "Thème claire",
     "darkTheme": "Thème sombre",
     "copyWithNumbers": "Copier avec numéros",
-    "copyWithoutNumbers": "Copy sans numéros"
+    "copyWithoutNumbers": "Copy sans numéros",
+    "strictSearch": "recherche stricte",
+    "fuzzySearch": "recherche floue"
   },
   {
     "langCode": "wol",
@@ -27,6 +31,8 @@
     "lightTheme": "Melo bu woyof",
     "darkTheme": "Melo bu lëndëm",
     "copyWithNumbers": "Copier avec numéros",
-    "copyWithoutNumbers": "Copy sans numéros"
+    "copyWithoutNumbers": "Copy sans numéros",
+    "strictSearch": "recherche stricte",
+    "fuzzySearch": "recherche floue"
   }
 ]

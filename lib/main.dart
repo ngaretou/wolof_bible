@@ -386,10 +386,8 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
     // print('MyHomePageState build');
     bool? hasSeenOnboarding = userPrefsBox.get('hasSeenOnboarding');
 
-    if (hasSeenOnboarding == null && appTitle == "Kàddug Yàlla") {
+    if (hasSeenOnboarding == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        // If Wolof ...
-
         showDialog(
             barrierDismissible: true,
             context: context,
@@ -598,7 +596,7 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
                   height: height,
                   title: height == 4
                       ? null
-                      : material.Center(child: Text(appTitle)),
+                      : DragToMoveArea(child: Center(child: Text(appTitle))),
                   actions: Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     mainAxisAlignment: MainAxisAlignment.end,
@@ -640,7 +638,7 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
                                   height:
                                       (MediaQuery.of(context).size.height / 2) -
                                           70),
-                              if (kIsWeb && appTitle == "Kàddug Yàlla")
+                              if (kIsWeb)
                                 Button(
                                     onPressed: () async {
                                       const url = 'https://kaddugyalla.com/av/';

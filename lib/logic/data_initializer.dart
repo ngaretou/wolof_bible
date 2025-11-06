@@ -122,6 +122,8 @@ class Translation {
   String share;
   String copyWithNumbers;
   String copyWithoutNumbers;
+  String strictSearch;
+  String fuzzySearch;
 
   Translation(
       {required this.langCode,
@@ -138,15 +140,15 @@ class Translation {
       required this.copy,
       required this.share,
       required this.copyWithNumbers,
-      required this.copyWithoutNumbers});
+      required this.copyWithoutNumbers,
+      required this.strictSearch,
+      required this.fuzzySearch});
 }
 
 List<Collection> collections = [];
 // List<ParsedLine> verses = [];
 List<Font> allFonts = [];
 List<Translation> translations = [];
-
-
 
 Future<void> asyncGetTranslations(BuildContext context) async {
   //Stuff for supplemental translations
@@ -283,6 +285,8 @@ Future<void> asyncGetTranslations(BuildContext context) async {
             "darkTheme": translation['darkTheme'],
             "copyWithNumbers": translation['copyWithNumbers'],
             "copyWithoutNumbers": translation['copyWithoutNumbers'],
+            "strictSearch": translation['strictSearch'],
+            "fuzzySearch": translation['fuzzySearch'],
           });
         }
       }
@@ -303,7 +307,10 @@ Future<void> asyncGetTranslations(BuildContext context) async {
           copy: copyText,
           share: shareText,
           copyWithNumbers: translationSupplement['copyWithNumbers']!,
-          copyWithoutNumbers: translationSupplement['copyWithoutNumbers']!));
+          copyWithoutNumbers: translationSupplement['copyWithoutNumbers']!, 
+          strictSearch: translationSupplement['strictSearch']!,
+          fuzzySearch: translationSupplement['fuzzySearch']!
+          ));
     }
   }
 
