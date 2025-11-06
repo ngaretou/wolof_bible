@@ -914,13 +914,13 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
 
   void _onDragStart(Offset position) {
     // Global position of the pointer when drag starts
-    print('on drag start');
+    // print('on drag start');
     copyEndLine = null;
     copyStartLine = _getLineAtOffset(position);
   }
 
   void _onDragEnd(Offset position) {
-    print('on drag end');
+    // print('on drag end');
     copyEndLine = _getLineAtOffset(position);
   }
 
@@ -1304,7 +1304,7 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
                       return Listener(
                         onPointerDown: (event) {
                           // this works on touch and mouse
-                          print('onpointerdown');
+                          // print('onpointerdown');
                           buttonPressed = event.buttons;
                           // Primary mouse button
                           if (event.buttons == 1 && _lastSelectedText == '') {
@@ -1312,7 +1312,7 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
                           }
                         },
                         onPointerUp: (event) {
-                          print('onpointerup');
+                          // print('onpointerup');
                           if (buttonPressed == 1) {
                             // This is the way to grab the end of the selection on pointer device
                             _onDragEnd(event.position);

@@ -1,15 +1,15 @@
 import 'dart:convert';
-import 'package:flutter/material.dart';
+import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:io';
 
-import '/main.dart';
 import '../logic/bible_abbreviations.dart';
 import '../logic/bulk_verse_copy_logic.dart';
 import '../logic/search_service.dart';
 import '../logic/data_initializer.dart';
 import '../logic/touch_media.dart';
+import '../main.dart'; // for userPrefsBox
 
 class BulkVerseCopy extends StatefulWidget {
   const BulkVerseCopy({super.key});
@@ -22,8 +22,8 @@ class _BulkVerseCopyState extends State<BulkVerseCopy> {
   TextEditingController verseRangeTextController = TextEditingController();
   bool showCopyHelper =
       false; // this is whether or not the color overlay with icon is shown
-  Widget hoveringIcon =
-      SizedBox(width: 20); // initially copy but after copy is a check mark
+  Widget hoveringIcon = const SizedBox(
+      width: 20); // initially copy but after copy is a check mark
 
   Future<List<HydratedVerseResult>>? verses;
 
@@ -57,30 +57,11 @@ You can have : or . separators, you can do ranges (MAT 8.9-14) or whole chapters
     super.initState();
   }
 
-  Widget copyHelperIcon({required IconData icon}) {
-    return Container(
-      width: 50,
-      height: 50,
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.onPrimaryContainer,
-        shape: BoxShape.circle, // makes it a perfect circle
-      ),
-      child: Center(
-          child: Icon(
-        icon,
-        color: Theme.of(context).colorScheme.primaryContainer,
-      )),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     int minLines = (userPrefsBox.get('instructions') == null)
         ? 18
         : (userPrefsBox.get('instructions') ? 16 : 23);
-
-    final copyIcon = copyHelperIcon(icon: Icons.copy);
-    final successIcon = copyHelperIcon(icon: Icons.check);
 
     void processUserInput() {
       // parse the contents the user has given us
@@ -112,7 +93,7 @@ You can have : or . separators, you can do ranges (MAT 8.9-14) or whole chapters
             includeVerseNumbers: includeVerseNumbers);
 
         FocusManager.instance.primaryFocus?.unfocus();
-        hoveringIcon = copyIcon;
+        hoveringIcon = copyIcon(context);
         if (isTouch) {
           showCopyHelper = true;
         }
@@ -123,14 +104,15 @@ You can have : or . separators, you can do ranges (MAT 8.9-14) or whole chapters
         showDialog(
             context: context,
             builder: (context) {
-              return AlertDialog(
-                title: Text('Could not parse:'),
+              return ContentDialog(
+                title: const Text('Could not parse:'),
                 content: SingleChildScrollView(
                     child: Text(results.errors.join('\n'))),
                 actions: [
-                  TextButton(
-                      onPressed: Navigator.of(context).pop, child: Text('OK')),
-                  TextButton(
+                  Button(
+                      onPressed: Navigator.of(context).pop,
+                      child: const Text('OK')),
+                  Button(
                       onPressed: () {
                         Clipboard.setData(
                           ClipboardData(
@@ -139,273 +121,203 @@ You can have : or . separators, you can do ranges (MAT 8.9-14) or whole chapters
                         );
                         Navigator.of(context).pop();
                       },
-                      child: Text('Copy'))
+                      child: const Text('Copy'))
                 ],
               );
             });
       }
     }
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: Icon(Icons.close),
-            onPressed: Navigator.of(context).pop,
-          ),
-          SizedBox(width: 20)
-        ],
-        title: Text('Bulk Verse Copy'),
-      ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ExpansionTile(
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16)),
-                collapsedShape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16)),
-                initiallyExpanded: userPrefsBox.get('instructions') ?? true,
-                onExpansionChanged: (value) {
-                  userPrefsBox.put('instructions', value);
-                  setState(() {});
-                },
-                collapsedBackgroundColor:
-                    Theme.of(context).colorScheme.surfaceContainer,
-                backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
-                title: Text('Instructions'),
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(18.0),
-                    child: Row(
-                      children: [
-                        Expanded(child: Text(instructions)),
-                        SizedBox(width: 20),
-                        ElevatedButton(
-                            onPressed: () {
-                              Navigator.of(context).push(MaterialPageRoute<
-                                      void>(
-                                  builder: (BuildContext licenseContext) =>
-                                      Theme(
-                                          //Here after Flutter 3 the theming wouldn't work right -
-                                          //wrap the License Page in its own Material theme,
-                                          //getting the imporant components from the saved theme
-                                          data: ThemeData(
-                                              useMaterial3: true, //important!
-                                              colorSchemeSeed: Theme.of(context)
-                                                  .primaryColor,
-                                              brightness:
-                                                  Theme.brightnessOf(context) ==
-                                                          Brightness.dark
-                                                      ? Brightness.dark
-                                                      : Brightness.light),
-                                          child: AbbreviationView())));
-                            },
-                            child: Text('See all abbreviations'))
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(
-                height: 20,
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: [
-                  SizedBox(width: 20),
-                  Flexible(child: Text('Choose collection:')),
-                  SizedBox(width: 20),
-                  Expanded(
-                    child: DropdownButton(
-                      isExpanded: true,
-                      items: collections
-                          .map((e) => DropdownMenuItem(
-                                value: e.id,
-                                child: Text(
-                                  e.name,
-                                ),
-                              ))
-                          .toList(),
-                      value: collectionId == ''
-                          ? collections.first.id
-                          : collectionId,
-                      onChanged: (value) {
-                        if (value != null) {
-                          setState(() {
-                            collectionId = value;
-                          });
-                        }
-                      },
-                    ),
-                  ),
-                  SizedBox(width: 60),
-                  Flexible(child: Text('Include verse numbers?')),
-                  SizedBox(width: 20),
-                  Switch(
-                      value: includeVerseNumbers,
-                      onChanged: (val) {
-                        setState(() {
-                          includeVerseNumbers = val;
-                        });
-                      })
-                ],
-              ),
-              SizedBox(height: 20),
-
-              Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expander(
+              initiallyExpanded: userPrefsBox.get('instructions') ?? true,
+              onStateChanged: (value) {
+                userPrefsBox.put('instructions', value);
+                setState(() {});
+              },
+              header: const Text('Instructions'),
+              content: Padding(
+                padding: const EdgeInsets.all(18.0),
+                child: Row(
                   children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: verseRangeTextController,
-
-                        minLines: minLines,
-                        maxLines: minLines,
-                        textCapitalization: TextCapitalization.none,
-                        autocorrect: false,
-                        decoration:
-                            InputDecoration(filled: true, hintText: sampleText),
-
-                        // The validator receives the text that the user has entered.
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter some text';
-                          } else {
-                            return null;
-                          }
+                    Expanded(child: Text(instructions)),
+                    const SizedBox(width: 20),
+                    Button(
+                        onPressed: () {
+                          showDialog(
+                            context: context,
+                            builder: (context) => ContentDialog(
+                              constraints: BoxConstraints(
+                                  maxWidth: double.infinity,
+                                  maxHeight: double.infinity),
+                              title: const Text('Abbreviations'),
+                              content: const AbbreviationView(),
+                              actions: [
+                                Button(
+                                  child: const Text('Close'),
+                                  onPressed: () => Navigator.pop(context),
+                                )
+                              ],
+                            ),
+                          );
                         },
-                      ),
+                        child: const Text('See all abbreviations'))
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(
+              height: 20,
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                const SizedBox(width: 20),
+                const Flexible(child: Text('Choose collection:')),
+                const SizedBox(width: 20),
+                Expanded(
+                  child: ComboBox<String>(
+                    isExpanded: true,
+                    items: collections
+                        .map((e) => ComboBoxItem(
+                              value: e.id,
+                              child: Text(e.name),
+                            ))
+                        .toList(),
+                    value: collectionId == ''
+                        ? collections.first.id
+                        : collectionId,
+                    onChanged: (value) {
+                      if (value != null) {
+                        setState(() {
+                          collectionId = value;
+                        });
+                      }
+                    },
+                  ),
+                ),
+                const SizedBox(width: 60),
+                const Text('Include verse numbers?'),
+                const SizedBox(width: 20),
+                ToggleSwitch(
+                    checked: includeVerseNumbers,
+                    onChanged: (val) {
+                      setState(() {
+                        includeVerseNumbers = val;
+                      });
+                    })
+              ],
+            ),
+            const SizedBox(height: 20),
+            Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: TextBox(
+                      controller: verseRangeTextController,
+                      minLines: minLines,
+                      maxLines: minLines,
+                      placeholder: sampleText,
                     ),
-                    SizedBox(width: 20),
-                    IconButton.filledTonal(
-                        icon: Icon(Icons.start), onPressed: processUserInput),
-                    SizedBox(width: 20),
-                    if (verses != null)
-                      Expanded(
-                        child: FutureBuilder(
-                            future: verses,
-                            builder: (ctx, snapshot) {
-                              if (snapshot.connectionState ==
-                                  ConnectionState.waiting) {
-                                return const Center(
-                                    child: CircularProgressIndicator());
-                              } else {
-                                final buffer = StringBuffer();
+                  ),
+                  const SizedBox(width: 20),
+                  SizedBox.square(
+                    dimension: 40,
+                    child: FilledButton(
+                      onPressed: processUserInput,
+                      child: Icon(FluentIcons.chevron_right),
+                    ),
+                  ),
+                  const SizedBox(width: 20),
+                  if (verses != null)
+                    Expanded(
+                      child: FutureBuilder(
+                          future: verses,
+                          builder: (ctx, snapshot) {
+                            if (snapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return const Center(child: ProgressRing());
+                            } else {
+                              final buffer = StringBuffer();
 
-                                if (snapshot.data != null &&
-                                    snapshot.data!.isNotEmpty) {
-                                  for (var entry in snapshot.data!) {
-                                    buffer.writeln(
-                                        '${entry.reference} : ${entry.composedText}');
-                                  }
+                              if (snapshot.data != null &&
+                                  snapshot.data!.isNotEmpty) {
+                                for (var entry in snapshot.data!) {
+                                  buffer.writeln(
+                                      '${entry.reference} : ${entry.composedText}');
+                                }
 
-                                  return GestureDetector(
-                                    onTap: () {
-                                      //copy to clipboard
-                                      Clipboard.setData(
-                                        ClipboardData(
-                                          text: buffer.toString(),
-                                        ),
-                                      );
+                                return GestureDetector(
+                                  onTap: () {
+                                    //copy to clipboard
+                                    Clipboard.setData(
+                                      ClipboardData(
+                                        text: buffer.toString(),
+                                      ),
+                                    );
+                                    setState(() {
+                                      hoveringIcon = successIcon(context);
+                                    });
+                                  },
+                                  child: MouseRegion(
+                                    onEnter: (_) {
                                       setState(() {
-                                        hoveringIcon = successIcon;
+                                        showCopyHelper = true;
                                       });
                                     },
-                                    child: MouseRegion(
-                                      onEnter: (_) {
-                                        setState(() {
-                                          showCopyHelper = true;
-                                        });
-                                      },
-                                      onExit: (_) {
-                                        setState(() {
-                                          showCopyHelper = false;
-                                        });
-                                      },
-                                      child: Stack(children: [
+                                    onExit: (_) {
+                                      setState(() {
+                                        showCopyHelper = false;
+                                      });
+                                    },
+                                    child: Stack(children: [
+                                      TextBox(
+                                        enabled: false,
+                                        readOnly: true,
+                                        minLines: minLines,
+                                        maxLines: minLines,
+                                        controller: TextEditingController(
+                                            text: buffer.toString()),
+                                      ),
+                                      if (showCopyHelper)
                                         Positioned.fill(
                                           child: Opacity(
-                                              opacity: showCopyHelper ? .2 : 0,
+                                              opacity: .2,
                                               child: Container(
-                                                color: Theme.of(context)
-                                                    .colorScheme
-                                                    .primaryContainer,
+                                                color: FluentTheme.of(context)
+                                                    .accentColor,
                                               )),
                                         ),
-                                        if (showCopyHelper)
-                                          Positioned.fill(
-                                              child:
-                                                  Center(child: hoveringIcon)),
-                                        TextFormField(
-                                          enabled: false,
-                                          // readOnly: true,
-                                          minLines: minLines,
-                                          maxLines: minLines,
-                                          textCapitalization:
-                                              TextCapitalization.none,
-                                          autocorrect: false,
-                                          initialValue: buffer.toString(),
-                                          decoration: const InputDecoration(
-                                            filled: true,
-                                          ),
-                                        ),
-                                      ]),
-                                    ),
-                                  );
-                                } else {
-                                  return Center(
-                                      child: Icon(Icons
-                                          .sentiment_dissatisfied_outlined));
-                                }
+                                      if (showCopyHelper)
+                                        Positioned.fill(
+                                            child: Center(child: hoveringIcon)),
+                                    ]),
+                                  ),
+                                );
+                              } else {
+                                return const Center(
+                                    child: Icon(FluentIcons.sad));
                               }
-                            }),
+                            }
+                          }),
+                    ),
+                  if (verses == null)
+                    Expanded(
+                      child: TextBox(
+                        readOnly: true,
+                        minLines: minLines,
+                        maxLines: minLines,
                       ),
-                    if (verses == null)
-                      Expanded(
-                        child: TextFormField(
-                          enabled: false,
-                          // readOnly: true,
-                          minLines: minLines,
-                          maxLines: minLines,
-                          textCapitalization: TextCapitalization.none,
-                          autocorrect: false,
-                          // initialValue: '...',
-                          decoration: const InputDecoration(
-                            filled: true,
-                          ),
-                        ),
-                      ),
-                    // Expanded(
-                    //     child: SizedBox(
-                    //   width: 40,
-                    //   height: 40,
-                    // ))
-                  ]),
-              // SizedBox(
-              //   height: 20,
-              // ),
-              // Row(
-              //   children: [
-              //     Expanded(child: Placeholder()),
-              //     Expanded(
-              //       child: SizedBox(
-              //         width: 165,
-              //         height: 10,
-              //       ),
-              //     )
-              //   ],
-              // )
-            ],
-          ),
+                    )
+                ])
+          ],
         ),
       ),
     );
@@ -421,45 +333,110 @@ class AbbreviationView extends StatelessWidget {
     final List<String> bookKeys =
         BibleAbbreviations.abbreviations.keys.toList();
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: Icon(Icons.close),
-            onPressed: Navigator.of(context).pop,
-          ),
-          SizedBox(width: 20)
-        ],
-        title: Text('Abbreviations'),
-      ),
-      body: Padding(
+    return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8.0),
         child: GridView.builder(
-            gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
                 maxCrossAxisExtent: 320, childAspectRatio: 3 / 2),
             itemCount: abb.length,
             itemBuilder: (context, i) {
-              return Card(
+              return Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: HoverCard(
+                    book: bookKeys[i],
+                    abbs: abb[bookKeys[i]]!,
+                  ));
+            }));
+  }
+}
+
+class HoverCard extends StatefulWidget {
+  final String book;
+  final List<String> abbs;
+  const HoverCard({required this.book, required this.abbs, super.key});
+
+  @override
+  State<HoverCard> createState() => _HoverCardState();
+}
+
+class _HoverCardState extends State<HoverCard> {
+  bool _hovering = false;
+  bool _copied = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final cardInfo = '${widget.book}: ${widget.abbs.join(', ')}';
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovering = true),
+      onExit: (_) {
+        setState(() {
+          _hovering = false;
+          _copied = false;
+        });
+      },
+      child: GestureDetector(
+        onTap: () {
+          Clipboard.setData(
+            ClipboardData(
+              text: cardInfo,
+            ),
+          );
+          setState(() {
+            _copied = true;
+          });
+        },
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: Card(
+                backgroundColor: _hovering
+                    ? FluentTheme.of(context).accentColor.lightest
+                    : FluentTheme.of(context).cardColor,
                 child: Padding(
-                  padding: const EdgeInsets.all(18.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        bookKeys[i],
-                        style: Theme.of(context).textTheme.bodyLarge,
-                      ),
-                      SizedBox(width: 20),
-                      Expanded(child: Text(abb[bookKeys[i]]!.join(', '))),
-                    ],
-                  ),
-                ),
-              );
-            }),
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.book,
+                            style: FluentTheme.of(context).typography.bodyLarge,
+                          ),
+                          const SizedBox(width: 20),
+                          Expanded(child: Text(widget.abbs.join(', ')))
+                        ])),
+              ),
+            ),
+            if (_hovering)
+              Center(child: _copied ? successIcon(context) : copyIcon(context))
+          ],
+        ),
       ),
     );
   }
+}
+
+Widget copyIcon(BuildContext context) {
+  return copyHelperIcon(context, icon: FluentIcons.copy);
+}
+
+Widget successIcon(BuildContext context) {
+  return copyHelperIcon(context, icon: FluentIcons.check_mark);
+}
+
+Widget copyHelperIcon(BuildContext context, {required IconData icon}) {
+  return Container(
+    width: 50,
+    height: 50,
+    decoration: BoxDecoration(
+      color: FluentTheme.of(context).accentColor.darker.withAlpha(255),
+      // color: Colors.red,
+      shape: BoxShape.circle, // makes it a perfect circle
+    ),
+    child: Center(
+        child: Icon(
+      icon,
+      color: FluentTheme.of(context).shadowColor,
+    )),
+  );
 }

@@ -1,7 +1,6 @@
 import 'dart:async';
 
 // import 'package:universal_html/html.dart' as html;
-import 'package:flutter/material.dart' as material;
 import 'package:flutter/services.dart';
 
 import 'package:path_provider/path_provider.dart';

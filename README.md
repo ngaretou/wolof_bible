@@ -83,7 +83,18 @@ to pre-process SAB data into assets
    * added a new strict and fuzzy search capability
    * reporting how many results are found in search box 
    * for macOS, double clicking title bar goes 
+   * consistent theming for license and bulk verse copy
 
 
 
 ## Status
+
+## Web release
+>>increment build number in pubspec.yaml
+rm -rf build/web
+flutter build web 
+cd build/web
+HASH=$(sha256sum main.dart.js | cut -c1-8)
+mv main.dart.js main.dart.$HASH.js
+sed -i .bak "s/main.dart.js/main.dart.$HASH.js/g" flutter_bootstrap.js 
+rm flutter_bootstrap.js.bak 
