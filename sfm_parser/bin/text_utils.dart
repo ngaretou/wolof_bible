@@ -1,1 +1,0 @@
-/Users/corey/myflutter/wolof_bible/lib/logic/text_utils.dart
