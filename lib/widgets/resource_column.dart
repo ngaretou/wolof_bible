@@ -3,6 +3,7 @@ import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter/foundation.dart';
 // import 'package:skeletonizer/skeletonizer.dart';
 import 'package:wolof_bible/main.dart';
+import 'package:wolof_bible/widgets/resource_chooser.dart';
 import '../providers/user_prefs.dart';
 import '../widgets/column_header.dart';
 import '../logic/aquifer_api.dart';
@@ -34,6 +35,7 @@ class _ResourceColumnState extends State<ResourceColumn> {
   bool _isLoading = true;
   int userResourceLanguageCode = 4;
   List<ResourceCollectionInfo> collections = [];
+  List<ResourceCollectionInfo> selectedCollections = [];
   late Future connectivityCheck;
   List<String> userResourceCodes = [];
   late ResourceLanguage language;
@@ -42,9 +44,6 @@ class _ResourceColumnState extends State<ResourceColumn> {
   @override
   void initState() {
     userResourceLanguageCode = widget.incomingUserResourceLanguageCode;
-    collections = AquiferService().getResourcesForLanguage(
-      userResourceLanguageCode,
-    );
     languages = AquiferService().allLanguages;
     isLinked = widget.bibleReference.partOfScrollGroup;
     connectivityCheck = _checkConnectivity();
@@ -63,18 +62,24 @@ class _ResourceColumnState extends State<ResourceColumn> {
   }
 
   void setLanguage() {
+    collections = AquiferService().getResourcesForLanguage(
+      userResourceLanguageCode,
+    );
+    userResourceCodes.clear();
+    userResourceCodes = collections
+        .where((c) => c.code.startsWith('Tyndale') || c.code == 'UbsImages')
+        .map((c) => c.code)
+        .toList();
     language = AquiferService().allLanguages.firstWhere(
       (l) => l.id == userResourceLanguageCode,
       orElse: () => AquiferService().allLanguages.first,
     );
     if (language.scriptDirection == 'LTR') {
-      textDirection = ui.TextDirection.ltr;
+      textDirection = TextDirection.ltr;
       alignment = Alignment.centerLeft;
-      // comboBoxFontSize = DefaultTextStyle.of(context).style.fontSize;
     } else {
-      textDirection = ui.TextDirection.rtl;
+      textDirection = TextDirection.rtl;
       alignment = Alignment.centerRight;
-      // comboBoxFontSize = 18;
     }
   }
 
@@ -91,9 +96,12 @@ class _ResourceColumnState extends State<ResourceColumn> {
                 child: _isLoading
                     ? Center(child: ProgressBar())
                     : ComboBox<int>(
-                        // isExpanded: true,
+                        isExpanded: true,
                         value: userResourceLanguageCode,
                         onChanged: (v) async {
+                          if (v == userResourceLanguageCode) {
+                            return;
+                          }
                           setState(() {
                             _isLoading = true;
                           });
@@ -104,27 +112,59 @@ class _ResourceColumnState extends State<ResourceColumn> {
                                 .getResourcesForLanguage(
                                   userResourceLanguageCode,
                                 );
+                            setLanguage();
                           }
                           setState(() {
                             _isLoading = false;
                           });
+                        },
+                        selectedItemBuilder: (context) {
+                          return languages.map((c) {
+                            return Align(
+                              alignment: c.scriptDirection == 'LTR'
+                                  ? Alignment.centerLeft
+                                  : Alignment.centerRight,
+                              child: Text(
+                                c.localizedDisplay,
+                                overflow: textOverflow,
+                                textDirection: c.scriptDirection == 'LTR'
+                                    ? TextDirection.ltr
+                                    : TextDirection.rtl,
+                              ),
+                            );
+                          }).toList();
                         },
                         items: languages
                             .map(
                               (c) => ComboBoxItem<int>(
                                 value: c.id,
                                 child: Align(
-                                  alignment: alignment,
+                                  alignment: c.scriptDirection == 'LTR'
+                                      ? Alignment.centerLeft
+                                      : Alignment.centerRight,
                                   child: Text(
                                     c.localizedDisplay,
                                     overflow: textOverflow,
-                                    textDirection: textDirection,
+                                    textDirection: c.scriptDirection == 'LTR'
+                                        ? TextDirection.ltr
+                                        : TextDirection.rtl,
                                   ),
                                 ),
                               ),
                             )
                             .toList(),
                       ),
+              ),
+              ResourceChooser(
+                resourceCodes: userResourceCodes,
+                langId: userResourceLanguageCode,
+                onChanged: (code) {
+                  if (userResourceCodes.contains(code)) {
+                    userResourceCodes.remove(code);
+                  } else {
+                    userResourceCodes.add(code);
+                  }
+                },
               ),
             ],
             onFontIncrease: () {
