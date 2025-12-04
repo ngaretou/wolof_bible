@@ -9,7 +9,8 @@
     "copyWithNumbers": "Copy with numbers",
     "copyWithoutNumbers": "Copy without numbers",
     "strictSearch": "strict search",
-    "fuzzySearch": "fuzzy search"
+    "fuzzySearch": "fuzzy search",
+    "openResourceColumn": "Open Resource Column"
   },
   {
     "langCode": "fr",
@@ -21,7 +22,8 @@
     "copyWithNumbers": "Copier avec numéros",
     "copyWithoutNumbers": "Copy sans numéros",
     "strictSearch": "recherche stricte",
-    "fuzzySearch": "recherche floue"
+    "fuzzySearch": "recherche floue",
+    "openResourceColumn": "Ouvrir une colonne de ressource"
   },
   {
     "langCode": "wol",
@@ -33,6 +35,7 @@
     "copyWithNumbers": "Copier avec numéros",
     "copyWithoutNumbers": "Copy sans numéros",
     "strictSearch": "recherche stricte",
-    "fuzzySearch": "recherche floue"
+    "fuzzySearch": "recherche floue",
+    "openResourceColumn": "Yokk pàccub faramfanceel"
   }
 ]

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../main.dart';
@@ -124,25 +125,28 @@ class Translation {
   String copyWithoutNumbers;
   String strictSearch;
   String fuzzySearch;
+  String openResourceColumn;
 
-  Translation(
-      {required this.langCode,
-      required this.langName,
-      required this.search,
-      required this.addColumn,
-      required this.settingsTheme,
-      required this.systemTheme,
-      required this.lightTheme,
-      required this.darkTheme,
-      required this.about,
-      required this.settings,
-      required this.settingsInterfaceLanguage,
-      required this.copy,
-      required this.share,
-      required this.copyWithNumbers,
-      required this.copyWithoutNumbers,
-      required this.strictSearch,
-      required this.fuzzySearch});
+  Translation({
+    required this.langCode,
+    required this.langName,
+    required this.search,
+    required this.addColumn,
+    required this.settingsTheme,
+    required this.systemTheme,
+    required this.lightTheme,
+    required this.darkTheme,
+    required this.about,
+    required this.settings,
+    required this.settingsInterfaceLanguage,
+    required this.copy,
+    required this.share,
+    required this.copyWithNumbers,
+    required this.copyWithoutNumbers,
+    required this.strictSearch,
+    required this.fuzzySearch,
+    required this.openResourceColumn,
+  });
 }
 
 List<Collection> collections = [];
@@ -155,8 +159,9 @@ Future<void> asyncGetTranslations(BuildContext context) async {
   Map<String, String> translationSupplement = {};
   AssetBundle assetBundle = DefaultAssetBundle.of(context);
   UserPrefs userPrefs = Provider.of<UserPrefs>(context, listen: false);
-  String translationsJSON =
-      await rootBundle.loadString("assets/translations.json");
+  String translationsJSON = await rootBundle.loadString(
+    "assets/translations.json",
+  );
   final translationData = json.decode(translationsJSON) as List<dynamic>;
 
   //get the appDef xml from outside the flutter project
@@ -188,8 +193,9 @@ Future<void> asyncGetTranslations(BuildContext context) async {
 
       Map<String, String> langInfo = {};
       for (var langForm in langForms) {
-        langInfo.addAll(
-            {langForm.getAttribute('lang').toString(): langForm.innerText});
+        langInfo.addAll({
+          langForm.getAttribute('lang').toString(): langForm.innerText,
+        });
       }
       if (langInfo.keys.contains(langCode)) {
         langName = langInfo[langCode].toString();
@@ -206,7 +212,8 @@ Future<void> asyncGetTranslations(BuildContext context) async {
           .findAllElements('translation')
           .toList()
           .where(
-              (element) => element.getAttribute('lang').toString() == langCode);
+            (element) => element.getAttribute('lang').toString() == langCode,
+          );
       String searchText = searchTextXML.first.innerText;
 
       Iterable<XmlElement> settingsTextXml = document
@@ -218,20 +225,24 @@ Future<void> asyncGetTranslations(BuildContext context) async {
           .findAllElements('translation')
           .toList()
           .where(
-              (element) => element.getAttribute('lang').toString() == langCode);
+            (element) => element.getAttribute('lang').toString() == langCode,
+          );
       String settingsText = settingsTextXml.first.innerText;
 
       Iterable<XmlElement> settingsInterfaceLanguageTextXml = document
           .getElement('app-definition')!
           .getElement('translation-mappings')!
           .findAllElements('translation-mapping')
-          .where((element) =>
-              element.getAttribute('id') == 'Settings_Interface_Language')
+          .where(
+            (element) =>
+                element.getAttribute('id') == 'Settings_Interface_Language',
+          )
           .first
           .findAllElements('translation')
           .toList()
           .where(
-              (element) => element.getAttribute('lang').toString() == langCode);
+            (element) => element.getAttribute('lang').toString() == langCode,
+          );
       String settingsInterfaceLanguageText =
           settingsInterfaceLanguageTextXml.first.innerText;
 
@@ -244,7 +255,8 @@ Future<void> asyncGetTranslations(BuildContext context) async {
           .findAllElements('translation')
           .toList()
           .where(
-              (element) => element.getAttribute('lang').toString() == langCode);
+            (element) => element.getAttribute('lang').toString() == langCode,
+          );
       String aboutText = aboutTextXml.first.innerText;
 
       Iterable<XmlElement> copyTextXml = document
@@ -256,7 +268,8 @@ Future<void> asyncGetTranslations(BuildContext context) async {
           .findAllElements('translation')
           .toList()
           .where(
-              (element) => element.getAttribute('lang').toString() == langCode);
+            (element) => element.getAttribute('lang').toString() == langCode,
+          );
       String copyText = copyTextXml.first.innerText;
 
       Iterable<XmlElement> shareTextXml = document
@@ -268,7 +281,8 @@ Future<void> asyncGetTranslations(BuildContext context) async {
           .findAllElements('translation')
           .toList()
           .where(
-              (element) => element.getAttribute('lang').toString() == langCode);
+            (element) => element.getAttribute('lang').toString() == langCode,
+          );
       String shareText = shareTextXml.first.innerText;
 
       // ----
@@ -287,30 +301,39 @@ Future<void> asyncGetTranslations(BuildContext context) async {
             "copyWithoutNumbers": translation['copyWithoutNumbers'],
             "strictSearch": translation['strictSearch'],
             "fuzzySearch": translation['fuzzySearch'],
+            "openResourceColumn": translation['openResourceColumn'],
           });
         }
       }
       // ----
-
-      translations.add(Translation(
-          langCode: langCode,
-          langName: langName,
-          search: searchText,
-          addColumn: translationSupplement['addColumn']!,
-          settingsTheme: translationSupplement['settingsTheme']!,
-          systemTheme: translationSupplement['systemTheme']!,
-          lightTheme: translationSupplement['lightTheme']!,
-          darkTheme: translationSupplement['darkTheme']!,
-          about: aboutText,
-          settings: settingsText,
-          settingsInterfaceLanguage: settingsInterfaceLanguageText,
-          copy: copyText,
-          share: shareText,
-          copyWithNumbers: translationSupplement['copyWithNumbers']!,
-          copyWithoutNumbers: translationSupplement['copyWithoutNumbers']!, 
-          strictSearch: translationSupplement['strictSearch']!,
-          fuzzySearch: translationSupplement['fuzzySearch']!
-          ));
+      try {
+        translations.add(
+          Translation(
+            langCode: langCode,
+            langName: langName,
+            search: searchText,
+            addColumn: translationSupplement['addColumn']!,
+            settingsTheme: translationSupplement['settingsTheme']!,
+            systemTheme: translationSupplement['systemTheme']!,
+            lightTheme: translationSupplement['lightTheme']!,
+            darkTheme: translationSupplement['darkTheme']!,
+            about: aboutText,
+            settings: settingsText,
+            settingsInterfaceLanguage: settingsInterfaceLanguageText,
+            copy: copyText,
+            share: shareText,
+            copyWithNumbers: translationSupplement['copyWithNumbers']!,
+            copyWithoutNumbers: translationSupplement['copyWithoutNumbers']!,
+            strictSearch: translationSupplement['strictSearch']!,
+            fuzzySearch: translationSupplement['fuzzySearch']!,
+            openResourceColumn: translationSupplement['openResourceColumn']!,
+          ),
+        );
+      } catch (e) {
+        if (kDebugMode) {
+          debugPrint(e.toString());
+        }
+      }
     }
   }
 
@@ -349,7 +372,9 @@ Future<void> asyncGetTranslations(BuildContext context) async {
 // }
 
 Future<List<Collection>> collectionsFromXML(
-    BuildContext context, Function updater) async {
+  BuildContext context,
+  Function updater,
+) async {
   AssetBundle assetBundle = DefaultAssetBundle.of(context);
 
   String appDefLocation = 'assets/json/appDef.appDef';
@@ -357,7 +382,8 @@ Future<List<Collection>> collectionsFromXML(
   //get the document into a usable iterable
   final document = XmlDocument.parse(xmlFileString);
 
-  final defaultLang = document
+  final defaultLang =
+      document
           .getElement('app-definition')!
           .getElement('translation-mappings')
           ?.getAttribute('default-lang') ??
@@ -367,14 +393,16 @@ Future<List<Collection>> collectionsFromXML(
   String fontWeight = "";
   String fontStyle = "";
 
-  XmlElement? xmlFontsSection =
-      document.getElement('app-definition')!.getElement('fonts');
+  XmlElement? xmlFontsSection = document
+      .getElement('app-definition')!
+      .getElement('fonts');
   if (xmlFontsSection != null) {
     Iterable<XmlElement> xmlFonts = xmlFontsSection.findAllElements('font');
     //Loop through fonts gathering info about each
     for (var xmlFont in xmlFonts) {
-      Iterable<XmlElement> xmlFontProperties =
-          xmlFont.findAllElements('style-decl');
+      Iterable<XmlElement> xmlFontProperties = xmlFont.findAllElements(
+        'style-decl',
+      );
 
       for (var xmlFontProperty in xmlFontProperties) {
         //the font weight and style are a bit different, they are in the same kind of xml tag,
@@ -385,13 +413,16 @@ Future<List<Collection>> collectionsFromXML(
         if (property == 'font-style') fontStyle = value;
       }
 
-      allFonts.add(Font(
+      allFonts.add(
+        Font(
           fontFamily: xmlFont.getAttribute('family').toString(),
           fontName: xmlFont.getElement('font-name')!.innerText.toString(),
           displayName: xmlFont.getElement('font-name')!.innerText.toString(),
           filename: xmlFont.getElement('filename')!.innerText.toString(),
           weight: fontWeight,
-          style: fontStyle));
+          style: fontStyle,
+        ),
+      );
     }
   }
 
@@ -405,14 +436,17 @@ Future<List<Collection>> collectionsFromXML(
     Iterable<XmlElement> xmlBookList = xmlCollection.findAllElements('book');
     for (var xmlBook in xmlBookList) {
       //Add the book
-      books.add(Book(
-        id: xmlBook.getAttribute('id').toString(),
-        name: xmlBook.getElement('name')!.innerText.toString(),
-      ));
+      books.add(
+        Book(
+          id: xmlBook.getAttribute('id').toString(),
+          name: xmlBook.getElement('name')!.innerText.toString(),
+        ),
+      );
     }
 
     //Now put it all together
-    collections.add(Collection(
+    collections.add(
+      Collection(
         id: xmlCollection.getAttribute('id').toString(),
         name: xmlCollection
             .getElement('book-collection-name')!
@@ -423,22 +457,26 @@ Future<List<Collection>> collectionsFromXML(
             .innerText
             .toString(),
         fonts: allFonts
-            .where((element) =>
-                element.fontFamily ==
-                xmlCollection
-                    .getElement('styles-info')!
-                    .getElement('text-font')!
-                    .getAttribute('family'))
+            .where(
+              (element) =>
+                  element.fontFamily ==
+                  xmlCollection
+                      .getElement('styles-info')!
+                      .getElement('text-font')!
+                      .getAttribute('family'),
+            )
             .toList(),
         books: books,
         language:
             xmlCollection.getElement('writing-system')?.getAttribute('code') ??
-                defaultLang,
+            defaultLang,
         textDirection: xmlCollection
             .getElement('styles-info')!
             .getElement('text-direction')!
             .getAttribute('value')
-            .toString()));
+            .toString(),
+      ),
+    );
   }
 
   // print('now we have the collections info');

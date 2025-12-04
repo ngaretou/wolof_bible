@@ -24,4 +24,7 @@ class UserColumnsDB {
 
   @HiveField(6)
   late int columnIndex;
+
+  @HiveField(7)
+  String? columnType;
 }

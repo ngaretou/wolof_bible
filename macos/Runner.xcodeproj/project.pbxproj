@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 60;
+	objectVersion = 54;
 	objects = {
 
 /* Begin PBXAggregateTarget section */
@@ -252,13 +252,9 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
-			inputPaths = (
-			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-frameworks-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -421,6 +417,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 17;
 				DEVELOPMENT_TEAM = RAJ3TA54HF;
+				EXECUTABLE_NAME = kaddug_yalla_plus;
 				INFOPLIST_FILE = Runner/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Kàddug Yàlla+";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
@@ -556,6 +553,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 17;
 				DEVELOPMENT_TEAM = RAJ3TA54HF;
+				EXECUTABLE_NAME = kaddug_yalla_plus;
 				INFOPLIST_FILE = Runner/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Kàddug Yàlla+";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
@@ -584,6 +582,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 17;
 				DEVELOPMENT_TEAM = RAJ3TA54HF;
+				EXECUTABLE_NAME = kaddug_yalla_plus;
 				INFOPLIST_FILE = Runner/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Kàddug Yàlla+";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";

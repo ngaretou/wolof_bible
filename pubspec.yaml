@@ -48,8 +48,8 @@ dependencies:
   xml: ^6.1.0
   # just_audio: ^0.9.24
   # audio_session: ^0.1.6+1
-  firebase_core: ^4.1.1
-  firebase_analytics: ^12.0.2
+  firebase_core: ^4.2.1
+  firebase_analytics: ^12.0.4
   scrollable_positioned_list: ^0.3.2
   google_fonts: ^6.0.0
 
@@ -66,6 +66,7 @@ dependencies:
   rxdart: ^0.28.0
   macos_window_utils: ^1.9.0
   macos_ui: ^2.2.2
+  http: ^1.6.0
 
 dev_dependencies:
   flutter_test:
@@ -367,6 +368,8 @@ flutter:
     - assets/project/data/
     - assets/project/data/about/
     - assets/translations.json
+    - assets/aquifer/eng/json/
+    - assets/aquifer/fra/json/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware
