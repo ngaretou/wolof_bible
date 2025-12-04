@@ -6,6 +6,8 @@ import 'dart:core';
 import '../hive/user_columns_db.dart';
 import '../main.dart' as main;
 
+enum ColumnType { scripture, resource }
+
 class BibleReference {
   Key key;
   bool partOfScrollGroup;
@@ -14,15 +16,18 @@ class BibleReference {
   String chapter;
   String verse;
   int columnIndex;
+  ColumnType type;
 
-  BibleReference(
-      {required this.key,
-      required this.partOfScrollGroup,
-      required this.collectionID,
-      required this.bookID,
-      required this.chapter,
-      required this.verse,
-      required this.columnIndex});
+  BibleReference({
+    required this.key,
+    required this.partOfScrollGroup,
+    required this.collectionID,
+    required this.bookID,
+    required this.chapter,
+    required this.verse,
+    required this.columnIndex,
+    this.type = ColumnType.scripture,
+  });
 
   @override
   String toString() {
@@ -33,7 +38,8 @@ class BibleReference {
         'bookID: $bookID, '
         'chapter: $chapter, '
         'verse: $verse, '
-        'columnIndex: $columnIndex'
+        'columnIndex: $columnIndex, '
+        'type: $type'
         ')';
   }
 }
@@ -54,7 +60,7 @@ class UserPrefs with ChangeNotifier {
 
   List<BibleReference> userColumns = [];
 
-  String? userLang;
+  String userLang = 'wol';
 
   Translation get currentTranslation {
     return translations
@@ -80,21 +86,28 @@ class UserPrefs with ChangeNotifier {
 
           for (var i = 0; i < main.userColumnsBox.length; i++) {
             Key newKeyForSession = UniqueKey();
+            final colDB = main.userColumnsBox.getAt(i)!;
+
+            ColumnType type = ColumnType.scripture;
+            if (colDB.columnType == 'resource') {
+              type = ColumnType.resource;
+            }
 
             BibleReference ref = BibleReference(
-                // key: UniqueKey(), //Here is where the unique key comes from after reloading.
-                // ScriptureColumns (List<Widget>) HAS to have a key so we can locate it later.
-                // The old key stored in the db is as String, but no way to convert String back to Key.
-                //For that reason we make a new key for this session above, then save it as we populate our in-memory copy of usercolumns
-                //And we also delete the old copy of the column info in the db and replace it with a new one
-                key: newKeyForSession,
-                partOfScrollGroup:
-                    main.userColumnsBox.getAt(i)!.partOfScrollGroup,
-                collectionID: main.userColumnsBox.getAt(i)!.collectionID,
-                bookID: main.userColumnsBox.getAt(i)!.bookID ?? 'MAT',
-                chapter: main.userColumnsBox.getAt(i)!.chapter ?? '1',
-                verse: main.userColumnsBox.getAt(i)!.verse ?? '1',
-                columnIndex: main.userColumnsBox.getAt(i)!.columnIndex);
+              // key: UniqueKey(), //Here is where the unique key comes from after reloading.
+              // ScriptureColumns (List<Widget>) HAS to have a key so we can locate it later.
+              // The old key stored in the db is as String, but no way to convert String back to Key.
+              //For that reason we make a new key for this session above, then save it as we populate our in-memory copy of usercolumns
+              //And we also delete the old copy of the column info in the db and replace it with a new one
+              key: newKeyForSession,
+              partOfScrollGroup: colDB.partOfScrollGroup,
+              collectionID: colDB.collectionID,
+              bookID: colDB.bookID ?? 'MAT',
+              chapter: colDB.chapter ?? '1',
+              verse: colDB.verse ?? '1',
+              columnIndex: colDB.columnIndex,
+              type: type,
+            );
             userColumns.add(ref);
           }
           //clear the box
@@ -145,16 +158,19 @@ class UserPrefs with ChangeNotifier {
       partOfScrollGroup = false;
       currentCollection = "C01";
       userColumns = List.generate(
-          2,
-          (index) => BibleReference(
-              key: UniqueKey(),
-              // columnIndex: index,
-              partOfScrollGroup: partOfScrollGroup,
-              collectionID: currentCollection,
-              bookID: 'MAT',
-              chapter: '1',
-              verse: '1',
-              columnIndex: index));
+        2,
+        (index) => BibleReference(
+          key: UniqueKey(),
+          // columnIndex: index,
+          partOfScrollGroup: partOfScrollGroup,
+          collectionID: currentCollection,
+          bookID: 'MAT',
+          chapter: '1',
+          verse: '1',
+          columnIndex: index,
+          type: ColumnType.scripture,
+        ),
+      );
     } else {
       //If it is more than one collection, each column initially will just take the next collection down.
       partOfScrollGroup = true;
@@ -162,13 +178,15 @@ class UserPrefs with ChangeNotifier {
       userColumns = List.generate(
         numberOfColumns,
         (index) => BibleReference(
-            key: UniqueKey(),
-            partOfScrollGroup: partOfScrollGroup,
-            collectionID: "C0${(index + 1).toString()}",
-            bookID: 'MAT',
-            chapter: '1',
-            verse: '1',
-            columnIndex: index),
+          key: UniqueKey(),
+          partOfScrollGroup: partOfScrollGroup,
+          collectionID: "C0${(index + 1).toString()}",
+          bookID: 'MAT',
+          chapter: '1',
+          verse: '1',
+          columnIndex: index,
+          type: ColumnType.scripture,
+        ),
       );
     }
 
@@ -185,7 +203,10 @@ class UserPrefs with ChangeNotifier {
         ..bookID = userColumns[i].bookID
         ..chapter = userColumns[i].chapter
         ..verse = userColumns[i].verse
-        ..columnIndex = i;
+        ..columnIndex = i
+        ..columnType = userColumns[i].type == ColumnType.resource
+            ? 'resource'
+            : 'scripture';
 
       main.userColumnsBox.put(userColumns[i].key.toString(), colDB);
     }
@@ -199,13 +220,15 @@ class UserPrefs with ChangeNotifier {
       ..bookID = ref.bookID
       ..chapter = ref.chapter
       ..verse = ref.verse
-      ..columnIndex = ref.columnIndex;
+      ..columnIndex = ref.columnIndex
+      ..columnType = ref.type == ColumnType.resource ? 'resource' : 'scripture';
 
     //We found the key, now replace the record at that spot or add it if it's new
     main.userColumnsBox.put(ref.key.toString(), colDB);
     //Now put it in the userColumns list
-    int indexToUpdate =
-        userColumns.indexWhere((element) => element.key == ref.key);
+    int indexToUpdate = userColumns.indexWhere(
+      (element) => element.key == ref.key,
+    );
     userColumns[indexToUpdate] = ref;
 
     // for (var ref in userColumns) {
@@ -218,6 +241,45 @@ class UserPrefs with ChangeNotifier {
     // }
 
     // printWhatsInBox();
+  }
+
+  void addColumn(ColumnType type) {
+    int limit = type == ColumnType.scripture ? 9 : 5;
+    int currentCount = userColumns.where((c) => c.type == type).length;
+
+    if (currentCount < limit) {
+      //This common key helps us keep track of refs and columns
+      Key key = UniqueKey();
+
+      //Which position should this column be in?
+      int position = userColumns.length;
+
+      //new default bible reference
+      BibleReference newDefaultRef = BibleReference(
+        key: key,
+        partOfScrollGroup: true,
+        collectionID: "C01",
+        bookID: 'MAT',
+        chapter: '1',
+        verse: '1',
+        columnIndex: position,
+        type: type,
+      );
+
+      userColumns.add(newDefaultRef);
+      saveScrollGroupState(newDefaultRef);
+      notifyListeners();
+    }
+  }
+
+  void deleteColumn(Key keyToDelete) {
+    // print('deleting column index $keyToDelete in UserPrefs');
+    //This removes the desired element from the record in memory
+    userColumns.removeWhere((element) => element.key == keyToDelete);
+    //and from the user columns entry in the db
+    deleteColumnFromBox(keyToDelete.toString());
+
+    notifyListeners();
   }
 
   void deleteColumnFromBox(String keyAsString) {
