@@ -50,6 +50,8 @@ class _BibleViewState extends State<BibleView> {
             key: bibleRef.key,
             bibleReference: bibleRef,
             deleteColumn: (key) => userPrefs.deleteColumn(key),
+            incomingUserResourceLanguageCode:
+                int.tryParse(bibleRef.collectionID) ?? 4,
           );
         })
         .toList();
