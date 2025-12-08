@@ -136,36 +136,46 @@ class ResourceItem {
     required this.scriptDirection,
   });
 
-  factory ResourceItem.fromJson(Map<String, dynamic> json) {
+  factory ResourceItem.fromCombinedJson(
+    Map<String, dynamic> summary,
+    Map<String, dynamic> detail,
+  ) {
+    // 1. Fields from Summary
     ResourceType type = ResourceType.studyNotes;
-    if (json['grouping'] != null && json['grouping']['mediaType'] == 'Image') {
+    if (summary['grouping'] != null &&
+        summary['grouping']['mediaType'] == 'Image') {
       type = ResourceType.images;
     }
 
+    String id = summary['id'].toString();
+    String collectionCode = summary['grouping']?['collectionCode'] ?? '';
+    String localizedName = summary['localizedName'] ?? '';
+
+    // 2. Fields from Detail
     String contentStr = '';
-    if (json['content'] != null) {
-      if (json['content'] is List) {
-        contentStr = (json['content'] as List).join('\n');
-      } else if (json['content'] is Map) {
-        contentStr = json['content']['url'] ?? '';
+    if (detail['content'] != null) {
+      if (detail['content'] is List) {
+        contentStr = (detail['content'] as List).join('\n');
+      } else if (detail['content'] is Map) {
+        contentStr = detail['content']['url'] ?? '';
       } else {
         if (kDebugMode) {
-          debugPrint('content is not a list or map: ${json['content']}');
+          debugPrint('content is not a list or map: ${detail['content']}');
         }
       }
     }
 
     int languageId = 0;
     String direction = 'LTR';
-    if (json['language'] != null) {
-      languageId = json['language']['id'] ?? 0;
-      direction = json['language']['scriptDirection'] ?? 'LTR';
+    if (detail['language'] != null) {
+      languageId = detail['language']['id'] ?? 0;
+      direction = detail['language']['scriptDirection'] ?? 'LTR';
     }
 
     return ResourceItem(
-      id: json['id'].toString(),
-      resourceCollectionCode: json['grouping']?['collectionCode'] ?? '',
-      localizedName: json['localizedName'] ?? '',
+      id: id,
+      resourceCollectionCode: collectionCode,
+      localizedName: localizedName,
       resourceType: type,
       content: contentStr,
       langID: languageId,

@@ -1,9 +1,11 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter/foundation.dart';
-// import 'package:skeletonizer/skeletonizer.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import 'package:wolof_bible/main.dart';
 import 'package:wolof_bible/widgets/resource_chooser.dart';
+import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:provider/provider.dart';
+import 'package:wolof_bible/widgets/content_tile.dart';
 import '../providers/user_prefs.dart';
 import '../widgets/column_header.dart';
 import '../logic/aquifer_api.dart';
@@ -29,25 +31,49 @@ class _ResourceColumnState extends State<ResourceColumn> {
   TextOverflow textOverflow = TextOverflow.ellipsis;
   Alignment alignment = Alignment.centerLeft;
   TextDirection textDirection = TextDirection.ltr;
+  AquiferService aquiferService = AquiferService();
+  bool _isOnline = false;
+  List<ResourceItem> _resourceItems = [];
+  final ItemScrollController itemScrollController = ItemScrollController();
+  final ItemPositionsListener itemPositionsListener =
+      ItemPositionsListener.create();
   double baseFontSize = 20;
   bool isLinked = true;
-  bool _isOnline = false;
-  bool _isLoading = true;
+  bool _loadingLanguage = false;
+  bool _loadingResources = false;
   int userResourceLanguageCode = 4;
   List<ResourceCollectionInfo> collections = [];
   List<ResourceCollectionInfo> selectedCollections = [];
-  late Future connectivityCheck;
+  late Future initialization;
   List<String> userResourceCodes = [];
   late ResourceLanguage language;
   List<ResourceLanguage> languages = [];
+
+  List<ResourceItem> dummyResourceItems = List.generate(
+    10,
+    (index) => ResourceItem(
+      id: index.toString(),
+      resourceCollectionCode: 'TyndaleStudyNotes',
+      localizedName: 'Dummy Resource Name',
+      resourceType: ResourceType.studyNotes,
+      content:
+          'These verses introduce the Pentateuch (Genesis—Deuteronomy) and teach Israel that the world was created, ordered, and populated by the one true God and not by the gods of surrounding nations. God blessed three specific things: animal life (1:22-25), human life (1:27), and the Sabbath day (2:3). This trilogy of blessings highlights the Creator’s plan: Humankind was made in God’s image to enjoy sovereign dominion over the creatures of the earth and to participate in God’s Sabbath rest.',
+      langID: 1,
+      scriptDirection: 'LTR',
+    ),
+  );
+
+  Future<void> init() async {
+    await _checkConnectivity();
+    setLanguage();
+  }
 
   @override
   void initState() {
     userResourceLanguageCode = widget.incomingUserResourceLanguageCode;
     languages = AquiferService().allLanguages;
     isLinked = widget.bibleReference.partOfScrollGroup;
-    connectivityCheck = _checkConnectivity();
-    setLanguage();
+    initialization = init();
     super.initState();
   }
 
@@ -56,12 +82,15 @@ class _ResourceColumnState extends State<ResourceColumn> {
     if (mounted) {
       setState(() {
         _isOnline = isOnline;
-        _isLoading = false;
       });
     }
   }
 
-  void setLanguage() {
+  Future<void> setLanguage() async {
+    setState(() {
+      _loadingLanguage = true;
+    });
+    collections.clear();
     collections = AquiferService().getResourcesForLanguage(
       userResourceLanguageCode,
     );
@@ -71,11 +100,19 @@ class _ResourceColumnState extends State<ResourceColumn> {
     );
     if (savedCodes != null) {
       userResourceCodes = List<String>.from(savedCodes);
-    } else {
+    }
+
+    // Fallback: If no codes selected (empty saved list or no save), try defaults
+    if (userResourceCodes.isEmpty) {
       userResourceCodes = collections
           .where((c) => c.code.startsWith('Tyndale') || c.code == 'UbsImages')
           .map((c) => c.code)
           .toList();
+    }
+
+    // Safety net: If still empty but we have collections, select the first one
+    if (userResourceCodes.isEmpty && collections.isNotEmpty) {
+      userResourceCodes.add(collections.first.code);
     }
     language = AquiferService().allLanguages.firstWhere(
       (l) => l.id == userResourceLanguageCode,
@@ -89,7 +126,78 @@ class _ResourceColumnState extends State<ResourceColumn> {
       alignment = Alignment.centerRight;
     }
     // update the content after lang is changed
-    // updateContent();
+    setState(() {
+      _loadingLanguage = false;
+    });
+    updateContent();
+  }
+
+  Future<void> _fetchResources() async {
+    if (!_isOnline) return;
+
+    setState(() {
+      _loadingResources = true;
+    });
+
+    try {
+      // TODO: make dynamic based on scroll position/bible reference
+      // For now, hardcoded to GEN 1 as requested
+      // If we want multiple collections:
+      List<ResourceItem> aggregatedItems = [];
+      for (var code in userResourceCodes) {
+        final items = await AquiferService().getResourcesForChapter(
+          connected: _isOnline,
+          langId: userResourceLanguageCode,
+          resourceCollectionCode: code,
+          book: 'GEN',
+          chapter: '1',
+        );
+        aggregatedItems.addAll(items);
+      }
+      aggregatedItems.sort((a, b) {
+        int getPriority(String code) {
+          if (code.contains('Intro')) return 1;
+          if (code.contains('Themes')) return 3;
+          if (code.contains('Profiles')) return 4;
+          if (code.contains('Image')) return 5;
+          // Notes is checked last because other categories also contain 'Notes'
+          if (code.contains('Notes')) return 2;
+          return 99; // Others
+        }
+
+        int getVerse(String name) {
+          final match = RegExp(r'[:\.](\d+)').firstMatch(name);
+          if (match != null) {
+            return int.parse(match.group(1)!);
+          }
+          return 0;
+        }
+
+        int priorityA = getPriority(a.resourceCollectionCode);
+        int priorityB = getPriority(b.resourceCollectionCode);
+
+        if (priorityA != priorityB) {
+          return priorityA.compareTo(priorityB);
+        } else {
+          int startVerseA = getVerse(a.localizedName);
+          int startVerseB = getVerse(b.localizedName);
+          if (startVerseA != startVerseB) {
+            return startVerseA.compareTo(startVerseB);
+          }
+          return a.localizedName.compareTo(b.localizedName);
+        }
+      });
+
+      setState(() {
+        _resourceItems = aggregatedItems;
+      });
+    } catch (e) {
+      debugPrint('Error fetching resources: $e');
+    } finally {
+      setState(() {
+        _loadingResources = false;
+      });
+    }
   }
 
   void updateContent() {
@@ -97,240 +205,287 @@ class _ResourceColumnState extends State<ResourceColumn> {
       'resource_prefs_$userResourceLanguageCode',
       userResourceCodes,
     );
-    setState(() {});
+
+    _fetchResources(); // Fetch resources when content is updated
   }
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: Column(
-        children: [
-          ColumnHeader(
-            leadingControls: [
-              SizedBox(
-                width: 160,
-                height: 34,
-                child: _isLoading
-                    ? Center(child: ProgressBar())
-                    : ComboBox<int>(
-                        isExpanded: true,
-                        value: userResourceLanguageCode,
-                        onChanged: (v) async {
-                          // if the value is the same, do nothing
-                          if (v == userResourceLanguageCode) {
-                            return;
-                          } else {
-                            // change the language: show loading indicator
-                            setState(() {
-                              _isLoading = true;
-                            });
-                            if (v != null) {
-                              // reset the collections available
-                              collections.clear();
-                              // get the new collections available
-                              userResourceLanguageCode = v;
-                              collections = AquiferService()
-                                  .getResourcesForLanguage(
-                                    userResourceLanguageCode,
+    return FutureBuilder(
+      future: initialization,
+      builder: (context, asyncSnapshot) {
+        if (asyncSnapshot.connectionState != ConnectionState.done) {
+          return Center(child: ProgressBar());
+        } else {
+          return Expanded(
+            child: Column(
+              children: [
+                ColumnHeader(
+                  leadingControls: [
+                    SizedBox(
+                      width: 160,
+                      height: 34,
+                      // language chooser
+                      child: _loadingLanguage
+                          ? Center(child: ProgressBar())
+                          : ComboBox<int>(
+                              isExpanded: true,
+                              value: userResourceLanguageCode,
+                              onChanged: (v) async {
+                                // if the value is the same, do nothing
+                                if (v == userResourceLanguageCode) {
+                                  return;
+                                } else {
+                                  // change the language: show loading indicator
+
+                                  if (v != null) {
+                                    // get the new collections available
+                                    userResourceLanguageCode = v;
+                                    // Save preferences
+                                    widget.bibleReference.collectionID = v
+                                        .toString();
+                                    Provider.of<UserPrefs>(
+                                      context,
+                                      listen: false,
+                                    ).saveScrollGroupState(
+                                      widget.bibleReference,
+                                    );
+
+                                    setLanguage();
+                                  }
+                                }
+                              },
+                              selectedItemBuilder: (context) {
+                                return languages.map((c) {
+                                  return Align(
+                                    alignment: c.scriptDirection == 'LTR'
+                                        ? Alignment.centerLeft
+                                        : Alignment.centerRight,
+                                    child: Text(
+                                      c.localizedDisplay,
+                                      overflow: textOverflow,
+                                      textDirection: c.scriptDirection == 'LTR'
+                                          ? TextDirection.ltr
+                                          : TextDirection.rtl,
+                                    ),
                                   );
+                                }).toList();
+                              },
+                              items: languages
+                                  .map(
+                                    (c) => ComboBoxItem<int>(
+                                      value: c.id,
+                                      child: Align(
+                                        alignment: c.scriptDirection == 'LTR'
+                                            ? Alignment.centerLeft
+                                            : Alignment.centerRight,
+                                        child: Text(
+                                          c.localizedDisplay,
+                                          overflow: textOverflow,
+                                          textDirection:
+                                              c.scriptDirection == 'LTR'
+                                              ? TextDirection.ltr
+                                              : TextDirection.rtl,
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                  .toList(),
+                            ),
+                    ),
+                    ResourceChooser(
+                      resourceCodes: userResourceCodes,
+                      langId: userResourceLanguageCode,
+                      textDirection: textDirection,
+                      onChanged: (code) {
+                        if (userResourceCodes.contains(code)) {
+                          userResourceCodes.remove(code);
+                        } else {
+                          userResourceCodes.add(code);
+                        }
+                      },
+                      // update the content after user changes resources
+                      onShouldUpdateContent: updateContent,
+                    ),
+                  ],
+                  onFontIncrease: () {
+                    if (baseFontSize < 50) {
+                      setState(() {
+                        baseFontSize = baseFontSize + 1;
+                      });
+                    }
+                  },
+                  onFontDecrease: () {
+                    if (baseFontSize > 10) {
+                      setState(() {
+                        baseFontSize = baseFontSize - 1;
+                      });
+                    }
+                  },
+                  isLinked: isLinked,
+                  onLinkChanged: (_) {
+                    setState(() {
+                      isLinked = !isLinked;
+                    });
+                  },
+                  onDelete: () =>
+                      widget.deleteColumn(widget.bibleReference.key),
+                  canDelete: true,
+                  trailingControls: [
+                    _loadingLanguage
+                        ? IconButton(
+                            icon: Icon(FluentIcons.plug_connected),
+                            onPressed: null,
+                          )
+                        : _isOnline
+                        ? SizedBox.shrink()
+                        : Tooltip(
+                            message: 'Check if internet is available',
+                            child: IconButton(
+                              icon: Icon(FluentIcons.plug_disconnected),
+                              onPressed: () async {
+                                setState(() {
+                                  _loadingLanguage = true;
+                                });
 
-                              // Save preference
-                              widget.bibleReference.collectionID = v.toString();
-                              Provider.of<UserPrefs>(
-                                context,
-                                listen: false,
-                              ).saveScrollGroupState(widget.bibleReference);
+                                await _checkConnectivity();
 
-                              setLanguage();
-                            }
-                            setState(() {
-                              _isLoading = false;
-                            });
-                          }
-                        },
-                        selectedItemBuilder: (context) {
-                          return languages.map((c) {
-                            return Align(
-                              alignment: c.scriptDirection == 'LTR'
-                                  ? Alignment.centerLeft
-                                  : Alignment.centerRight,
-                              child: Text(
-                                c.localizedDisplay,
-                                overflow: textOverflow,
-                                textDirection: c.scriptDirection == 'LTR'
-                                    ? TextDirection.ltr
-                                    : TextDirection.rtl,
-                              ),
+                                await AquiferService().reInitializeResourceData(
+                                  _isOnline,
+                                );
+                                languages = AquiferService().allLanguages;
+
+                                setState(() {
+                                  _loadingLanguage = false;
+                                });
+                              },
+                            ),
+                          ),
+
+                    if (kDebugMode)
+                      Tooltip(
+                        message: 'Clear User Preferences',
+                        child: IconButton(
+                          icon: Icon(
+                            FluentIcons.triangle_shape,
+                            color: Colors.orange,
+                          ),
+                          onPressed: () {
+                            userPrefsBox.clear();
+                          },
+                        ),
+                      ),
+                    if (kDebugMode)
+                      Tooltip(
+                        message: 'Test getting list of resources',
+                        child: IconButton(
+                          icon: Icon(
+                            FluentIcons.app_icon_default,
+                            color: Colors.orange,
+                          ),
+                          onPressed: () {
+                            AquiferService().getResourcesForChapter(
+                              connected: _isOnline,
+                              langId: userResourceLanguageCode,
+                              resourceCollectionCode: 'TyndaleStudyNotes',
+                              book: 'GEN',
+                              chapter: '1',
                             );
-                          }).toList();
-                        },
-                        items: languages
-                            .map(
-                              (c) => ComboBoxItem<int>(
-                                value: c.id,
-                                child: Align(
-                                  alignment: c.scriptDirection == 'LTR'
-                                      ? Alignment.centerLeft
-                                      : Alignment.centerRight,
-                                  child: Text(
-                                    c.localizedDisplay,
-                                    overflow: textOverflow,
-                                    textDirection: c.scriptDirection == 'LTR'
-                                        ? TextDirection.ltr
-                                        : TextDirection.rtl,
-                                  ),
-                                ),
+                          },
+                        ),
+                      ),
+                  ],
+                ),
+
+                // main column
+                Expanded(
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 2.5),
+                    decoration: BoxDecoration(
+                      // color: FluentTheme.of(context).cardColor,
+                      border: Border(
+                        right: BorderSide(
+                          width: 1.0,
+                          color: Color.fromARGB(85, 126, 126, 126),
+                        ),
+                      ),
+                    ),
+                    child: Center(
+                      child: _loadingLanguage
+                          ? const ProgressRing()
+                          : _loadingResources
+                          ? Skeletonizer(
+                              enabled: true,
+                              child: ScrollablePositionedList.builder(
+                                itemCount: dummyResourceItems.length,
+                                itemBuilder: (context, index) {
+                                  return Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Column(
+                                      crossAxisAlignment: .start,
+                                      children: [
+                                        Text(
+                                          dummyResourceItems[index]
+                                              .localizedName,
+                                          style: TextStyle(
+                                            fontSize: baseFontSize + 2,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        const Divider(),
+                                        const SizedBox(height: 8),
+                                        Text(dummyResourceItems[index].content),
+                                      ],
+                                    ),
+                                  );
+                                },
+                                itemScrollController: itemScrollController,
+                                itemPositionsListener: itemPositionsListener,
                               ),
                             )
-                            .toList(),
-                      ),
-              ),
-              ResourceChooser(
-                resourceCodes: userResourceCodes,
-                langId: userResourceLanguageCode,
-                textDirection: textDirection,
-                onChanged: (code) {
-                  if (userResourceCodes.contains(code)) {
-                    userResourceCodes.remove(code);
-                  } else {
-                    userResourceCodes.add(code);
-                  }
-                },
-                // update the content after user changes resources
-                onShouldUpdateContent: updateContent,
-              ),
-            ],
-            onFontIncrease: () {
-              if (baseFontSize < 50) {
-                setState(() {
-                  baseFontSize = baseFontSize + 1;
-                });
-              }
-            },
-            onFontDecrease: () {
-              if (baseFontSize > 10) {
-                setState(() {
-                  baseFontSize = baseFontSize - 1;
-                });
-              }
-            },
-            isLinked: isLinked,
-            onLinkChanged: (_) {
-              setState(() {
-                isLinked = !isLinked;
-              });
-            },
-            onDelete: () => widget.deleteColumn(widget.bibleReference.key),
-            canDelete: true,
-            trailingControls: [
-              _isLoading
-                  ? IconButton(
-                      icon: Icon(FluentIcons.plug_connected),
-                      onPressed: null,
-                    )
-                  : IconButton(
-                      icon: _isOnline
-                          ? Icon(FluentIcons.plug_connected)
-                          : Icon(FluentIcons.plug_disconnected),
-                      onPressed: () async {
-                        setState(() {
-                          _isLoading = true;
-                        });
-                        final currentStatus = _isOnline;
-                        await _checkConnectivity();
-                        // TODO what is this
-                        // if (currentStatus != _isOnline) {
-                        await AquiferService().reInitializeResourceData(
-                          _isOnline,
-                        );
-                        languages = AquiferService().allLanguages;
-                        // }
-                        setState(() {
-                          _isLoading = false;
-                        });
-                      },
+                          : _resourceItems.isEmpty
+                          ? const Text('No resources found for this chapter.')
+                          : ScrollablePositionedList.builder(
+                              itemCount: _resourceItems.length,
+                              itemBuilder: (context, index) {
+                                return ContentTile(
+                                  item: _resourceItems[index],
+                                  baseFontSize: baseFontSize,
+                                );
+                              },
+                              itemScrollController: itemScrollController,
+                              itemPositionsListener: itemPositionsListener,
+                            ),
+                      // : Column(
+                      //     mainAxisAlignment: MainAxisAlignment.center,
+                      //     children: [
+                      //       Icon(
+                      //         FluentIcons.error,
+                      //         size: 32,
+                      //         color: Colors.red,
+                      //       ),
+                      //       const SizedBox(height: 8),
+                      //       const Text('Offline Mode'),
+                      //       const SizedBox(height: 16),
+                      //       Button(
+                      //         onPressed: () {
+                      //           setState(() {
+                      //             _loadingLanguage = true;
+                      //           });
+                      //           _checkConnectivity();
+                      //         },
+                      //         child: const Text('Retry'),
+                      //       ),
+                      //     ],
+                      //   ),
                     ),
-
-              if (kDebugMode)
-                Tooltip(
-                  message: 'Clear User Preferences',
-                  child: IconButton(
-                    icon: Icon(
-                      FluentIcons.triangle_shape,
-                      color: Colors.orange,
-                    ),
-                    onPressed: () {
-                      userPrefsBox.clear();
-                    },
                   ),
                 ),
-              if (kDebugMode)
-                Tooltip(
-                  message: 'Test getting list of resources',
-                  child: IconButton(
-                    icon: Icon(
-                      FluentIcons.app_icon_default,
-                      color: Colors.orange,
-                    ),
-                    onPressed: () {
-                      AquiferService().getResourcesForChapter(
-                        connected: _isOnline,
-                        langId: userResourceLanguageCode,
-                        resourceCollectionCode: 'TyndaleStudyNotes',
-                        book: 'GEN',
-                        chapter: '1',
-                      );
-                    },
-                  ),
-                ),
-            ],
-          ),
-
-          // Content Placeholder
-          Expanded(
-            child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 2.5),
-              decoration: BoxDecoration(
-                // color: FluentTheme.of(context).cardColor,
-                border: Border(
-                  right: BorderSide(
-                    width: 1.0,
-                    color: Color.fromARGB(85, 126, 126, 126),
-                  ),
-                ),
-              ),
-              child: Center(
-                child: _isLoading
-                    ? const ProgressRing()
-                    : _isOnline
-                    ? Text(
-                        'Resource Column Placeholder\nFont Size: $baseFontSize\nLinked: $isLinked',
-                        textAlign: TextAlign.center,
-                      )
-                    : Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          
-                          Icon(FluentIcons.error, size: 32, color: Colors.red),
-                          const SizedBox(height: 8),
-                          const Text('Offline Mode'),
-                          const SizedBox(height: 16),
-                          Button(
-                            onPressed: () {
-                              setState(() {
-                                _isLoading = true;
-                              });
-                              _checkConnectivity();
-                            },
-                            child: const Text('Retry'),
-                          ),
-                        ],
-                      ),
-              ),
+              ],
             ),
-          ),
-        ],
-      ),
+          );
+        }
+      },
     );
   }
 }

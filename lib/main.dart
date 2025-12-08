@@ -360,6 +360,15 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
     if (isDesktop) {
       saveWindowSize();
     }
+    super.onWindowResize();
+  }
+
+  @override
+  void onWindowResized() {
+    if (isDesktop) {
+      saveWindowSize();
+    }
+    super.onWindowResized();
   }
 
   //This works as far as it goes - the problem is that it can't detect when we are already in full screen.

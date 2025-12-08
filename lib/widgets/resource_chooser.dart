@@ -1,5 +1,4 @@
 import 'package:fluent_ui/fluent_ui.dart';
-import 'package:skeletonizer/skeletonizer.dart';
 import 'package:wolof_bible/widgets/resource_column.dart';
 import '../logic/aquifer_api.dart';
 import '../providers/aquifer_classes.dart';
