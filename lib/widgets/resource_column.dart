@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter/foundation.dart';
 import 'package:skeletonizer/skeletonizer.dart';
@@ -48,6 +49,7 @@ class _ResourceColumnState extends State<ResourceColumn> {
   List<String> userResourceCodes = [];
   late ResourceLanguage language;
   List<ResourceLanguage> languages = [];
+  StreamSubscription<ResourceItem>? _resourceSubscription;
 
   List<ResourceItem> dummyResourceItems = List.generate(
     10,
@@ -62,6 +64,12 @@ class _ResourceColumnState extends State<ResourceColumn> {
       scriptDirection: 'LTR',
     ),
   );
+
+  @override
+  void dispose() {
+    _resourceSubscription?.cancel();
+    super.dispose();
+  }
 
   Future<void> init() async {
     await _checkConnectivity();
@@ -135,68 +143,56 @@ class _ResourceColumnState extends State<ResourceColumn> {
   Future<void> _fetchResources() async {
     if (!_isOnline) return;
 
+    await _resourceSubscription?.cancel();
+    _resourceItems.clear();
+
     setState(() {
       _loadingResources = true;
     });
 
     try {
-      // TODO: make dynamic based on scroll position/bible reference
-      // For now, hardcoded to GEN 1 as requested
-      // If we want multiple collections:
-      List<ResourceItem> aggregatedItems = [];
-      for (var code in userResourceCodes) {
-        final items = await AquiferService().getResourcesForChapter(
-          connected: _isOnline,
-          langId: userResourceLanguageCode,
-          resourceCollectionCode: code,
-          book: 'GEN',
-          chapter: '1',
-        );
-        aggregatedItems.addAll(items);
-      }
-      aggregatedItems.sort((a, b) {
-        int getPriority(String code) {
-          if (code.contains('Intro')) return 1;
-          if (code.contains('Themes')) return 3;
-          if (code.contains('Profiles')) return 4;
-          if (code.contains('Image')) return 5;
-          // Notes is checked last because other categories also contain 'Notes'
-          if (code.contains('Notes')) return 2;
-          return 99; // Others
-        }
-
-        int getVerse(String name) {
-          final match = RegExp(r'[:\.](\d+)').firstMatch(name);
-          if (match != null) {
-            return int.parse(match.group(1)!);
-          }
-          return 0;
-        }
-
-        int priorityA = getPriority(a.resourceCollectionCode);
-        int priorityB = getPriority(b.resourceCollectionCode);
-
-        if (priorityA != priorityB) {
-          return priorityA.compareTo(priorityB);
-        } else {
-          int startVerseA = getVerse(a.localizedName);
-          int startVerseB = getVerse(b.localizedName);
-          if (startVerseA != startVerseB) {
-            return startVerseA.compareTo(startVerseB);
-          }
-          return a.localizedName.compareTo(b.localizedName);
-        }
-      });
-
-      setState(() {
-        _resourceItems = aggregatedItems;
-      });
+      _resourceSubscription = AquiferService()
+          .streamResourcesForChapter(
+            connected: _isOnline,
+            langId: userResourceLanguageCode,
+            resourceCollectionCodes: userResourceCodes,
+            book: 'GEN',
+            chapter: '1',
+          )
+          .listen(
+            (item) {
+              if (mounted) {
+                setState(() {
+                  if (_loadingResources) {
+                    _loadingResources = false;
+                  }
+                  _resourceItems.add(item);
+                });
+              }
+            },
+            onError: (e) {
+              debugPrint('Error fetching resources: $e');
+              if (mounted) {
+                setState(() {
+                  _loadingResources = false;
+                });
+              }
+            },
+            onDone: () {
+              if (mounted) {
+                setState(() {
+                  _loadingResources = false;
+                });
+              }
+            },
+          );
     } catch (e) {
-      debugPrint('Error fetching resources: $e');
-    } finally {
-      setState(() {
-        _loadingResources = false;
-      });
+      debugPrint('Error starting resource stream: $e');
+      if (mounted) {
+        setState(() {
+          _loadingResources = false;
+        });
+      }
     }
   }
 
@@ -384,13 +380,17 @@ class _ResourceColumnState extends State<ResourceColumn> {
                             color: Colors.orange,
                           ),
                           onPressed: () {
-                            AquiferService().getResourcesForChapter(
-                              connected: _isOnline,
-                              langId: userResourceLanguageCode,
-                              resourceCollectionCode: 'TyndaleStudyNotes',
-                              book: 'GEN',
-                              chapter: '1',
-                            );
+                            AquiferService()
+                                .streamResourcesForChapter(
+                                  connected: _isOnline,
+                                  langId: userResourceLanguageCode,
+                                  resourceCollectionCodes: [
+                                    'TyndaleStudyNotes',
+                                  ],
+                                  book: 'GEN',
+                                  chapter: '1',
+                                )
+                                .listen((event) => print(event));
                           },
                         ),
                       ),
