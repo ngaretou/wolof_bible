@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 /// Please note that although ResourceLanguage and AvailableLanguage appear
 /// very similar here, they come from different sources so should remain as
 /// separate classes for conversion purposes and possible future changes.
@@ -112,6 +114,63 @@ class ResourceCollectionInfo {
   @override
   String toString() {
     return 'ResourceCollectionInfo(code: $code)';
+  }
+}
+
+class ResourceItem {
+  final String id;
+  final String resourceCollectionCode;
+  final String localizedName;
+  final ResourceType resourceType; // "mediaType": "Text" or "Image"
+  final String content;
+  final int langID;
+  final String scriptDirection;
+
+  ResourceItem({
+    required this.id,
+    required this.resourceCollectionCode,
+    required this.localizedName,
+    required this.resourceType,
+    required this.content,
+    required this.langID,
+    required this.scriptDirection,
+  });
+
+  factory ResourceItem.fromJson(Map<String, dynamic> json) {
+    ResourceType type = ResourceType.studyNotes;
+    if (json['grouping'] != null && json['grouping']['mediaType'] == 'Image') {
+      type = ResourceType.images;
+    }
+
+    String contentStr = '';
+    if (json['content'] != null) {
+      if (json['content'] is List) {
+        contentStr = (json['content'] as List).join('\n');
+      } else if (json['content'] is Map) {
+        contentStr = json['content']['url'] ?? '';
+      } else {
+        if (kDebugMode) {
+          debugPrint('content is not a list or map: ${json['content']}');
+        }
+      }
+    }
+
+    int languageId = 0;
+    String direction = 'LTR';
+    if (json['language'] != null) {
+      languageId = json['language']['id'] ?? 0;
+      direction = json['language']['scriptDirection'] ?? 'LTR';
+    }
+
+    return ResourceItem(
+      id: json['id'].toString(),
+      resourceCollectionCode: json['grouping']?['collectionCode'] ?? '',
+      localizedName: json['localizedName'] ?? '',
+      resourceType: type,
+      content: contentStr,
+      langID: languageId,
+      scriptDirection: direction,
+    );
   }
 }
 

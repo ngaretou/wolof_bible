@@ -1,4 +1,3 @@
-import 'dart:ui' as ui;
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter/foundation.dart';
 // import 'package:skeletonizer/skeletonizer.dart';
@@ -239,6 +238,7 @@ class _ResourceColumnState extends State<ResourceColumn> {
                         });
                         final currentStatus = _isOnline;
                         await _checkConnectivity();
+                        // TODO what is this
                         // if (currentStatus != _isOnline) {
                         await AquiferService().reInitializeResourceData(
                           _isOnline,
@@ -261,6 +261,25 @@ class _ResourceColumnState extends State<ResourceColumn> {
                     ),
                     onPressed: () {
                       userPrefsBox.clear();
+                    },
+                  ),
+                ),
+              if (kDebugMode)
+                Tooltip(
+                  message: 'Test getting list of resources',
+                  child: IconButton(
+                    icon: Icon(
+                      FluentIcons.app_icon_default,
+                      color: Colors.orange,
+                    ),
+                    onPressed: () {
+                      AquiferService().getResourcesForChapter(
+                        connected: _isOnline,
+                        langId: userResourceLanguageCode,
+                        resourceCollectionCode: 'TyndaleStudyNotes',
+                        book: 'GEN',
+                        chapter: '1',
+                      );
                     },
                   ),
                 ),
@@ -291,6 +310,7 @@ class _ResourceColumnState extends State<ResourceColumn> {
                     : Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
+                          
                           Icon(FluentIcons.error, size: 32, color: Colors.red),
                           const SizedBox(height: 8),
                           const Text('Offline Mode'),

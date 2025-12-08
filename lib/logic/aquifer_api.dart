@@ -112,61 +112,25 @@ class AquiferService {
     }
   }
 
-  Future<ResourceCollectionInfo?> getResourceCollectionInfoFromAquifer(
-    String resourceCode,
-  ) async {
-    final uri = Uri.parse('$baseUrl/resources/collections/$resourceCode');
-    try {
-      final response = await http.get(
-        uri,
-        headers: {
-          'Content-Type': 'application/json',
-          'X-App-ID': _appId, // CRITICAL: Must match the secret on Cloudflare
-        },
-      );
-
-      if (response.statusCode == 200) {
-        // get it usable
-        final jsonData = json.decode(response.body);
-        // save it for later
-        userPrefsBox.put(resourceCode, jsonData);
-        // send it on as a class
-        return ResourceCollectionInfo.fromJson(jsonData);
-      } else {
-        debugPrint('Error: ${response.statusCode} - ${response.body}');
-        return null;
+  // multiple collection metadata retrieval
+  Future<List<ResourceCollectionInfo>> loadCollections(bool connected) async {
+    // single collection metadata retrieval
+    ResourceCollectionInfo? loadCollectionInfoFromHive(String resourceCode) {
+      final resourceCollectionInfo = userPrefsBox.get(resourceCode);
+      if (resourceCollectionInfo != null) {
+        return ResourceCollectionInfo.fromJson(resourceCollectionInfo);
       }
-    } catch (e) {
-      debugPrint('Exception: $e');
       return null;
     }
-  }
 
-  // single collection metadata retrieval
-  ResourceCollectionInfo? getResourceCollectionInfoFromHive(
-    String resourceCode,
-  ) {
-    final resourceCollectionInfo = userPrefsBox.get(resourceCode);
-    if (resourceCollectionInfo != null) {
-      return ResourceCollectionInfo.fromJson(resourceCollectionInfo);
-    }
-    return null;
-  }
-
-  // multiple collection metadata retrieval
-  Future<List<ResourceCollectionInfo>> getAvailableCollections(
-    bool connected,
-  ) async {
     // only initialize when needed
     if (_allCollections.isNotEmpty) return _allCollections;
     //helper for offline retreival and Listifying of online resources
-    List<ResourceCollectionInfo> getCollectionsFromHive() {
+    List<ResourceCollectionInfo> loadCollectionsFromHive() {
       List<ResourceCollectionInfo> collections = [];
       try {
         for (var resourceCode in targetedResources) {
-          final collectionInfo = getResourceCollectionInfoFromHive(
-            resourceCode,
-          );
+          final collectionInfo = loadCollectionInfoFromHive(resourceCode);
           if (collectionInfo != null) {
             collections.add(collectionInfo);
           }
@@ -178,10 +142,42 @@ class AquiferService {
     }
 
     //helper for online retreival and Listifying
-    Future<List<ResourceCollectionInfo>> getCollectionsFromAquifer() async {
+    Future<List<ResourceCollectionInfo>> refreshCollectionsFromAquifer() async {
       List<ResourceCollectionInfo> collections = [];
+
+      Future<ResourceCollectionInfo?> refreshCollectionInfoFromAquifer(
+        String resourceCode,
+      ) async {
+        final uri = Uri.parse('$baseUrl/resources/collections/$resourceCode');
+        try {
+          final response = await http.get(
+            uri,
+            headers: {
+              'Content-Type': 'application/json',
+              'X-App-ID':
+                  _appId, // CRITICAL: Must match the secret on Cloudflare
+            },
+          );
+
+          if (response.statusCode == 200) {
+            // get it usable
+            final jsonData = json.decode(response.body);
+            // save it for later
+            userPrefsBox.put(resourceCode, jsonData);
+            // send it on as a class
+            return ResourceCollectionInfo.fromJson(jsonData);
+          } else {
+            debugPrint('Error: ${response.statusCode} - ${response.body}');
+            return null;
+          }
+        } catch (e) {
+          debugPrint('Exception: $e');
+          return null;
+        }
+      }
+
       for (var resourceCode in targetedResources) {
-        final collectionInfo = await getResourceCollectionInfoFromAquifer(
+        final collectionInfo = await refreshCollectionInfoFromAquifer(
           resourceCode,
         );
         if (collectionInfo != null) {
@@ -208,18 +204,18 @@ class AquiferService {
             DateTime.now().subtract(const Duration(days: 30)), // production
           )) {
         try {
-          return await getCollectionsFromAquifer();
+          return await refreshCollectionsFromAquifer();
         } catch (e) {
           // fallback to local collections if we can't get online
           return offlineResources.toList();
         }
       } else {
         try {
-          final result = getCollectionsFromHive();
+          final result = loadCollectionsFromHive();
           if (result.isNotEmpty) {
             return result;
           } else {
-            return await getCollectionsFromAquifer();
+            return await refreshCollectionsFromAquifer();
           }
         } catch (e) {
           // fallback to local collections if we can't get hive or local
@@ -232,7 +228,7 @@ class AquiferService {
   /// this globally filters the
   Future<void> initializeResourceData(bool connected) async {
     // get the two main lists of info
-    _allCollections = await getAvailableCollections(connected);
+    _allCollections = await loadCollections(connected);
     _allLanguages = await loadLanguages(connected);
 
     // only show languages in the interface that actually have the two main study note collections
@@ -271,6 +267,97 @@ class AquiferService {
           ),
         )
         .toList();
+  }
+
+  /// Get the articles for a specific chapter
+  Future<List<ResourceItem>> getResourcesForChapter({
+    required bool connected,
+    required int langId,
+    required String resourceCollectionCode,
+    required String book,
+    // this as it is only is set up to get one chapter at a time
+    required String chapter,
+    String? startVerse,
+    String? endVerse,
+  }) async {
+    List<dynamic> allItems = [];
+    int offset = 0;
+    final limit = 100;
+    bool hasMore = true;
+
+    if (!connected) {
+      return [];
+    }
+
+    while (hasMore) {
+      Uri uri;
+      if (startVerse == null || endVerse == null) {
+        uri = Uri.parse(
+          '$baseUrl/resources/search?resourceCollectionCode=$resourceCollectionCode&bookCode=$book&startChapter=$chapter&endChapter=$chapter&languageId=${langId.toString()}&limit=$limit&offset=$offset',
+        );
+      } else {
+        uri = Uri.parse(
+          '$baseUrl/resources/search?resourceCollectionCode=$resourceCollectionCode&bookCode=$book&startChapter=$chapter&endChapter=$chapter&startVerse=$startVerse&endVerse=$endVerse&languageId=${langId.toString()}&limit=$limit&offset=$offset',
+        );
+      }
+
+      try {
+        final response = await http.get(
+          uri,
+          headers: {'Content-Type': 'application/json', 'X-App-ID': _appId},
+        );
+
+        if (response.statusCode == 200) {
+          final jsonData = json.decode(response.body);
+
+          if (jsonData['items'] != null) {
+            allItems.addAll(jsonData['items']);
+          }
+
+          int totalItemCount = jsonData['totalItemCount'] ?? 0;
+          offset += limit;
+
+          if (offset >= totalItemCount ||
+              (jsonData['returnedItemCount'] as int? ?? 0) == 0) {
+            hasMore = false;
+          }
+        } else {
+          debugPrint('Error: ${response.statusCode} - ${response.body}');
+          hasMore = false;
+        }
+      } catch (e) {
+        debugPrint('Exception: $e');
+        hasMore = false;
+      }
+    }
+
+    // prettyPrintJson(json.encode(allItems.length)); // Optional debug
+
+    // Now fetch details for each item
+    List<ResourceItem> detailedItems = [];
+    for (var item in allItems) {
+      try {
+        final id = item['id'];
+        final detailUri = Uri.parse(
+          '$baseUrl/resources/$id?contentTextType=html',
+        );
+        final response = await http.get(
+          detailUri,
+          headers: {'Content-Type': 'application/json', 'X-App-ID': _appId},
+        );
+
+        if (response.statusCode == 200) {
+          final detailJson = json.decode(response.body);
+          detailedItems.add(ResourceItem.fromJson(detailJson));
+        } else {
+          debugPrint('Error fetching details for $id: ${response.statusCode}');
+        }
+      } catch (e) {
+        debugPrint('Exception fetching details for item: $e');
+      }
+    }
+
+    return detailedItems;
   }
 
   // if (collectionInfo.availableLanguages.any(
