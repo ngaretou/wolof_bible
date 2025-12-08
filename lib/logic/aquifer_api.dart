@@ -269,73 +269,130 @@ class AquiferService {
         .toList();
   }
 
-  /// Get the articles for a specific chapter
-  Future<List<ResourceItem>> getResourcesForChapter({
+  /// Get the articles for a specific chapter as a stream
+  Stream<ResourceItem> streamResourcesForChapter({
     required bool connected,
     required int langId,
-    required String resourceCollectionCode,
+    required List<String> resourceCollectionCodes, // Changed to List
     required String book,
-    // this as it is only is set up to get one chapter at a time
     required String chapter,
     String? startVerse,
     String? endVerse,
-  }) async {
-    List<dynamic> allItems = [];
-    int offset = 0;
-    final limit = 100;
-    bool hasMore = true;
-
-    if (!connected) {
-      return [];
+    bool reverse = false, // Add reverse parameter
+  }) async* {
+    if (!connected || resourceCollectionCodes.isEmpty) {
+      return;
     }
 
-    while (hasMore) {
-      Uri uri;
-      if (startVerse == null || endVerse == null) {
-        uri = Uri.parse(
-          '$baseUrl/resources/search?resourceCollectionCode=$resourceCollectionCode&bookCode=$book&startChapter=$chapter&endChapter=$chapter&languageId=${langId.toString()}&limit=$limit&offset=$offset',
-        );
-      } else {
-        uri = Uri.parse(
-          '$baseUrl/resources/search?resourceCollectionCode=$resourceCollectionCode&bookCode=$book&startChapter=$chapter&endChapter=$chapter&startVerse=$startVerse&endVerse=$endVerse&languageId=${langId.toString()}&limit=$limit&offset=$offset',
-        );
-      }
+    List<dynamic> allMetadataItems = [];
+    final limit = 100;
 
-      try {
-        final response = await http.get(
-          uri,
-          headers: {'Content-Type': 'application/json', 'X-App-ID': _appId},
-        );
+    // Helper to fetch metadata for a single collection
+    Future<List<dynamic>> fetchCollectionMetadata(String code) async {
+      List<dynamic> items = [];
+      int offset = 0;
+      bool hasMore = true;
 
-        if (response.statusCode == 200) {
-          final jsonData = json.decode(response.body);
+      while (hasMore) {
+        Uri uri;
+        if (startVerse == null || endVerse == null) {
+          uri = Uri.parse(
+            '$baseUrl/resources/search?resourceCollectionCode=$code&bookCode=$book&startChapter=$chapter&endChapter=$chapter&languageId=${langId.toString()}&limit=$limit&offset=$offset',
+          );
+        } else {
+          uri = Uri.parse(
+            '$baseUrl/resources/search?resourceCollectionCode=$code&bookCode=$book&startChapter=$chapter&endChapter=$chapter&startVerse=$startVerse&endVerse=$endVerse&languageId=${langId.toString()}&limit=$limit&offset=$offset',
+          );
+        }
 
-          if (jsonData['items'] != null) {
-            allItems.addAll(jsonData['items']);
-          }
+        try {
+          final response = await http.get(
+            uri,
+            headers: {'Content-Type': 'application/json', 'X-App-ID': _appId},
+          );
 
-          int totalItemCount = jsonData['totalItemCount'] ?? 0;
-          offset += limit;
+          if (response.statusCode == 200) {
+            final jsonData = json.decode(response.body);
 
-          if (offset >= totalItemCount ||
-              (jsonData['returnedItemCount'] as int? ?? 0) == 0) {
+            if (jsonData['items'] != null) {
+              items.addAll(jsonData['items']);
+            }
+
+            int totalItemCount = jsonData['totalItemCount'] ?? 0;
+            offset += limit;
+
+            if (offset >= totalItemCount ||
+                (jsonData['returnedItemCount'] as int? ?? 0) == 0) {
+              hasMore = false;
+            }
+          } else {
+            debugPrint('Error: ${response.statusCode} - ${response.body}');
             hasMore = false;
           }
-        } else {
-          debugPrint('Error: ${response.statusCode} - ${response.body}');
+        } catch (e) {
+          debugPrint('Exception: $e');
           hasMore = false;
         }
-      } catch (e) {
-        debugPrint('Exception: $e');
-        hasMore = false;
       }
+      return items;
     }
 
-    // prettyPrintJson(json.encode(allItems.length)); // Optional debug
+    // Phase 1: Fetch all metadata in parallel
+    final results = await Future.wait(
+      resourceCollectionCodes.map((code) => fetchCollectionMetadata(code)),
+    );
 
-    // Now fetch details for each item
-    List<ResourceItem> detailedItems = [];
-    for (var item in allItems) {
+    for (var list in results) {
+      allMetadataItems.addAll(list);
+    }
+
+    // Phase 2: Sort the metadata
+    allMetadataItems.sort((a, b) {
+      // Extract needed fields for sorting from JSON
+      String codeA = a['grouping']?['collectionCode'] ?? '';
+      String codeB = b['grouping']?['collectionCode'] ?? '';
+      String nameA = a['localizedName'] ?? '';
+      String nameB = b['localizedName'] ?? '';
+
+      int getPriority(String code) {
+        if (code.contains('Intro')) return 1;
+        if (code.contains('Themes')) return 3;
+        if (code.contains('Profiles')) return 4;
+        if (code.contains('Image')) return 5;
+        // Notes is checked last because other categories also contain 'Notes'
+        if (code.contains('Notes')) return 2;
+        return 99; // Others
+      }
+
+      int getVerse(String name) {
+        final match = RegExp(r'[:\.](\d+)').firstMatch(name);
+        if (match != null) {
+          return int.parse(match.group(1)!);
+        }
+        return 0;
+      }
+
+      int priorityA = getPriority(codeA);
+      int priorityB = getPriority(codeB);
+
+      if (priorityA != priorityB) {
+        return priorityA.compareTo(priorityB);
+      } else {
+        int startVerseA = getVerse(nameA);
+        int startVerseB = getVerse(nameB);
+        if (startVerseA != startVerseB) {
+          return startVerseA.compareTo(startVerseB);
+        }
+        return nameA.compareTo(nameB);
+      }
+    });
+
+    if (reverse) {
+      allMetadataItems = allMetadataItems.reversed.toList();
+    }
+
+    // Phase 3: Stream details
+    for (var item in allMetadataItems) {
       try {
         final id = item['id'];
         final detailUri = Uri.parse(
@@ -348,7 +405,7 @@ class AquiferService {
 
         if (response.statusCode == 200) {
           final detailJson = json.decode(response.body);
-          detailedItems.add(ResourceItem.fromCombinedJson(item, detailJson));
+          yield ResourceItem.fromCombinedJson(item, detailJson);
         } else {
           debugPrint(
             'Error fetching details for $id: ${response.statusCode} ${response.body}',
@@ -358,8 +415,6 @@ class AquiferService {
         debugPrint('Exception fetching details for item: $e');
       }
     }
-
-    return detailedItems;
   }
 
   // if (collectionInfo.availableLanguages.any(
