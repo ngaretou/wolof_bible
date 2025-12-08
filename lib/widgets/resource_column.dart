@@ -81,6 +81,13 @@ class _ResourceColumnState extends State<ResourceColumn> {
       textDirection = TextDirection.rtl;
       alignment = Alignment.centerRight;
     }
+    // update the content after lang is changed
+    updateContent();
+  }
+
+  void updateContent() {
+    print('updateContent');
+    setState(() {});
   }
 
   @override
@@ -158,6 +165,7 @@ class _ResourceColumnState extends State<ResourceColumn> {
               ResourceChooser(
                 resourceCodes: userResourceCodes,
                 langId: userResourceLanguageCode,
+                textDirection: textDirection,
                 onChanged: (code) {
                   if (userResourceCodes.contains(code)) {
                     userResourceCodes.remove(code);
@@ -165,6 +173,8 @@ class _ResourceColumnState extends State<ResourceColumn> {
                     userResourceCodes.add(code);
                   }
                 },
+                // update the content after user changes resources
+                onShouldUpdateContent: updateContent,
               ),
             ],
             onFontIncrease: () {
@@ -278,5 +288,21 @@ class _ResourceColumnState extends State<ResourceColumn> {
         ],
       ),
     );
+  }
+}
+
+IconData contentIcon(String code) {
+  if (code.contains('Intro')) {
+    return FluentIcons.book_answers;
+  } else if (code.contains('Themes')) {
+    return FluentIcons.favorite_star_fill;
+  } else if (code.contains('Profiles')) {
+    return FluentIcons.profile_search;
+  } else if (code.contains('Notes')) {
+    return FluentIcons.reading_mode_solid;
+  } else if (code.contains('Image')) {
+    return FluentIcons.picture_fill;
+  } else {
+    return FluentIcons.info;
   }
 }

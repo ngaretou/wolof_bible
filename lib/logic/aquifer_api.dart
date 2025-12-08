@@ -403,6 +403,8 @@ final List<ResourceCollectionInfo> offlineResources = [
   ),
 ];
 
+
+
 final List<String> targetedResources = [
   'TyndaleStudyNotes',
   'TyndaleStudyNotesBookIntros',
