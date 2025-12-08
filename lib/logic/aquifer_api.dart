@@ -261,7 +261,6 @@ class AquiferService {
     _allCollections.clear();
     _allLanguages.clear();
     await initializeResourceData(connected);
-    print('here');
   }
 
   List<ResourceCollectionInfo> getResourcesForLanguage(int langId) {
@@ -402,8 +401,6 @@ final List<ResourceCollectionInfo> offlineResources = [
     availableLanguages: offlineAvailableLanguages.toList(),
   ),
 ];
-
-
 
 final List<String> targetedResources = [
   'TyndaleStudyNotes',

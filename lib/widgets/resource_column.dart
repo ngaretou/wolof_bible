@@ -66,10 +66,17 @@ class _ResourceColumnState extends State<ResourceColumn> {
       userResourceLanguageCode,
     );
     userResourceCodes.clear();
-    userResourceCodes = collections
-        .where((c) => c.code.startsWith('Tyndale') || c.code == 'UbsImages')
-        .map((c) => c.code)
-        .toList();
+    final savedCodes = userPrefsBox.get(
+      'resource_prefs_$userResourceLanguageCode',
+    );
+    if (savedCodes != null) {
+      userResourceCodes = List<String>.from(savedCodes);
+    } else {
+      userResourceCodes = collections
+          .where((c) => c.code.startsWith('Tyndale') || c.code == 'UbsImages')
+          .map((c) => c.code)
+          .toList();
+    }
     language = AquiferService().allLanguages.firstWhere(
       (l) => l.id == userResourceLanguageCode,
       orElse: () => AquiferService().allLanguages.first,
@@ -82,11 +89,14 @@ class _ResourceColumnState extends State<ResourceColumn> {
       alignment = Alignment.centerRight;
     }
     // update the content after lang is changed
-    updateContent();
+    // updateContent();
   }
 
   void updateContent() {
-    print('updateContent');
+    userPrefsBox.put(
+      'resource_prefs_$userResourceLanguageCode',
+      userResourceCodes,
+    );
     setState(() {});
   }
 
@@ -106,24 +116,29 @@ class _ResourceColumnState extends State<ResourceColumn> {
                         isExpanded: true,
                         value: userResourceLanguageCode,
                         onChanged: (v) async {
+                          // if the value is the same, do nothing
                           if (v == userResourceLanguageCode) {
                             return;
+                          } else {
+                            // change the language: show loading indicator
+                            setState(() {
+                              _isLoading = true;
+                            });
+                            if (v != null) {
+                              // reset the collections available
+                              collections.clear();
+                              // get the new collections available
+                              userResourceLanguageCode = v;
+                              collections = AquiferService()
+                                  .getResourcesForLanguage(
+                                    userResourceLanguageCode,
+                                  );
+                              setLanguage();
+                            }
+                            setState(() {
+                              _isLoading = false;
+                            });
                           }
-                          setState(() {
-                            _isLoading = true;
-                          });
-                          if (v != null) {
-                            userResourceLanguageCode = v;
-                            collections.clear();
-                            collections = AquiferService()
-                                .getResourcesForLanguage(
-                                  userResourceLanguageCode,
-                                );
-                            setLanguage();
-                          }
-                          setState(() {
-                            _isLoading = false;
-                          });
                         },
                         selectedItemBuilder: (context) {
                           return languages.map((c) {
