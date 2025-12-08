@@ -12,6 +12,7 @@ import '../widgets/column_header.dart';
 import '../logic/aquifer_api.dart';
 import '../providers/aquifer_classes.dart';
 
+// TODO continue to look at online/offline resources hybrid testing and getting the resources to show consistently
 class ResourceColumn extends StatefulWidget {
   final BibleReference bibleReference;
   final int incomingUserResourceLanguageCode;
@@ -42,6 +43,7 @@ class _ResourceColumnState extends State<ResourceColumn> {
   bool isLinked = true;
   bool _loadingLanguage = false;
   bool _loadingResources = false;
+  bool _shouldCheckConnectivity = true;
   int userResourceLanguageCode = 4;
   List<ResourceCollectionInfo> collections = [];
   List<ResourceCollectionInfo> selectedCollections = [];
@@ -86,6 +88,23 @@ class _ResourceColumnState extends State<ResourceColumn> {
   }
 
   Future<void> _checkConnectivity() async {
+    if (kIsWeb) {
+      if (mounted) {
+        setState(() {
+          _isOnline = true;
+        });
+      }
+      return;
+    }
+
+    if (!_shouldCheckConnectivity) {
+      if (mounted) {
+        setState(() {
+          _isOnline = false;
+        });
+      }
+      return;
+    }
     final isOnline = await AquiferService().checkConnectivity();
     if (mounted) {
       setState(() {
@@ -141,7 +160,7 @@ class _ResourceColumnState extends State<ResourceColumn> {
   }
 
   Future<void> _fetchResources() async {
-    if (!_isOnline) return;
+    // if (!_isOnline) return; // Allow offline fetching
 
     await _resourceSubscription?.cancel();
     _resourceItems.clear();
@@ -197,10 +216,12 @@ class _ResourceColumnState extends State<ResourceColumn> {
   }
 
   void updateContent() {
-    userPrefsBox.put(
-      'resource_prefs_$userResourceLanguageCode',
-      userResourceCodes,
-    );
+    if (_isOnline) {
+      userPrefsBox.put(
+        'resource_prefs_$userResourceLanguageCode',
+        userResourceCodes,
+      );
+    }
 
     _fetchResources(); // Fetch resources when content is updated
   }
@@ -328,35 +349,44 @@ class _ResourceColumnState extends State<ResourceColumn> {
                       widget.deleteColumn(widget.bibleReference.key),
                   canDelete: true,
                   trailingControls: [
-                    _loadingLanguage
-                        ? IconButton(
-                            icon: Icon(FluentIcons.plug_connected),
-                            onPressed: null,
-                          )
-                        : _isOnline
-                        ? SizedBox.shrink()
-                        : Tooltip(
-                            message: 'Check if internet is available',
-                            child: IconButton(
-                              icon: Icon(FluentIcons.plug_disconnected),
-                              onPressed: () async {
-                                setState(() {
-                                  _loadingLanguage = true;
-                                });
-
-                                await _checkConnectivity();
-
-                                await AquiferService().reInitializeResourceData(
-                                  _isOnline,
-                                );
-                                languages = AquiferService().allLanguages;
-
-                                setState(() {
-                                  _loadingLanguage = false;
-                                });
-                              },
-                            ),
+                    if (!kIsWeb)
+                      Tooltip(
+                        message: _isOnline
+                            ? 'Disconnect (Go Offline)'
+                            : 'Connect (Check Internet)',
+                        child: IconButton(
+                          icon: Icon(
+                            _isOnline
+                                ? FluentIcons.plug_connected
+                                : FluentIcons.plug_disconnected,
                           ),
+                          onPressed: () async {
+                            setState(() {
+                              _loadingLanguage = true;
+                            });
+
+                            // Toggle intended state
+                            if (_isOnline) {
+                              _shouldCheckConnectivity = false;
+                            } else {
+                              _shouldCheckConnectivity = true;
+                            }
+
+                            await _checkConnectivity();
+
+                            await AquiferService().reInitializeResourceData(
+                              _isOnline,
+                            );
+                            languages = AquiferService().allLanguages;
+
+                            setState(() {
+                              _loadingLanguage = false;
+                            });
+
+                            _fetchResources();
+                          },
+                        ),
+                      ),
 
                     if (kDebugMode)
                       Tooltip(

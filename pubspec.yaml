@@ -368,8 +368,10 @@ flutter:
     - assets/project/data/
     - assets/project/data/about/
     - assets/translations.json
-    - assets/aquifer/eng/json/
-    - assets/aquifer/fra/json/
+    - assets/aquifer/eng/TyndaleStudyNotes/
+    - assets/aquifer/eng/TyndaleStudyNotesBookIntros/
+    - assets/aquifer/fra/TyndaleStudyNotes/
+    - assets/aquifer/fra/TyndaleStudyNotesBookIntros/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware

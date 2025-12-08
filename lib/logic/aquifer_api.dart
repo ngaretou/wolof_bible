@@ -5,7 +5,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../secrets.dart';
 import '../providers/aquifer_classes.dart';
-import '../main.dart';
+import 'package:wolof_bible/main.dart';
+import 'package:flutter/services.dart' show rootBundle;
 
 const String baseUrl = 'https://aquifer-proxy.corey-garrett.workers.dev';
 
@@ -273,148 +274,151 @@ class AquiferService {
   Stream<ResourceItem> streamResourcesForChapter({
     required bool connected,
     required int langId,
-    required List<String> resourceCollectionCodes, // Changed to List
-    required String book,
-    required String chapter,
+    required List<String> resourceCollectionCodes,
+    required String? book,
+    required String? chapter,
     String? startVerse,
     String? endVerse,
-    bool reverse = false, // Add reverse parameter
+    bool reverse = false,
   }) async* {
-    if (!connected || resourceCollectionCodes.isEmpty) {
+    if (book == null || chapter == null) {
       return;
     }
 
-    List<dynamic> allMetadataItems = [];
-    final limit = 100;
+    final offlineCapableCodes = {
+      'TyndaleStudyNotes',
+      'TyndaleStudyNotesBookIntros',
+    };
+    final offlineTargets = resourceCollectionCodes
+        .where((code) => offlineCapableCodes.contains(code))
+        .toList();
+    final onlineTargets = resourceCollectionCodes
+        .where((code) => !offlineCapableCodes.contains(code))
+        .toList();
 
-    // Helper to fetch metadata for a single collection
-    Future<List<dynamic>> fetchCollectionMetadata(String code) async {
-      List<dynamic> items = [];
-      int offset = 0;
-      bool hasMore = true;
+    // 1. Parallel Fetching
+    final Future<List<_SortableItem>> offlineFuture = Future(() async {
+      List<_SortableItem> results = [];
+      for (final code in offlineTargets) {
+        final items = await _fetchOfflineResources(
+          langId: langId,
+          resourceCollectionCode: code,
+          book: book,
+          chapter: chapter,
+          startVerse: startVerse,
+        );
+        results.addAll(
+          items.map(
+            (item) => _SortableItem(
+              priority: _getPriority(item.resourceCollectionCode),
+              verse: _getVerse(item.localizedName),
+              name: item.localizedName,
+              isOffline: true,
+              data: item,
+            ),
+          ),
+        );
+      }
+      return results;
+    });
 
-      while (hasMore) {
-        Uri uri;
-        if (startVerse == null || endVerse == null) {
-          uri = Uri.parse(
-            '$baseUrl/resources/search?resourceCollectionCode=$code&bookCode=$book&startChapter=$chapter&endChapter=$chapter&languageId=${langId.toString()}&limit=$limit&offset=$offset',
-          );
-        } else {
-          uri = Uri.parse(
-            '$baseUrl/resources/search?resourceCollectionCode=$code&bookCode=$book&startChapter=$chapter&endChapter=$chapter&startVerse=$startVerse&endVerse=$endVerse&languageId=${langId.toString()}&limit=$limit&offset=$offset',
-          );
-        }
-
-        try {
-          final response = await http.get(
-            uri,
-            headers: {'Content-Type': 'application/json', 'X-App-ID': _appId},
-          );
-
-          if (response.statusCode == 200) {
-            final jsonData = json.decode(response.body);
-
-            if (jsonData['items'] != null) {
-              items.addAll(jsonData['items']);
+    final Future<List<_SortableItem>> onlineFuture = Future(() async {
+      if (!connected || onlineTargets.isEmpty) {
+        return [];
+      }
+      List<Map<String, dynamic>> allMetadata = [];
+      await Future.wait(
+        onlineTargets.map((code) async {
+          try {
+            final url =
+                '$baseUrl/resources/search?resourceType=StudyNotes&bookCode=$book&startChapter=$chapter&endChapter=$chapter&languageCode=${langId == 4 ? 'fra' : 'eng'}&limit=1000&collectionCode=$code';
+            final response = await http
+                .get(Uri.parse(url), headers: {'X-App-ID': _appId})
+                .timeout(const Duration(seconds: 10));
+            if (response.statusCode == 200) {
+              final data = json.decode(response.body) as List;
+              allMetadata.addAll(data.map((e) => e as Map<String, dynamic>));
             }
-
-            int totalItemCount = jsonData['totalItemCount'] ?? 0;
-            offset += limit;
-
-            if (offset >= totalItemCount ||
-                (jsonData['returnedItemCount'] as int? ?? 0) == 0) {
-              hasMore = false;
-            }
-          } else {
-            debugPrint('Error: ${response.statusCode} - ${response.body}');
-            hasMore = false;
+          } catch (e) {
+            debugPrint('Error fetching metadata for $code: $e');
           }
-        } catch (e) {
-          debugPrint('Exception: $e');
-          hasMore = false;
-        }
+        }),
+      );
+      return allMetadata.map((json) {
+        final code = json['grouping']?['collectionCode'] ?? '';
+        final name = json['localizedName'] ?? '';
+        return _SortableItem(
+          priority: _getPriority(code),
+          verse: _getVerse(name),
+          name: name,
+          isOffline: false,
+          data: json,
+        );
+      }).toList();
+    });
+
+    final List<List<_SortableItem>> results = await Future.wait([
+      offlineFuture,
+      onlineFuture,
+    ]);
+    final List<_SortableItem> allItems = results.expand((x) => x).toList();
+
+    // 2. Sorting
+    allItems.sort((a, b) {
+      if (a.priority != b.priority) {
+        return a.priority.compareTo(b.priority);
       }
-      return items;
-    }
-
-    // Phase 1: Fetch all metadata in parallel
-    final results = await Future.wait(
-      resourceCollectionCodes.map((code) => fetchCollectionMetadata(code)),
-    );
-
-    for (var list in results) {
-      allMetadataItems.addAll(list);
-    }
-
-    // Phase 2: Sort the metadata
-    allMetadataItems.sort((a, b) {
-      // Extract needed fields for sorting from JSON
-      String codeA = a['grouping']?['collectionCode'] ?? '';
-      String codeB = b['grouping']?['collectionCode'] ?? '';
-      String nameA = a['localizedName'] ?? '';
-      String nameB = b['localizedName'] ?? '';
-
-      int getPriority(String code) {
-        if (code.contains('Intro')) return 1;
-        if (code.contains('Themes')) return 3;
-        if (code.contains('Profiles')) return 4;
-        if (code.contains('Image')) return 5;
-        // Notes is checked last because other categories also contain 'Notes'
-        if (code.contains('Notes')) return 2;
-        return 99; // Others
+      if (a.verse != b.verse) {
+        return a.verse.compareTo(b.verse);
       }
-
-      int getVerse(String name) {
-        final match = RegExp(r'[:\.](\d+)').firstMatch(name);
-        if (match != null) {
-          return int.parse(match.group(1)!);
-        }
-        return 0;
-      }
-
-      int priorityA = getPriority(codeA);
-      int priorityB = getPriority(codeB);
-
-      if (priorityA != priorityB) {
-        return priorityA.compareTo(priorityB);
-      } else {
-        int startVerseA = getVerse(nameA);
-        int startVerseB = getVerse(nameB);
-        if (startVerseA != startVerseB) {
-          return startVerseA.compareTo(startVerseB);
-        }
-        return nameA.compareTo(nameB);
-      }
+      return a.name.compareTo(b.name);
     });
 
     if (reverse) {
-      allMetadataItems = allMetadataItems.reversed.toList();
+      final reversed = allItems.reversed.toList();
+      allItems.clear();
+      allItems.addAll(reversed);
     }
 
-    // Phase 3: Stream details
-    for (var item in allMetadataItems) {
-      try {
-        final id = item['id'];
-        final detailUri = Uri.parse(
-          '$baseUrl/resources/$id?contentTextType=html',
-        );
-        final response = await http.get(
-          detailUri,
-          headers: {'Content-Type': 'application/json', 'X-App-ID': _appId},
-        );
+    // 3. Streaming
+    for (final item in allItems) {
+      if (item.isOffline) {
+        yield item.data as ResourceItem;
+      } else {
+        try {
+          final summary = item.data as Map<String, dynamic>;
+          final contentId = summary['id'];
+          final url = '$baseUrl/resources/$contentId';
+          final response = await http
+              .get(Uri.parse(url), headers: {'X-App-ID': _appId})
+              .timeout(const Duration(seconds: 10));
 
-        if (response.statusCode == 200) {
-          final detailJson = json.decode(response.body);
-          yield ResourceItem.fromCombinedJson(item, detailJson);
-        } else {
-          debugPrint(
-            'Error fetching details for $id: ${response.statusCode} ${response.body}',
-          );
+          if (response.statusCode == 200) {
+            final detail = json.decode(response.body) as Map<String, dynamic>;
+            yield ResourceItem.fromCombinedJson(summary, detail);
+          }
+        } catch (e) {
+          debugPrint('Error fetching specific resource: $e');
         }
-      } catch (e) {
-        debugPrint('Exception fetching details for item: $e');
       }
     }
+  }
+
+  int _getPriority(String code) {
+    if (code.contains('Intro')) return 1;
+    if (code.contains('Themes')) return 3;
+    if (code.contains('Profiles')) return 4;
+    if (code.contains('Image')) return 5;
+    if (code.contains('Notes')) return 2;
+    return 99;
+  }
+
+  int _getVerse(String name) {
+    final match = RegExp(r'[:\.](\d+)').firstMatch(name);
+    if (match != null) {
+      return int.parse(match.group(1)!);
+    }
+    return 0;
   }
 
   // if (collectionInfo.availableLanguages.any(
@@ -489,6 +493,141 @@ class AquiferService {
       return false;
     }
   }
+
+  // Book code to number mapping (standard English codes)
+  final Map<String, String> _bookCodeToNumber = {
+    'GEN': '01',
+    'EXO': '02',
+    'LEV': '03',
+    'NUM': '04',
+    'DEU': '05',
+    'JOS': '06',
+    'JDG': '07',
+    'RUT': '08',
+    '1SA': '09',
+    '2SA': '10',
+    '1KI': '11',
+    '2KI': '12',
+    '1CH': '13',
+    '2CH': '14',
+    'EZR': '15',
+    'NEH': '16',
+    'EST': '17',
+    'JOB': '18',
+    'PSA': '19',
+    'PRO': '20',
+    'ECC': '21',
+    'SNG': '22',
+    'ISA': '23',
+    'JER': '24',
+    'LAM': '25',
+    'EZK': '26',
+    'DAN': '27',
+    'HOS': '28',
+    'JOL': '29',
+    'AMO': '30',
+    'OBA': '31',
+    'JON': '32',
+    'MIC': '33',
+    'NAM': '34',
+    'HAB': '35',
+    'ZEP': '36',
+    'HAG': '37',
+    'ZEC': '38',
+    'MAL': '39',
+    'MAT': '40',
+    'MRK': '41',
+    'LUK': '42',
+    'JHN': '43',
+    'ACT': '44',
+    'ROM': '45',
+    '1CO': '46',
+    '2CO': '47',
+    'GAL': '48',
+    'EPH': '49',
+    'PHP': '50',
+    'COL': '51',
+    '1TH': '52',
+    '2TH': '53',
+    '1TI': '54',
+    '2TI': '55',
+    'TIT': '56',
+    'PHM': '57',
+    'HEB': '58',
+    'JAS': '59',
+    '1PE': '60',
+    '2PE': '61',
+    '1JN': '62',
+    '2JN': '63',
+    '3JN': '64',
+    'JUD': '65',
+    'REV': '66',
+  };
+
+  Future<List<ResourceItem>> _fetchOfflineResources({
+    required int langId,
+    required String resourceCollectionCode,
+    required String book,
+    required String chapter,
+    String? startVerse,
+  }) async {
+    List<ResourceItem> items = [];
+    try {
+      final langCode = langId == 4 ? 'fra' : 'eng';
+      final bookNum = _bookCodeToNumber[book];
+
+      if (bookNum == null) {
+        debugPrint('Book code $book not found in offline mapping');
+        return [];
+      }
+
+      final assetPath =
+          'assets/aquifer/$langCode/$resourceCollectionCode/$bookNum.content.json';
+      try {
+        final jsonString = await rootBundle.loadString(assetPath);
+        final List<dynamic> jsonList = json.decode(jsonString);
+
+        // Filter and map items
+        for (var item in jsonList) {
+          final indexRef = item['index_reference'] as String?;
+          if (indexRef != null && indexRef.length >= 8) {
+            // Parse chapter from index_reference: 01001001 -> 01 (book) 001 (chapter) 001 (verse)
+            // Indices: 0-1 book, 2-4 chapter, 5-7 verse
+            final itemChapter = int.tryParse(indexRef.substring(2, 5));
+
+            if (itemChapter != null && itemChapter == int.tryParse(chapter)) {
+              // Map to ResourceItem
+              final localizedName = item['title'] ?? '';
+              final mediaTypeStr = item['media_type'] ?? 'Text';
+              final resourceType = mediaTypeStr == 'Image'
+                  ? ResourceType.images
+                  : ResourceType.studyNotes;
+
+              items.add(
+                ResourceItem(
+                  id: item['content_id'].toString(),
+                  resourceCollectionCode: resourceCollectionCode,
+                  localizedName: localizedName,
+                  resourceType: resourceType,
+                  content: item['content'] ?? '',
+                  langID: langId,
+                  scriptDirection: langId == 4 ? 'LTR' : 'LTR',
+                ),
+              );
+            }
+          }
+        }
+      } catch (e) {
+        // It's possible the file doesn't exist for this specific collection/book combo
+        // e.g. BookIntros might not have every book or the file naming might differ
+        // quiet fail is okay for offline assets not found, but logging is good.
+        // debugPrint('Error loading offline asset $assetPath: $e');
+      }
+    } catch (e) {
+      debugPrint('Error fetching offline resources: $e');
+    }
+    return items;
+  }
 }
 
 void prettyPrintJson(String rawJson) {
@@ -522,17 +661,32 @@ final List<ResourceLanguage> offlineLanguages = [
   ),
 ];
 
-final List<AvailableLanguage> offlineAvailableLanguages = [
+final List<AvailableLanguage> offlineNoteLanguages = [
   AvailableLanguage(
     id: 4,
     code: 'fra',
-    displayName: 'Français',
+    displayName: 'Notes d\'étude',
     scriptDirection: 'LTR',
   ),
   AvailableLanguage(
     id: 1,
     code: 'eng',
-    displayName: 'English',
+    displayName: 'Study Notes',
+    scriptDirection: 'LTR',
+  ),
+];
+
+final List<AvailableLanguage> offlineIntroLanguages = [
+  AvailableLanguage(
+    id: 4,
+    code: 'fra',
+    displayName: 'Introductions',
+    scriptDirection: 'LTR',
+  ),
+  AvailableLanguage(
+    id: 1,
+    code: 'eng',
+    displayName: 'Introductions',
     scriptDirection: 'LTR',
   ),
 ];
@@ -542,7 +696,13 @@ final List<ResourceCollectionInfo> offlineResources = [
     code: 'TyndaleStudyNotes',
     resourceType: ResourceType.studyNotes,
     licenseInfo: offlineLicenseInfo,
-    availableLanguages: offlineAvailableLanguages.toList(),
+    availableLanguages: offlineNoteLanguages,
+  ),
+  ResourceCollectionInfo(
+    code: 'TyndaleStudyNotesBookIntros',
+    resourceType: ResourceType.studyNotes,
+    licenseInfo: offlineLicenseInfo,
+    availableLanguages: offlineIntroLanguages,
   ),
 ];
 
@@ -556,31 +716,45 @@ final List<String> targetedResources = [
   // 'UbsImages',
 ];
 
+// Future<void> searchResources(String query) async {
+//   final uri = Uri.parse('$baseUrl/resources/search').replace(
+//     queryParameters: {
+//       'query': query,
+//       // Add other parameters as needed
+//     },
+//   );
 
+//   try {
+//     final response = await http.get(
+//       uri,
+//       headers: {
+//         'Content-Type': 'application/json',
+//         'X-App-ID': _appId, // CRITICAL: Must match the secret on Cloudflare
+//       },
+//     );
 
-  // Future<void> searchResources(String query) async {
-  //   final uri = Uri.parse('$baseUrl/resources/search').replace(
-  //     queryParameters: {
-  //       'query': query,
-  //       // Add other parameters as needed
-  //     },
-  //   );
+//     if (response.statusCode == 200) {
+//       print('Data: ${response.body}');
+//     } else {
+//       print('Error: ${response.statusCode} - ${response.body}');
+//     }
+//   } catch (e) {
+//     print('Exception: $e');
+//   }
+// }
 
-  //   try {
-  //     final response = await http.get(
-  //       uri,
-  //       headers: {
-  //         'Content-Type': 'application/json',
-  //         'X-App-ID': _appId, // CRITICAL: Must match the secret on Cloudflare
-  //       },
-  //     );
+class _SortableItem {
+  final int priority;
+  final int verse;
+  final String name;
+  final bool isOffline;
+  final dynamic data;
 
-  //     if (response.statusCode == 200) {
-  //       print('Data: ${response.body}');
-  //     } else {
-  //       print('Error: ${response.statusCode} - ${response.body}');
-  //     }
-  //   } catch (e) {
-  //     print('Exception: $e');
-  //   }
-  // }
+  _SortableItem({
+    required this.priority,
+    required this.verse,
+    required this.name,
+    required this.isOffline,
+    required this.data,
+  });
+}
