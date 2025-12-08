@@ -76,6 +76,12 @@ class _ContentTileState extends State<ContentTile> {
 
         // fontFamily: 'Gentium', // Assuming a good font defaults
       ),
+      // we're not quite ready to handle hyperlinks so make them invisible
+      "a": Style(
+        color: FluentTheme.of(context).typography.body!.color,
+        textDecoration: TextDecoration.none,
+      ),
+
       "p": Style(margin: Margins.only(bottom: 8)),
       "h1": Style(
         margin: Margins.zero,
