@@ -1,8 +1,9 @@
+import 'dart:core';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
-import '../logic/data_initializer.dart';
-import 'dart:core';
+import 'package:hive/hive.dart';
 
+import '../logic/data_initializer.dart';
 import '../hive/user_columns_db.dart';
 import '../main.dart' as main;
 
@@ -128,10 +129,26 @@ class UserPrefs with ChangeNotifier {
 
           _userPrefList = UserPrefList(userColumns: userColumns);
         } catch (e) {
-          // safety valve in case seomething goes wrong - reset db and start over
-          debugPrint('Error in loading user prefs, reinitializing columns...');
-          await main.userColumnsBox.clear();
-          initializePrefs(collections);
+          // safety valve in case something goes wrong - reset db and start over
+          debugPrint(e.toString());
+          debugPrint(
+            'Error in loading user prefs (likely schema migration), reinitializing columns...',
+          );
+          try {
+            await main.userColumnsBox.clear();
+          } catch (e) {
+            // If clear fails, the box might be corrupted. Delete file.
+            // Note: deleteFromDisk closes the box. We need to reopen.
+            // For now, let's assume clear works or just rely on main to open it next time?
+            // But we need it NOW.
+            // Let's stick to clear() as it usually works even with schema mismatch as long as we don't read items.
+            // If we really need to delete:
+            await main.userColumnsBox.deleteFromDisk();
+            main.userColumnsBox = await Hive.openBox<UserColumnsDB>(
+              'userColumnsDB',
+            );
+          }
+          await initializePrefs(collections);
         }
       }
     }
@@ -258,7 +275,7 @@ class UserPrefs with ChangeNotifier {
       BibleReference newDefaultRef = BibleReference(
         key: key,
         partOfScrollGroup: true,
-        collectionID: "C01",
+        collectionID: type == ColumnType.resource ? '4' : "C01",
         bookID: 'MAT',
         chapter: '1',
         verse: '1',

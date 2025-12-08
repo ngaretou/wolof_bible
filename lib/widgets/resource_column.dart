@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 // import 'package:skeletonizer/skeletonizer.dart';
 import 'package:wolof_bible/main.dart';
 import 'package:wolof_bible/widgets/resource_chooser.dart';
+import 'package:provider/provider.dart';
 import '../providers/user_prefs.dart';
 import '../widgets/column_header.dart';
 import '../logic/aquifer_api.dart';
@@ -133,6 +134,14 @@ class _ResourceColumnState extends State<ResourceColumn> {
                                   .getResourcesForLanguage(
                                     userResourceLanguageCode,
                                   );
+
+                              // Save preference
+                              widget.bibleReference.collectionID = v.toString();
+                              Provider.of<UserPrefs>(
+                                context,
+                                listen: false,
+                              ).saveScrollGroupState(widget.bibleReference);
+
                               setLanguage();
                             }
                             setState(() {
