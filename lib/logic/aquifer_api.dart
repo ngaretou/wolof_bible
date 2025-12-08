@@ -348,9 +348,11 @@ class AquiferService {
 
         if (response.statusCode == 200) {
           final detailJson = json.decode(response.body);
-          detailedItems.add(ResourceItem.fromJson(detailJson));
+          detailedItems.add(ResourceItem.fromCombinedJson(item, detailJson));
         } else {
-          debugPrint('Error fetching details for $id: ${response.statusCode}');
+          debugPrint(
+            'Error fetching details for $id: ${response.statusCode} ${response.body}',
+          );
         }
       } catch (e) {
         debugPrint('Exception fetching details for item: $e');
@@ -492,11 +494,11 @@ final List<ResourceCollectionInfo> offlineResources = [
 final List<String> targetedResources = [
   'TyndaleStudyNotes',
   'TyndaleStudyNotesBookIntros',
-  'TyndaleStudyNotesThemes',
+  // 'TyndaleStudyNotesThemes',
   'TyndaleStudyNotesProfiles',
-  'BiblicaStudyNotes',
-  'BiblicaStudyNotesBookIntros',
-  'UbsImages',
+  // 'BiblicaStudyNotes',
+  // 'BiblicaStudyNotesBookIntros',
+  // 'UbsImages',
 ];
 
 
