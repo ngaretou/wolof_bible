@@ -132,7 +132,7 @@ class _ResourceColumnState extends State<ResourceColumn> {
     // Fallback: If no codes selected (empty saved list or no save), try defaults
     if (userResourceCodes.isEmpty) {
       userResourceCodes = collections
-          .where((c) => c.code.startsWith('Tyndale') || c.code == 'UbsImages')
+          .where((c) => c.code.startsWith('Tyndale'))
           .map((c) => c.code)
           .toList();
     }
@@ -226,13 +226,56 @@ class _ResourceColumnState extends State<ResourceColumn> {
     _fetchResources(); // Fetch resources when content is updated
   }
 
+  Widget _buildLoadingResources() {
+    return Skeletonizer(
+      enabled: true,
+      child: ScrollablePositionedList.builder(
+        itemCount: dummyResourceItems.length,
+        itemBuilder: (context, index) {
+          return Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Column(
+              crossAxisAlignment: .start,
+              children: [
+                Text(
+                  dummyResourceItems[index].localizedName,
+                  style: TextStyle(fontSize: baseFontSize + 2),
+                ),
+                const SizedBox(height: 8),
+                const Divider(),
+                const SizedBox(height: 8),
+                Text(dummyResourceItems[index].content),
+              ],
+            ),
+          );
+        },
+        itemScrollController: itemScrollController,
+        itemPositionsListener: itemPositionsListener,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return FutureBuilder(
       future: initialization,
       builder: (context, asyncSnapshot) {
         if (asyncSnapshot.connectionState != ConnectionState.done) {
-          return Center(child: ProgressBar());
+          return Expanded(
+            child: Column(
+              children: [
+                ColumnHeader(
+                  leadingControls: [SizedBox(width: 160, height: 34)],
+                  onFontIncrease: () {},
+                  onFontDecrease: () {},
+                  isLinked: false,
+                  onLinkChanged: (_) {},
+                  onDelete: () {},
+                ),
+                Expanded(child: _buildLoadingResources()),
+              ],
+            ),
+          );
         } else {
           return Expanded(
             child: Column(
@@ -442,37 +485,9 @@ class _ResourceColumnState extends State<ResourceColumn> {
                     ),
                     child: Center(
                       child: _loadingLanguage
-                          ? const ProgressRing()
+                          ? _buildLoadingResources()
                           : _loadingResources
-                          ? Skeletonizer(
-                              enabled: true,
-                              child: ScrollablePositionedList.builder(
-                                itemCount: dummyResourceItems.length,
-                                itemBuilder: (context, index) {
-                                  return Padding(
-                                    padding: const EdgeInsets.all(8.0),
-                                    child: Column(
-                                      crossAxisAlignment: .start,
-                                      children: [
-                                        Text(
-                                          dummyResourceItems[index]
-                                              .localizedName,
-                                          style: TextStyle(
-                                            fontSize: baseFontSize + 2,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 8),
-                                        const Divider(),
-                                        const SizedBox(height: 8),
-                                        Text(dummyResourceItems[index].content),
-                                      ],
-                                    ),
-                                  );
-                                },
-                                itemScrollController: itemScrollController,
-                                itemPositionsListener: itemPositionsListener,
-                              ),
-                            )
+                          ? _buildLoadingResources()
                           : _resourceItems.isEmpty
                           ? const Text('No resources found for this chapter.')
                           : ScrollablePositionedList.builder(
