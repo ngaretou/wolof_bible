@@ -87,7 +87,12 @@ to pre-process SAB data into assets
 
 
 
-## Status
+## Todo
+translations for 
+- context menu right click on contentTile
+- Disconnect button on resource column
+- Settings screen resource collections, suggested/default radio button
+  - Also move that setting
 
 ## Web release
 >>increment build number in pubspec.yaml

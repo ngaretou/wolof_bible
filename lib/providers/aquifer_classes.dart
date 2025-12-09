@@ -76,11 +76,13 @@ class ResourceCollectionInfo {
     late LicenseInfo licenseInfo;
     late List<AvailableLanguage> availableLanguages;
     late ResourceType resourceType;
+    // license
     try {
       licenseInfo = LicenseInfo.fromJson(json);
     } catch (e) {
       print('LicenseInfo.fromJson Exception: $e');
     }
+    // available languages
     try {
       availableLanguages = (json['availableLanguages'] as List)
           .where((e) => (e['resourceItemCount'] as int) >= 50)
@@ -90,6 +92,7 @@ class ResourceCollectionInfo {
       print('availableLanguagesException: $e');
       availableLanguages = [];
     }
+    // resource type
     try {
       if (json['resourceType'] != null) {
         if (json['resourceType'] == 'StudyNotes') {
@@ -102,7 +105,7 @@ class ResourceCollectionInfo {
       print('resourceTypeException: $e');
       resourceType = ResourceType.studyNotes;
     }
-
+    // putting it all together
     return ResourceCollectionInfo(
       code: json['code'],
       resourceType: resourceType,

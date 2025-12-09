@@ -349,6 +349,7 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
     super.dispose();
   }
 
+  // this works for Windows but for macos we've got the macos_window_delegate.dart file
   Future<void> saveWindowSize() async {
     Size media = await windowManager.getSize();
     userPrefsBox.put('windowHeight', media.height);

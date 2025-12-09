@@ -115,69 +115,45 @@ class AquiferService {
 
   // multiple collection metadata retrieval
   Future<List<ResourceCollectionInfo>> loadCollections(bool connected) async {
-    // single collection metadata retrieval
-    ResourceCollectionInfo? loadCollectionInfoFromHive(String resourceCode) {
-      final resourceCollectionInfo = userPrefsBox.get(resourceCode);
-      if (resourceCollectionInfo != null) {
-        return ResourceCollectionInfo.fromJson(resourceCollectionInfo);
-      }
-      return null;
-    }
-
     // only initialize when needed
     if (_allCollections.isNotEmpty) return _allCollections;
-    //helper for offline retreival and Listifying of online resources
-    List<ResourceCollectionInfo> loadCollectionsFromHive() {
-      List<ResourceCollectionInfo> collections = [];
+
+    /// Get the metadata for a single collection from Aquifer and save it to Hive
+    Future<ResourceCollectionInfo?> refreshCollectionInfoFromAquifer(
+      String resourceCode,
+    ) async {
+      final uri = Uri.parse('$baseUrl/resources/collections/$resourceCode');
       try {
-        for (var resourceCode in targetedResources) {
-          final collectionInfo = loadCollectionInfoFromHive(resourceCode);
-          if (collectionInfo != null) {
-            collections.add(collectionInfo);
-          }
+        final response = await http.get(
+          uri,
+          headers: {'Content-Type': 'application/json', 'X-App-ID': _appId},
+        );
+
+        if (response.statusCode == 200) {
+          // get it usable
+          final jsonData = json.decode(response.body);
+          // save it for later
+          userPrefsBox.put(resourceCode, response.body);
+          // send it on as a class
+          return ResourceCollectionInfo.fromJson(jsonData);
+        } else {
+          debugPrint('Error: ${response.statusCode} - ${response.body}');
+          return null;
         }
-        return collections;
       } catch (e) {
-        return [];
+        debugPrint('Exception: $e');
+        return null;
       }
     }
 
-    //helper for online retreival and Listifying
-    Future<List<ResourceCollectionInfo>> refreshCollectionsFromAquifer() async {
+    /// helper for online retreival and Listifying of a list of collections from Aquifer
+    Future<List<ResourceCollectionInfo>> refreshListCollectionInfoFromAquifer(
+      List<String> collectionCodes,
+    ) async {
       List<ResourceCollectionInfo> collections = [];
 
-      Future<ResourceCollectionInfo?> refreshCollectionInfoFromAquifer(
-        String resourceCode,
-      ) async {
-        final uri = Uri.parse('$baseUrl/resources/collections/$resourceCode');
-        try {
-          final response = await http.get(
-            uri,
-            headers: {
-              'Content-Type': 'application/json',
-              'X-App-ID':
-                  _appId, // CRITICAL: Must match the secret on Cloudflare
-            },
-          );
-
-          if (response.statusCode == 200) {
-            // get it usable
-            final jsonData = json.decode(response.body);
-            // save it for later
-            userPrefsBox.put(resourceCode, jsonData);
-            // send it on as a class
-            return ResourceCollectionInfo.fromJson(jsonData);
-          } else {
-            debugPrint('Error: ${response.statusCode} - ${response.body}');
-            return null;
-          }
-        } catch (e) {
-          debugPrint('Exception: $e');
-          return null;
-        }
-      }
-
-      for (var resourceCode in targetedResources) {
+      for (var resourceCode in collectionCodes) {
+        // saved to Hive here
         final collectionInfo = await refreshCollectionInfoFromAquifer(
           resourceCode,
         );
@@ -186,14 +162,90 @@ class AquiferService {
         }
       }
       if (collections.isNotEmpty) {
+        //
         userPrefsBox.put('collectionsLastUpdated', DateTime.now());
       }
       return collections;
     }
 
+    /// set up to get all collections by type or default to StudyNotes
+    Future<List<ResourceCollectionInfo>> refreshCollectionListFromAquifer({
+      List<String> resourceTypes = const ['StudyNotes'],
+    }) async {
+      List<ResourceCollectionInfo> collections = [];
+      for (final resourceType in resourceTypes) {
+        final uri = Uri.parse(
+          '$baseUrl/resources/collections?resourceType=$resourceType',
+        );
+        try {
+          final response = await http.get(uri, headers: {'X-App-ID': _appId});
+
+          if (response.statusCode == 200) {
+            List<String> collectionCodes = [];
+            List<dynamic> collectionInfoList = json.decode(response.body);
+            for (var collectionInfo in collectionInfoList) {
+              if (collectionInfo is Map<String, dynamic> &&
+                  collectionInfo.containsKey('code')) {
+                collectionCodes.add(collectionInfo['code']);
+              }
+            }
+            final collections = await refreshListCollectionInfoFromAquifer(
+              collectionCodes,
+            );
+            List<String> allCollectionCodes = collections
+                .map((collection) => collection.code)
+                .toList();
+            userPrefsBox.put('allCollectionCodes', allCollectionCodes);
+            return collections;
+          } else {
+            debugPrint('Error: ${response.statusCode} - ${response.body}');
+            return [];
+          }
+        } catch (e) {
+          debugPrint('Exception: $e');
+          return [];
+        }
+      }
+
+      return collections;
+    }
+
+    // single collection metadata retrieval
+    ResourceCollectionInfo? loadCollectionInfoFromHive(String resourceCode) {
+      final resourceCollectionInfo = json.decode(
+        userPrefsBox.get(resourceCode),
+      );
+
+      if (resourceCollectionInfo != null) {
+        return ResourceCollectionInfo.fromJson(resourceCollectionInfo);
+      }
+      return null;
+    }
+
+    List<ResourceCollectionInfo> loadCollectionsFromHive(
+      List<String> collectionCodes,
+    ) {
+      /// helper for offline retreival and Listifying of online resources
+      List<ResourceCollectionInfo> collections = [];
+      try {
+        for (var resourceCode in collectionCodes) {
+          final collectionInfo = loadCollectionInfoFromHive(resourceCode);
+          if (collectionInfo != null) {
+            collections.add(collectionInfo);
+          }
+        }
+        return collections;
+      } catch (e) {
+        debugPrint('Exception from loadCollectionsFromHive: $e');
+        return [];
+      }
+    }
+
     if (!connected) {
       return offlineResources.toList();
     } else {
+      bool useDefaultResourcesOnly =
+          userPrefsBox.get('useDefaultResourcesOnly') ?? true;
       // we're online
       final DateTime? lastUpdated = userPrefsBox.get('collectionsLastUpdated');
 
@@ -205,18 +257,32 @@ class AquiferService {
             DateTime.now().subtract(const Duration(days: 30)), // production
           )) {
         try {
-          return await refreshCollectionsFromAquifer();
+          List<ResourceCollectionInfo> aquiferCollections =
+              await refreshCollectionListFromAquifer();
+          if (useDefaultResourcesOnly) {
+            return aquiferCollections
+                .where(
+                  (collection) => defaultResources.any(
+                    (resource) => resource == collection.code,
+                  ),
+                )
+                .toList();
+          } else {
+            return aquiferCollections;
+          }
         } catch (e) {
           // fallback to local collections if we can't get online
           return offlineResources.toList();
         }
       } else {
         try {
-          final result = loadCollectionsFromHive();
-          if (result.isNotEmpty) {
-            return result;
+          if (useDefaultResourcesOnly) {
+            return loadCollectionsFromHive(defaultResources);
           } else {
-            return await refreshCollectionsFromAquifer();
+            List<String> allCollectionCodes = userPrefsBox.get(
+              'allCollectionCodes',
+            );
+            return loadCollectionsFromHive(allCollectionCodes);
           }
         } catch (e) {
           // fallback to local collections if we can't get hive or local
@@ -331,12 +397,13 @@ class AquiferService {
         onlineTargets.map((code) async {
           try {
             final url =
-                '$baseUrl/resources/search?resourceType=StudyNotes&bookCode=$book&startChapter=$chapter&endChapter=$chapter&languageCode=${langId == 4 ? 'fra' : 'eng'}&limit=1000&collectionCode=$code';
+                '$baseUrl/resources/search?resourceCollectionCode=$code&bookCode=$book&startChapter=$chapter&endChapter=$chapter&languageCode=${langId == 4 ? 'fra' : 'eng'}&limit=100';
             final response = await http
                 .get(Uri.parse(url), headers: {'X-App-ID': _appId})
                 .timeout(const Duration(seconds: 10));
-            if (response.statusCode == 200) {
-              final data = json.decode(response.body) as List;
+            final decoded = json.decode(response.body);
+            if (decoded is Map && decoded.containsKey('items')) {
+              final data = decoded['items'] as List;
               allMetadata.addAll(data.map((e) => e as Map<String, dynamic>));
             }
           } catch (e) {
@@ -388,7 +455,7 @@ class AquiferService {
         try {
           final summary = item.data as Map<String, dynamic>;
           final contentId = summary['id'];
-          final url = '$baseUrl/resources/$contentId';
+          final url = '$baseUrl/resources/$contentId?contentTextType=html';
           final response = await http
               .get(Uri.parse(url), headers: {'X-App-ID': _appId})
               .timeout(const Duration(seconds: 10));
@@ -421,63 +488,15 @@ class AquiferService {
     return 0;
   }
 
-  // if (collectionInfo.availableLanguages.any(
-  //           (language) => language.id == langId,
-  //         )) {
-  //           collections.add(collectionInfo);
-  //         }
-
-  /// set up to get all collections by type or default to StudyNotes
-  /// This works but is unused
-  // Future<List<ResourceCollectionInfo>> getResourceCollections({
-  //   String resourceType = 'StudyNotes',
-  // }) async {
-  //   List<ResourceCollectionInfo> collections = [];
-
-  //   final uri = Uri.parse(
-  //     '$baseUrl/resources/collections?resourceType=$resourceType',
-  //   );
-  //   try {
-  //     final response = await http.get(
-  //       uri,
-  //       headers: {
-  //         'X-App-ID': _appId, // CRITICAL: Must match the secret on Cloudflare
-  //       },
-  //     );
-
-  //     if (response.statusCode == 200) {
-  //       List<dynamic> collectionInfoList = json.decode(response.body);
-  //       for (var collectionInfo in collectionInfoList) {
-  //         if (collectionInfo is Map<String, dynamic> &&
-  //             collectionInfo.containsKey('code')) {
-  //           // get the collection info as our class, ResourceCollectionInfo
-  //           final collection = await getResourceCollectionInfoFromAquifer(
-  //             collectionInfo['code'],
-  //           );
-  //           if (collection != null) {
-  //             collections.add(collection);
-  //           }
-  //         }
-  //       }
-  //     } else {
-  //       debugPrint('Error: ${response.statusCode} - ${response.body}');
-  //     }
-  //   } catch (e) {
-  //     debugPrint('Exception: $e');
-  //   }
-  //   return collections;
-  // }
-
   Future<bool> checkConnectivity() async {
     try {
       // ignore: unused_local_variable
+      // final url =
+      //     '$baseUrl/resources/search?resourceType=StudyNotes&bookCode=GEN&startChapter=1&endChapter=1&languageCode=fra&limit=1';
+      final url = baseUrl;
+      // ignore: unused_local_variable
       final response = await http
-          .get(
-            Uri.parse(
-              '$baseUrl/resources/search?resourceType=StudyNotes&bookCode=GEN&startChapter=1&endChapter=1&languageCode=fra&limit=1',
-            ),
-            headers: {'X-App-ID': _appId},
-          )
+          .get(Uri.parse(url), headers: {'X-App-ID': _appId})
           .timeout(const Duration(seconds: 5));
 
       // if (kDebugMode) {
@@ -595,7 +614,10 @@ class AquiferService {
             // Indices: 0-1 book, 2-4 chapter, 5-7 verse
             final itemChapter = int.tryParse(indexRef.substring(2, 5));
 
-            if (itemChapter != null && itemChapter == int.tryParse(chapter)) {
+            final requestedChapter = int.tryParse(chapter);
+            if (itemChapter != null &&
+                (itemChapter == requestedChapter ||
+                    (requestedChapter == 1 && itemChapter == 0))) {
               // Map to ResourceItem
               final localizedName = item['title'] ?? '';
               final mediaTypeStr = item['media_type'] ?? 'Text';
@@ -706,7 +728,7 @@ final List<ResourceCollectionInfo> offlineResources = [
   ),
 ];
 
-final List<String> targetedResources = [
+final List<String> defaultResources = [
   'TyndaleStudyNotes',
   'TyndaleStudyNotesBookIntros',
   // 'TyndaleStudyNotesThemes',
@@ -715,33 +737,6 @@ final List<String> targetedResources = [
   // 'BiblicaStudyNotesBookIntros',
   // 'UbsImages',
 ];
-
-// Future<void> searchResources(String query) async {
-//   final uri = Uri.parse('$baseUrl/resources/search').replace(
-//     queryParameters: {
-//       'query': query,
-//       // Add other parameters as needed
-//     },
-//   );
-
-//   try {
-//     final response = await http.get(
-//       uri,
-//       headers: {
-//         'Content-Type': 'application/json',
-//         'X-App-ID': _appId, // CRITICAL: Must match the secret on Cloudflare
-//       },
-//     );
-
-//     if (response.statusCode == 200) {
-//       print('Data: ${response.body}');
-//     } else {
-//       print('Error: ${response.statusCode} - ${response.body}');
-//     }
-//   } catch (e) {
-//     print('Exception: $e');
-//   }
-// }
 
 class _SortableItem {
   final int priority;
