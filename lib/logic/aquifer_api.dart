@@ -377,7 +377,7 @@ class AquiferService {
           items.map(
             (item) => _SortableItem(
               priority: _getPriority(item.resourceCollectionCode),
-              verse: _getVerse(item.localizedName),
+              verse: AquiferService.getVerseFromTitle(item.localizedName),
               name: item.localizedName,
               isOffline: true,
               data: item,
@@ -416,7 +416,7 @@ class AquiferService {
         final name = json['localizedName'] ?? '';
         return _SortableItem(
           priority: _getPriority(code),
-          verse: _getVerse(name),
+          verse: AquiferService.getVerseFromTitle(name),
           name: name,
           isOffline: false,
           data: json,
@@ -462,7 +462,13 @@ class AquiferService {
 
           if (response.statusCode == 200) {
             final detail = json.decode(response.body) as Map<String, dynamic>;
-            yield ResourceItem.fromCombinedJson(summary, detail);
+            yield ResourceItem.fromCombinedJson(
+              summary,
+              detail,
+              bookID: book,
+              chapter: int.tryParse(chapter) ?? 0,
+              verse: item.verse,
+            );
           }
         } catch (e) {
           debugPrint('Error fetching specific resource: $e');
@@ -480,7 +486,7 @@ class AquiferService {
     return 99;
   }
 
-  int _getVerse(String name) {
+  static int getVerseFromTitle(String name) {
     final match = RegExp(r'[:\.](\d+)').firstMatch(name);
     if (match != null) {
       return int.parse(match.group(1)!);
@@ -514,7 +520,8 @@ class AquiferService {
   }
 
   // Book code to number mapping (standard English codes)
-  final Map<String, String> _bookCodeToNumber = {
+  // Book code to number mapping (standard English codes)
+  static const Map<String, String> bookCodeToNumber = {
     'GEN': '01',
     'EXO': '02',
     'LEV': '03',
@@ -593,7 +600,7 @@ class AquiferService {
     List<ResourceItem> items = [];
     try {
       final langCode = langId == 4 ? 'fra' : 'eng';
-      final bookNum = _bookCodeToNumber[book];
+      final bookNum = bookCodeToNumber[book];
 
       if (bookNum == null) {
         debugPrint('Book code $book not found in offline mapping');
@@ -634,6 +641,9 @@ class AquiferService {
                   content: item['content'] ?? '',
                   langID: langId,
                   scriptDirection: langId == 4 ? 'LTR' : 'LTR',
+                  bookID: book,
+                  chapter: itemChapter,
+                  verse: int.tryParse(indexRef.substring(5, 8)) ?? 0,
                 ),
               );
             }
