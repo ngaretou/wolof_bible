@@ -128,6 +128,9 @@ class ResourceItem {
   final String content;
   final int langID;
   final String scriptDirection;
+  final String bookID;
+  final int chapter;
+  final int verse;
 
   ResourceItem({
     required this.id,
@@ -137,12 +140,18 @@ class ResourceItem {
     required this.content,
     required this.langID,
     required this.scriptDirection,
+    this.bookID = '',
+    this.chapter = 0,
+    this.verse = 0,
   });
 
   factory ResourceItem.fromCombinedJson(
     Map<String, dynamic> summary,
-    Map<String, dynamic> detail,
-  ) {
+    Map<String, dynamic> detail, {
+    String bookID = '',
+    int chapter = 0,
+    int verse = 0,
+  }) {
     // 1. Fields from Summary
     ResourceType type = ResourceType.studyNotes;
     if (summary['grouping'] != null &&
@@ -183,6 +192,9 @@ class ResourceItem {
       content: contentStr,
       langID: languageId,
       scriptDirection: direction,
+      bookID: bookID,
+      chapter: chapter,
+      verse: verse,
     );
   }
 }

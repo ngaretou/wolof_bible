@@ -11,8 +11,9 @@ import '../providers/user_prefs.dart';
 import '../widgets/column_header.dart';
 import '../logic/aquifer_api.dart';
 import '../providers/aquifer_classes.dart';
+import '../providers/column_manager.dart';
+import '../logic/chapter_fetch_service.dart';
 
-// TODO continue to look at online/offline resources hybrid testing and getting the resources to show consistently
 class ResourceColumn extends StatefulWidget {
   final BibleReference bibleReference;
   final int incomingUserResourceLanguageCode;
@@ -67,24 +68,347 @@ class _ResourceColumnState extends State<ResourceColumn> {
     ),
   );
 
+  String currentBookID = 'GEN';
+  String currentChapter = '1';
+  bool _isScrollGroupListenerInitialized = false;
+  ScrollGroup? _scrollGroup;
+  bool _isProgrammaticScroll = false;
+
+  Map<String, dynamic> toc = {}; // Store the Table of Contents
+  bool _isFetchingNext = false;
+  bool _isFetchingPrevious = false;
+
+  // Track the range of loaded content for infinite scroll
+  ChapterInfo? _firstLoaded;
+  ChapterInfo? _lastLoaded;
+
   @override
   void dispose() {
     _resourceSubscription?.cancel();
+    if (_isScrollGroupListenerInitialized) {
+      _scrollGroup?.removeListener(_onScrollGroupChanged);
+    }
     super.dispose();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_isScrollGroupListenerInitialized) {
+      _scrollGroup = Provider.of<ScrollGroup>(context, listen: false);
+      _scrollGroup!.addListener(_onScrollGroupChanged);
+      _isScrollGroupListenerInitialized = true;
+    }
+  }
+
+  void _onScrollGroupChanged() {
+    if (!isLinked) return;
+
+    final groupRef = _scrollGroup!.getScrollGroupRef;
+    if (groupRef == null) return;
+
+    // Check if we are the active column driving the change
+    final activeKey = _scrollGroup!.getActiveColumnKey;
+    if (activeKey == widget.key) return;
+
+    // 1. Check for Book/Chapter Change
+    if (groupRef.bookID != currentBookID ||
+        groupRef.chapter != currentChapter) {
+      setState(() {
+        currentBookID = groupRef.bookID;
+        currentChapter = groupRef.chapter;
+        // Reset loaded tracking on manual/sync navigation
+        _firstLoaded = ChapterInfo(currentBookID, int.parse(currentChapter));
+        _lastLoaded = ChapterInfo(currentBookID, int.parse(currentChapter));
+      });
+      _fetchResources().then((_) {
+        // After fetching, scroll to the specific verse
+        _scrollToVerse(groupRef.bookID, groupRef.chapter, groupRef.verse);
+      });
+    } else {
+      // 2. Same Chapter, just scroll to verse
+      _scrollToVerse(groupRef.bookID, groupRef.chapter, groupRef.verse);
+    }
+  }
+
+  void _scrollToVerse(String bookID, String chapter, String verse) {
+    if (_resourceItems.isEmpty) return;
+
+    final int targetBookNum = _bookCodeToNumber(bookID);
+    final int targetChapter = int.tryParse(chapter) ?? 0;
+    final int targetVerse = int.tryParse(verse) ?? 0;
+
+    // Find index of first resource with verse >= targetVerse
+    // AND matching book/chapter if we strictly enforce it
+    // (though list should mostly differ by verse)
+    int index = _resourceItems.indexWhere((item) {
+      // Logic:
+      // 1. Check book matching (approx via code)
+      // 2. Check chapter
+      // 3. Check verse >= target
+
+      final itemBookNum = _bookCodeToNumber(item.bookID);
+
+      return itemBookNum == targetBookNum &&
+          item.chapter == targetChapter &&
+          item.verse == targetVerse;
+
+      // below original Antigravity version
+
+      // if (itemBookNum < targetBookNum) return false;
+      // if (itemBookNum > targetBookNum) return true; // Passed it?
+
+      // if (item.chapter < targetChapter) return false;
+      // if (item.chapter > targetChapter) return true; // Passed it?
+
+      // return item.verse == targetVerse;
+      // return item.verse <= targetVerse;
+    });
+
+    // so that we'll only scroll when we get to or past the target
+    // otherwise if notes on vv 14 and then 16, it will scroll to 16 when you get to 15
+    // 2 Corinthians 13.7 (8-9) 10
+    // it's ok not to scroll.
+    if (index != -1) {
+      _isProgrammaticScroll = true;
+      // itemScrollController.jumpTo(index: index);
+      itemScrollController.scrollTo(
+        duration: Duration(milliseconds: 200),
+        index: index,
+      );
+      Future.delayed(const Duration(milliseconds: 300), () {
+        _isProgrammaticScroll = false;
+      });
+    }
+  }
+
+  int _bookCodeToNumber(String code) {
+    final numStr = AquiferService.bookCodeToNumber[code];
+    return int.tryParse(numStr ?? '') ?? 0;
   }
 
   Future<void> init() async {
     await _checkConnectivity();
+    await _loadTOC();
     setLanguage();
+  }
+
+  Future<void> _loadTOC() async {
+    // Use C01 as default structure for navigation
+    toc = await ChapterFetchService().getCollectionToc('C01');
   }
 
   @override
   void initState() {
+    currentBookID = widget.bibleReference.bookID;
+    currentChapter = widget.bibleReference.chapter;
+
+    // Initialize loaded range
+    final chInt = int.tryParse(currentChapter) ?? 1;
+    _firstLoaded = ChapterInfo(currentBookID, chInt);
+    _lastLoaded = ChapterInfo(currentBookID, chInt);
+
     userResourceLanguageCode = widget.incomingUserResourceLanguageCode;
     languages = AquiferService().allLanguages;
     isLinked = widget.bibleReference.partOfScrollGroup;
     initialization = init();
+
+    itemPositionsListener.itemPositions.addListener(_handleScroll);
+
     super.initState();
+  }
+
+  void _handleScroll() {
+    if (_isProgrammaticScroll) return;
+
+    final positions = itemPositionsListener.itemPositions.value;
+    if (positions.isEmpty || !mounted) return;
+
+    // Find top item
+    final topItem = positions.reduce(
+      (min, pos) => pos.itemLeadingEdge < min.itemLeadingEdge ? pos : min,
+    );
+
+    final index = topItem.index;
+
+    // Infinite Scroll Logic
+    final lastVisibleIndex = positions
+        .map((p) => p.index)
+        .reduce((max, p) => p > max ? p : max);
+    final firstVisibleIndex = positions
+        .map((p) => p.index)
+        .reduce((min, p) => p < min ? p : min);
+
+    // Fetch Next
+    if (!_isFetchingNext && _resourceItems.length - lastVisibleIndex < 5) {
+      _fetchNextChapter();
+    }
+
+    // Fetch Previous
+    // Only if we aren't at the very beginning of the book (checked inside _fetchPreviousChapter)
+    if (!_isFetchingPrevious && firstVisibleIndex < 5) {
+      _fetchPreviousChapter();
+    }
+
+    if (index >= 0 && index < _resourceItems.length) {
+      final item = _resourceItems[index];
+
+      if (isLinked) {
+        final currentRef = _scrollGroup!.getScrollGroupRef;
+        // Only update if significantly different (e.g. verse changed)
+        if (currentRef != null &&
+            (currentRef.verse != item.verse.toString() ||
+                currentRef.bookID != item.bookID ||
+                currentRef.chapter != item.chapter.toString())) {
+          // User requested to disable resource column leading to debug overactive scrolling.
+          // _scrollGroup!.setActiveColumnKey = widget.key;
+
+          // final ref = BibleReference(
+          //  key: widget.bibleReference.key,
+          //  partOfScrollGroup: true,
+          //  collectionID: widget.bibleReference.collectionID,
+          //  bookID: item.bookID,
+          //  chapter: item.chapter.toString(),
+          //  verse: item.verse.toString(),
+          //  columnIndex: widget.bibleReference.columnIndex,
+          // );
+          // _scrollGroup!.setScrollGroupRef = ref;
+        }
+      }
+    }
+  }
+
+  Future<void> _fetchNextChapter() async {
+    if (_isFetchingNext || toc.isEmpty || _lastLoaded == null) return;
+
+    // Calculate next chapter
+    final nextInfo = ChapterFetchService().getNextChapterInfo(
+      toc,
+      toc.keys.toList(),
+      _lastLoaded!,
+    );
+
+    if (nextInfo == null) return;
+
+    setState(() {
+      _isFetchingNext = true;
+    });
+
+    try {
+      // Create a temporary subscription to get the list
+      List<ResourceItem> newItems = [];
+      await AquiferService()
+          .streamResourcesForChapter(
+            connected: _isOnline,
+            langId: userResourceLanguageCode,
+            resourceCollectionCodes: userResourceCodes,
+            book: nextInfo.bookId,
+            chapter: nextInfo.chapter.toString(),
+          )
+          .forEach((item) {
+            newItems.add(item);
+          });
+
+      if (mounted) {
+        setState(() {
+          _lastLoaded = nextInfo; // Update tracker
+          if (newItems.isNotEmpty) {
+            _resourceItems.addAll(newItems);
+          }
+        });
+      }
+    } catch (e) {
+      debugPrint('Error fetching next chapter resources: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isFetchingNext = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _fetchPreviousChapter() async {
+    if (_isFetchingPrevious || toc.isEmpty || _firstLoaded == null) return;
+
+    final prevInfo = ChapterFetchService().getPreviousChapterInfo(
+      toc,
+      toc.keys.toList(),
+      _firstLoaded!,
+    );
+
+    if (prevInfo == null) return;
+
+    setState(() {
+      _isFetchingPrevious = true;
+    });
+
+    try {
+      List<ResourceItem> newItems = [];
+      await AquiferService()
+          .streamResourcesForChapter(
+            connected: _isOnline,
+            langId: userResourceLanguageCode,
+            resourceCollectionCodes: userResourceCodes,
+            book: prevInfo.bookId,
+            chapter: prevInfo.chapter.toString(),
+          )
+          .forEach((item) {
+            newItems.add(item);
+          });
+
+      if (mounted) {
+        // Logic: Insert items, then jump to (index + addedCount)
+        // We do this even if newItems is empty? No, only if newItems.
+
+        // Update tracker regardless?
+        // Yes, to prevent re-fetching.
+        setState(() {
+          _firstLoaded = prevInfo;
+        });
+
+        if (newItems.isNotEmpty) {
+          final addedCount = newItems.length;
+
+          // Get current top item to restore position
+          final positions = itemPositionsListener.itemPositions.value;
+          if (positions.isNotEmpty) {
+            final topItem = positions.reduce(
+              (min, pos) =>
+                  pos.itemLeadingEdge < min.itemLeadingEdge ? pos : min,
+            );
+            final oldIndex = topItem.index;
+            final oldOffset = topItem.itemLeadingEdge;
+
+            setState(() {
+              _resourceItems.insertAll(0, newItems);
+            });
+
+            // Restore position
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                itemScrollController.jumpTo(
+                  index: oldIndex + addedCount,
+                  alignment: oldOffset,
+                );
+              }
+            });
+          } else {
+            setState(() {
+              _resourceItems.insertAll(0, newItems);
+            });
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetching previous chapter resources: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isFetchingPrevious = false;
+        });
+      }
+    }
   }
 
   Future<void> _checkConnectivity() async {
@@ -175,8 +499,8 @@ class _ResourceColumnState extends State<ResourceColumn> {
             connected: _isOnline,
             langId: userResourceLanguageCode,
             resourceCollectionCodes: userResourceCodes,
-            book: 'GEN',
-            chapter: '1',
+            book: currentBookID,
+            chapter: currentChapter,
           )
           .listen(
             (item) {
@@ -265,7 +589,13 @@ class _ResourceColumnState extends State<ResourceColumn> {
             child: Column(
               children: [
                 ColumnHeader(
-                  leadingControls: [SizedBox(width: 160, height: 34)],
+                  leadingControls: [
+                    SizedBox(
+                      width: 160,
+                      height: 34,
+                      child: Center(child: ProgressBar()),
+                    ),
+                  ],
                   onFontIncrease: () {},
                   onFontDecrease: () {},
                   isLinked: false,
@@ -444,29 +774,29 @@ class _ResourceColumnState extends State<ResourceColumn> {
                           },
                         ),
                       ),
-                    if (kDebugMode)
-                      Tooltip(
-                        message: 'Test getting list of resources',
-                        child: IconButton(
-                          icon: Icon(
-                            FluentIcons.app_icon_default,
-                            color: Colors.orange,
-                          ),
-                          onPressed: () {
-                            AquiferService()
-                                .streamResourcesForChapter(
-                                  connected: _isOnline,
-                                  langId: userResourceLanguageCode,
-                                  resourceCollectionCodes: [
-                                    'TyndaleStudyNotes',
-                                  ],
-                                  book: 'GEN',
-                                  chapter: '1',
-                                )
-                                .listen((event) => print(event));
-                          },
-                        ),
-                      ),
+                    // if (kDebugMode)
+                    //   Tooltip(
+                    //     message: 'Test getting list of resources',
+                    //     child: IconButton(
+                    //       icon: Icon(
+                    //         FluentIcons.app_icon_default,
+                    //         color: Colors.orange,
+                    //       ),
+                    //       onPressed: () {
+                    //         AquiferService()
+                    //             .streamResourcesForChapter(
+                    //               connected: _isOnline,
+                    //               langId: userResourceLanguageCode,
+                    //               resourceCollectionCodes: [
+                    //                 'TyndaleStudyNotes',
+                    //               ],
+                    //               book: 'GEN',
+                    //               chapter: '1',
+                    //             )
+                    //             .listen((event) => print(event));
+                    //       },
+                    //     ),
+                    //   ),
                   ],
                 ),
 
