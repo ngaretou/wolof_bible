@@ -22,6 +22,7 @@ import 'package:macos_window_utils/macos_window_utils.dart' as macos;
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:wolof_bible/logic/aquifer_api.dart';
+import 'package:wolof_bible/widgets/whats_new.dart';
 import 'firebase_options.dart';
 
 import 'screens/about.dart';
@@ -392,21 +393,8 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
   @override
   Widget build(BuildContext context) {
     // print('MyHomePageState build');
+    // Teaching:
     bool? hasSeenOnboarding = userPrefsBox.get('hasSeenOnboarding');
-
-    if (hasSeenOnboarding == null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        showDialog(
-          barrierDismissible: true,
-          context: context,
-          builder: (BuildContext context) {
-            return const Center(child: OnboardingPanel());
-          },
-        );
-        //save that the user has seen the onboarding
-        userPrefsBox.put('hasSeenOnboarding', true);
-      });
-    }
 
     return FutureBuilder(
       future: initInterface,
@@ -812,7 +800,15 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
                           listen: true,
                         ).currentTranslation.openResourceColumn,
                       ),
-                      icon: const Icon(FluentIcons.book_answers),
+
+                      icon: WhatsNew(
+                        icon: const Icon(FluentIcons.info),
+                        title: 'New: Study Notes',
+                        subtitle:
+                            'Click here for a new Resources column that brings you study notes from trusted sources.',
+                        flag: 'hasSeenResourceIntro',
+                        child: const Icon(FluentIcons.info),
+                      ),
                       functionToRun: () {
                         if (index != 0) {
                           setState(() {

@@ -116,11 +116,16 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
   Future<void> loadTOC() async {
     try {
       final path = 'assets/json/${currentCollection.value}_toc.json';
+      debugPrint('Loading TOC from $path');
       final jsonString = await rootBundle.loadString(path);
       toc = json.decode(jsonString);
     } catch (e) {
-      debugPrint('TOC not found or failed to parse');
-      debugPrint(e.toString()); // TOC not found or failed to parse
+      debugPrint('TOC not found or failed to parse: ${e.toString()}');
+
+      final path = 'assets/json/C01_toc.json';
+      debugPrint('Loading fallback TOC from $path');
+      final jsonString = await rootBundle.loadString(path);
+      toc = json.decode(jsonString);
     }
   }
 
@@ -998,7 +1003,9 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
     );
 
     if (!collectionExists) {
-      return const Expanded(child: Center(child: ProgressRing()));
+      // this is bad - close the column
+      widget.deleteColumn(widget.key);
+      // return const Expanded(child: Center(child: ProgressRing()));
     }
 
     //Couple of things to get to pass in to the Paragraph Builder
