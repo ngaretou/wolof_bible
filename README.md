@@ -84,6 +84,10 @@ to pre-process SAB data into assets
    * reporting how many results are found in search box 
    * for macOS, double clicking title bar goes 
    * consistent theming for license and bulk verse copy
+ * 2.0.6
+   * Pre-processing: Removed identification markers in introductions
+   * Included manual assets section in pubspec.yaml different from auto generated
+   * 
 
 
 
@@ -93,6 +97,7 @@ translations for
 - Disconnect button on resource column
 - Settings screen resource collections, suggested/default radio button
   - Also move that setting
+- No resources found for this chapter to No resources to display and translations
 
 ## Web release
 >>increment build number in pubspec.yaml

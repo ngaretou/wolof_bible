@@ -43,28 +43,25 @@ class _ContentTileState extends State<ContentTile> {
       isNote = false;
     } else if (code.contains('Themes')) {
       icon = FluentIcons.favorite_star_fill;
-      accentColor = FluentTheme.of(
-        context,
-      ).cardColor.lerpWith(Colors.orange, .1);
+      // accentColor = FluentTheme.of(
+      //   context,
+      // ).cardColor.lerpWith(Colors.orange, 1);
 
       isNote = false;
     } else if (code.contains('Profiles')) {
       icon = FluentIcons.profile_search;
-      accentColor = FluentTheme.of(
-        context,
-      ).cardColor.lerpWith(Colors.purple, .1);
 
       isNote = false;
     } else if (code.contains('Notes')) {
       icon = FluentIcons.reading_mode_solid;
-      accentColor = FluentTheme.of(context).cardColor.lerpWith(Colors.blue, .1);
+      // accentColor = FluentTheme.of(context).cardColor.lerpWith(Colors.blue, .1);
 
       isNote = true;
     } else if (code.contains('Image')) {
       icon = FluentIcons.picture_fill;
-      accentColor = FluentTheme.of(
-        context,
-      ).cardColor.lerpWith(Colors.green, .1);
+      // accentColor = FluentTheme.of(
+      //   context,
+      // ).cardColor.lerpWith(Colors.green, .1);
       isNote = false;
     }
     final Map<String, Style> htmlStyles = {
@@ -270,7 +267,7 @@ class _ContentTileState extends State<ContentTile> {
             // Header
             Row(
               children: [
-                Icon(icon),
+                Icon(icon, color: accentColor),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(

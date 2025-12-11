@@ -36,7 +36,7 @@ class _ResourceColumnState extends State<ResourceColumn> {
   TextDirection textDirection = TextDirection.ltr;
   AquiferService aquiferService = AquiferService();
   bool _isOnline = false;
-  List<ResourceItem> _resourceItems = [];
+  final List<ResourceItem> _resourceItems = [];
   final ItemScrollController itemScrollController = ItemScrollController();
   final ItemPositionsListener itemPositionsListener =
       ItemPositionsListener.create();
@@ -172,6 +172,7 @@ class _ResourceColumnState extends State<ResourceColumn> {
     if (index != -1) {
       _isProgrammaticScroll = true;
       // itemScrollController.jumpTo(index: index);
+      print('scrolling _scrollToVerse');
       itemScrollController.scrollTo(
         duration: Duration(milliseconds: 200),
         index: index,
@@ -387,6 +388,7 @@ class _ResourceColumnState extends State<ResourceColumn> {
             // Restore position
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (mounted) {
+                print('Restoring position');
                 itemScrollController.jumpTo(
                   index: oldIndex + addedCount,
                   alignment: oldOffset,
@@ -584,6 +586,7 @@ class _ResourceColumnState extends State<ResourceColumn> {
     return FutureBuilder(
       future: initialization,
       builder: (context, asyncSnapshot) {
+        //
         if (asyncSnapshot.connectionState != ConnectionState.done) {
           return Expanded(
             child: Column(
@@ -618,6 +621,7 @@ class _ResourceColumnState extends State<ResourceColumn> {
                       // language chooser
                       child: _loadingLanguage
                           ? Center(child: ProgressBar())
+                          // resource language chooser
                           : ComboBox<int>(
                               isExpanded: true,
                               value: userResourceLanguageCode,
@@ -683,6 +687,7 @@ class _ResourceColumnState extends State<ResourceColumn> {
                                   .toList(),
                             ),
                     ),
+                    // small gear icon setting for choosing resources for the selected lang
                     ResourceChooser(
                       resourceCodes: userResourceCodes,
                       langId: userResourceLanguageCode,
@@ -730,8 +735,8 @@ class _ResourceColumnState extends State<ResourceColumn> {
                         child: IconButton(
                           icon: Icon(
                             _isOnline
-                                ? FluentIcons.plug_connected
-                                : FluentIcons.plug_disconnected,
+                                ? WindowsIcons.wifi
+                                : WindowsIcons.wifi_error4,
                           ),
                           onPressed: () async {
                             setState(() {
@@ -819,7 +824,7 @@ class _ResourceColumnState extends State<ResourceColumn> {
                           : _loadingResources
                           ? _buildLoadingResources()
                           : _resourceItems.isEmpty
-                          ? const Text('No resources found for this chapter.')
+                          ? const Icon(FluentIcons.library, size: 64)
                           : ScrollablePositionedList.builder(
                               itemCount: _resourceItems.length,
                               itemBuilder: (context, index) {

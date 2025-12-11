@@ -135,7 +135,23 @@ void sfmToJson() async {
         });
 
         final chapters = bookText.split(r'\c ');
-        // chapters.removeAt(0);
+
+        // chapter 0 is the opening identification stuff that we don't need. Remove anything unnecessary
+        List<String> unnecessaryMarkers = ['ide', 'rem', 'sts'];
+
+        // get it into a list of lines
+        final chapterZero = chapters[0].split('\n');
+        // check each one
+        for (var line in chapterZero) {
+          final lineMatch = RegExp(r'\\(\w+)\s*(.*)').firstMatch(line);
+          if (lineMatch != null) {
+            final style = lineMatch.group(1)!;
+            if (unnecessaryMarkers.contains(style)) {
+              //delete the unnecessary ones
+              chapters[0] = chapters[0].replaceAll('$line\n', '');
+            }
+          }
+        }
 
         for (var chapterContent in chapters) {
           // beginning of line
@@ -230,7 +246,6 @@ void sfmToJson() async {
                 verseForLine != '' &&
                 chapterNumber != 0 &&
                 !isHeader(style)) {
-              
               // don't include footnote text in the index \f...\f* and \ef...\ef*
               final footnotePattern = RegExp(
                 r'\\f.*?\\f\*|\\ef.*?\\ef\*',
