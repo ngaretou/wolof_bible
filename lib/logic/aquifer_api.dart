@@ -345,7 +345,7 @@ class AquiferService {
     required String? chapter,
     String? startVerse,
     String? endVerse,
-    bool reverse = false,
+    // bool reverse = false,
   }) async* {
     if (book == null || chapter == null) {
       return;
@@ -441,11 +441,11 @@ class AquiferService {
       return a.name.compareTo(b.name);
     });
 
-    if (reverse) {
-      final reversed = allItems.reversed.toList();
-      allItems.clear();
-      allItems.addAll(reversed);
-    }
+    // if (reverse) {
+    //   final reversed = allItems.reversed.toList();
+    //   allItems.clear();
+    //   allItems.addAll(reversed);
+    // }
 
     // 3. Streaming - Parallelized & Ordered
     // Map to futures to start all requests immediately while preserving order

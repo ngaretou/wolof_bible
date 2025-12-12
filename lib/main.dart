@@ -802,7 +802,7 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
                         Provider.of<UserPrefs>(
                           context,
                           listen: false,
-                        ).addColumn(ColumnType.scripture);
+                        ).addColumn(context, ColumnType.scripture);
                       },
                     ),
                     //Open Resource Column
@@ -832,7 +832,7 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
                         Provider.of<UserPrefs>(
                           context,
                           listen: false,
-                        ).addColumn(ColumnType.resource);
+                        ).addColumn(context, ColumnType.resource);
                       },
                     ),
                   ],

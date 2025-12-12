@@ -307,7 +307,10 @@ class _ResourceColumnState extends State<ResourceColumn> {
             chapter: nextInfo.chapter.toString(),
           )
           .forEach((item) {
-            newItems.add(item);
+            // Deduplicate: Don't add if already in the list
+            if (!_resourceItems.any((existing) => existing.id == item.id)) {
+              newItems.add(item);
+            }
           });
 
       if (mounted) {
@@ -358,7 +361,10 @@ class _ResourceColumnState extends State<ResourceColumn> {
             chapter: prevInfo.chapter.toString(),
           )
           .forEach((item) {
-            newItems.add(item);
+            // Deduplicate: Don't add if already in the list
+            if (!_resourceItems.any((existing) => existing.id == item.id)) {
+              newItems.add(item);
+            }
           });
 
       if (mounted) {
@@ -538,9 +544,6 @@ class _ResourceColumnState extends State<ResourceColumn> {
             },
             onDone: () async {
               debugPrint('End of fetching initial chapter');
-
-              // This was causing the "wild scrolling" by inserting items at the top
-              // while the user is trying to view the current chapter.
               // Previous chapter will now only load via _handleScroll when viewing top.
               _loadingResources = false;
               _isFetching = false;
@@ -880,18 +883,6 @@ class _ResourceColumnState extends State<ResourceColumn> {
                                     _fetchPreviousChapter();
                                   }
                                 }
-                                return false;
-
-                                // if (notification is OverscrollNotification &&
-                                //     notification.overscroll < 0 &&
-                                //     notification.metrics.pixels <=
-                                //         notification.metrics.minScrollExtent &&
-                                //     !_isFetching) {
-                                //   print(
-                                //     'Overscroll detected - fetching previous',
-                                //   );
-                                //   _fetchPreviousChapter();
-                                // }
                                 return false;
                               },
                               child: ScrollablePositionedList.builder(
