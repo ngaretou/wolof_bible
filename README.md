@@ -92,12 +92,17 @@ to pre-process SAB data into assets
 
 
 ## Todo
-translations for 
-- context menu right click on contentTile
-- Disconnect button on resource column
-- Settings screen resource collections, suggested/default radio button
-  - Also move that setting
-- No resources found for this chapter to No resources to display and translations
+- translations for 
+  - context menu right click on contentTile
+  - Disconnect button on resource column
+  - Settings screen resource collections, suggested/default radio button
+    - Also move that setting
+  - Resource panel teaching panel
+  - No resources found for this chapter to No resources to display and translations
+- Hebrews in Eng showing with 1 chapter - other Bibles good
+- Check if the chapter is in before fetching
+- Double check the UBS images are showing right now
+
 
 ## Web release
 >>increment build number in pubspec.yaml

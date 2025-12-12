@@ -447,32 +447,44 @@ class AquiferService {
       allItems.addAll(reversed);
     }
 
-    // 3. Streaming
-    for (final item in allItems) {
+    // 3. Streaming - Parallelized & Ordered
+    // Map to futures to start all requests immediately while preserving order
+    final List<Future<ResourceItem?>> orderedFutures = allItems.map((item) {
       if (item.isOffline) {
-        yield item.data as ResourceItem;
+        return Future.value(item.data as ResourceItem);
       } else {
-        try {
-          final summary = item.data as Map<String, dynamic>;
-          final contentId = summary['id'];
-          final url = '$baseUrl/resources/$contentId?contentTextType=html';
-          final response = await http
-              .get(Uri.parse(url), headers: {'X-App-ID': _appId})
-              .timeout(const Duration(seconds: 10));
+        return Future<ResourceItem?>(() async {
+          try {
+            final summary = item.data as Map<String, dynamic>;
+            final contentId = summary['id'];
+            final url = '$baseUrl/resources/$contentId?contentTextType=html';
+            final response = await http
+                .get(Uri.parse(url), headers: {'X-App-ID': _appId})
+                .timeout(const Duration(seconds: 10));
 
-          if (response.statusCode == 200) {
-            final detail = json.decode(response.body) as Map<String, dynamic>;
-            yield ResourceItem.fromCombinedJson(
-              summary,
-              detail,
-              bookID: book,
-              chapter: int.tryParse(chapter) ?? 0,
-              verse: item.verse,
-            );
+            if (response.statusCode == 200) {
+              final detail = json.decode(response.body) as Map<String, dynamic>;
+              return ResourceItem.fromCombinedJson(
+                summary,
+                detail,
+                bookID: book,
+                chapter: int.tryParse(chapter) ?? 0,
+                verse: item.verse,
+              );
+            }
+          } catch (e) {
+            debugPrint('Error fetching specific resource: $e');
           }
-        } catch (e) {
-          debugPrint('Error fetching specific resource: $e');
-        }
+          return null;
+        });
+      }
+    }).toList();
+
+    // Yield results in the correct sorted order
+    for (final future in orderedFutures) {
+      final item = await future;
+      if (item != null) {
+        yield item;
       }
     }
   }

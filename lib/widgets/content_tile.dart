@@ -1,9 +1,14 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_html/flutter_html.dart';
+// ignore: depend_on_referenced_packages
+import 'package:html/parser.dart' as html_parser;
+// ignore: depend_on_referenced_packages
+import 'package:html/dom.dart' as dom;
 import '../providers/aquifer_classes.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:wolof_bible/providers/user_prefs.dart';
+import '../logic/aquifer_api.dart';
 
 class ContentTile extends StatefulWidget {
   final ResourceItem item;
@@ -22,8 +27,23 @@ class ContentTile extends StatefulWidget {
 class _ContentTileState extends State<ContentTile> {
   bool _isExpanded = false;
 
+  final collections = AquiferService().allCollections;
+
   @override
   Widget build(BuildContext context) {
+    final code = widget.item.resourceCollectionCode;
+    final collection = collections.firstWhere((c) => c.code == code);
+    final displayName = collection.availableLanguages
+        .firstWhere((l) => l.id == widget.item.langID)
+        .displayName;
+    final licenseInfo = collection.licenseInfo;
+    final copyrightStatement =
+        '''
+$displayName © ${licenseInfo.dates} ${licenseInfo.holderName}
+    ${licenseInfo.holderUrl}
+${licenseInfo.licenseName}
+    ${licenseInfo.licenseUrl}
+''';
     final translation = Provider.of<UserPrefs>(
       context,
       listen: true,
@@ -35,8 +55,6 @@ class _ContentTileState extends State<ContentTile> {
     ).cardColor.lerpWith(Colors.grey, .1);
     IconData icon = FluentIcons.info;
     bool isNote = false;
-
-    final code = widget.item.resourceCollectionCode;
 
     if (code.contains('Intro')) {
       icon = FluentIcons.book_answers;
@@ -126,6 +144,49 @@ class _ContentTileState extends State<ContentTile> {
     }
 
     Widget noteBody() {
+      Widget noteSource() {
+        return Tooltip(
+          message: '$copyrightStatement\n(Click to copy)',
+          child: GestureDetector(
+            onTap: () {
+              Clipboard.setData(ClipboardData(text: copyrightStatement));
+              showDialog(
+                barrierDismissible: true,
+                context: context,
+                builder: (dialogContext) {
+                  Future.delayed(const Duration(milliseconds: 500), () {
+                    if (!dialogContext.mounted) return;
+                    Navigator.of(dialogContext).pop();
+                  });
+
+                  return ContentDialog(
+                    content: Container(
+                      height: 50,
+                      width: 50,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.green,
+                      ),
+                      child: Icon(FluentIcons.check_mark, color: Colors.white),
+                    ),
+                  );
+                },
+              );
+            },
+            child: Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: Text(
+                displayName,
+                style: TextStyle(
+                  fontSize: widget.baseFontSize - 8,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ),
+          ),
+        );
+      }
+
       // Logic for expandable content
       Widget contentWidget;
       if (widget.item.resourceType == ResourceType.images) {
@@ -139,7 +200,12 @@ class _ContentTileState extends State<ContentTile> {
               SizedBox(
                 height: 300,
                 child: SingleChildScrollView(
-                  child: Html(data: widget.item.content, style: htmlStyles),
+                  child: Column(
+                    children: [
+                      Html(data: widget.item.content, style: htmlStyles),
+                      noteSource(),
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(height: 8),
@@ -182,7 +248,12 @@ class _ContentTileState extends State<ContentTile> {
         }
       } else {
         // Short content, standard display
-        contentWidget = Html(data: widget.item.content, style: htmlStyles);
+        contentWidget = Column(
+          children: [
+            Html(data: widget.item.content, style: htmlStyles),
+            noteSource(),
+          ],
+        );
       }
 
       return SelectionArea(
@@ -205,8 +276,16 @@ class _ContentTileState extends State<ContentTile> {
               }
 
               Future<void> copyWholeNote() async {
-                await selectAll();
-                await simpleCopy();
+                final fullNote =
+                    '''
+${widget.item.localizedName} 
+${htmlToPlainText(widget.item.content)} 
+
+$copyrightStatement
+''';
+
+                await Clipboard.setData(ClipboardData(text: fullNote));
+
                 if (!context.mounted) return;
 
                 showDialog(
@@ -313,4 +392,51 @@ class _ContentTileState extends State<ContentTile> {
             ),
     );
   }
+}
+
+/// Converts HTML into plain text, preserving newlines and lists.
+String htmlToPlainText(String htmlString) {
+  if (htmlString.isEmpty) return '';
+
+  final document = html_parser.parse(htmlString);
+  final buffer = StringBuffer();
+
+  void walk(dom.Node node) {
+    if (node is dom.Text) {
+      buffer.write(node.text);
+    } else if (node is dom.Element) {
+      switch (node.localName) {
+        case 'br':
+          buffer.write('\n');
+          break;
+        case 'p':
+        case 'div':
+        case 'section':
+        case 'header':
+        case 'footer':
+          buffer.write('\n');
+          node.nodes.forEach(walk);
+          buffer.write('\n');
+          break;
+        case 'li':
+          buffer.write('• ');
+          node.nodes.forEach(walk);
+          buffer.write('\n');
+          break;
+        case 'ul':
+        case 'ol':
+          buffer.write('\n');
+          node.nodes.forEach(walk);
+          buffer.write('\n');
+          break;
+        default:
+          node.nodes.forEach(walk);
+      }
+    }
+  }
+
+  document.body?.nodes.forEach(walk);
+
+  // Normalize multiple newlines
+  return buffer.toString().replaceAll(RegExp(r'\n\s*\n\s*\n+'), '\n\n').trim();
 }
