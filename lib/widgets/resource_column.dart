@@ -32,6 +32,7 @@ class ResourceColumn extends StatefulWidget {
 
 class _ResourceColumnState extends State<ResourceColumn> {
   // data
+  static final List<int> _hasOfflineContent = [1, 4]; //langIds
   AquiferService aquiferService = AquiferService();
   final List<ResourceItem> _resourceItems = [];
   ScrollGroup? _scrollGroup;
@@ -90,6 +91,16 @@ class _ResourceColumnState extends State<ResourceColumn> {
       _scrollGroup = Provider.of<ScrollGroup>(context, listen: false);
       _scrollGroup!.addListener(_onScrollGroupChanged);
       _isScrollGroupListenerInitialized = true;
+    }
+  }
+
+  void listUserPrefsBoxKeys() {
+    final keys = userPrefsBox.keys.toList();
+    for (var key in keys) {
+      if (key.contains('resource_prefs')) {
+        final value = userPrefsBox.get(key);
+        print('$key: $value');
+      }
     }
   }
 
@@ -164,7 +175,7 @@ class _ResourceColumnState extends State<ResourceColumn> {
     if (index != -1) {
       _isProgrammaticScroll = true;
       // itemScrollController.jumpTo(index: index);
-      print('scrolling _scrollToVerse');
+
       itemScrollController.scrollTo(
         duration: Duration(milliseconds: 200),
         index: index,
@@ -181,6 +192,8 @@ class _ResourceColumnState extends State<ResourceColumn> {
   }
 
   Future<void> init() async {
+    // Ensure AquiferService knows our connectivity state on startup
+    await AquiferService().reInitializeResourceData(_isOnline);
     await _loadTOC();
     setLanguage();
   }
@@ -203,7 +216,6 @@ class _ResourceColumnState extends State<ResourceColumn> {
     userResourceLanguageCode = widget.incomingUserResourceLanguageCode;
     languages = AquiferService().allLanguages.toList();
     isLinked = widget.bibleReference.partOfScrollGroup;
-    initialization = init();
 
     itemPositionsListener.itemPositions.addListener(_handleScroll);
 
@@ -212,9 +224,12 @@ class _ResourceColumnState extends State<ResourceColumn> {
       _checkConnectivity(); // to set _is Online
     } else {
       _isOnline = userPrefsBox.get('userConnectivityChoice');
+      // if they've chosen to be online we should check connectivity
+      // if they've chosen offline, don't even check
       _shouldCheckConnectivity = _isOnline;
-      _checkConnectivity(); // will check to see if shouldcheck
+      _checkConnectivity(); // will check to see if shouldcheck is true
     }
+    initialization = init();
     super.initState();
   }
 
@@ -222,7 +237,6 @@ class _ResourceColumnState extends State<ResourceColumn> {
     if (_isProgrammaticScroll || _isFetching) {
       return;
     }
-    print('_handleScroll');
 
     final positions = itemPositionsListener.itemPositions.value;
     if (positions.isEmpty || !mounted) return;
@@ -333,19 +347,27 @@ class _ResourceColumnState extends State<ResourceColumn> {
     if ((_isFetching || toc.isEmpty || _firstLoaded == null)) {
       return;
     }
-    print('fetching previous chapter');
 
-    final prevInfo = ChapterFetchService().getPreviousChapterInfo(
+    ChapterInfo? prevInfo = ChapterFetchService().getPreviousChapterInfo(
       toc,
       toc.keys.toList(),
       _firstLoaded!,
     );
 
     if (prevInfo == null) return;
+    if (prevInfo.chapter == 0) {
+      // If chapter is 0 (introduction), get the last chapter of the previous book
+      prevInfo = ChapterFetchService().getPreviousChapterInfo(
+        toc,
+        toc.keys.toList(),
+        ChapterInfo(prevInfo.bookId, 0),
+      );
+      if (prevInfo == null) return;
+    }
 
-    _isFetching = true;
     if (mounted) {
       setState(() {
+        _isFetching = true;
         _isFetchingPrevious = true;
       });
     }
@@ -398,7 +420,6 @@ class _ResourceColumnState extends State<ResourceColumn> {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (mounted) {
                 _isProgrammaticScroll = true;
-                print('Restoring position');
 
                 itemScrollController.jumpTo(
                   index: oldIndex + addedCount,
@@ -417,6 +438,7 @@ class _ResourceColumnState extends State<ResourceColumn> {
       }
     } catch (e) {
       debugPrint('Error fetching previous chapter resources: $e');
+      _isFetchingPrevious = false;
     } finally {
       _isFetching = false;
     }
@@ -453,34 +475,106 @@ class _ResourceColumnState extends State<ResourceColumn> {
     setState(() {
       _loadingLanguage = true;
     });
+
+    // Normal language switch: load from prefs, no forced reset
+    await _loadCollectionsAndSettings(forceReset: false);
+
+    setState(() {
+      _loadingLanguage = false;
+    });
+    updateContent();
+  }
+
+  Future<void> _toggleConnectivity() async {
+    setState(() {
+      _loadingLanguage = true;
+    });
+
+    // 1. Toggle Connectivity State
+    if (_isOnline) {
+      // Going Offline
+      _shouldCheckConnectivity = false;
+      _isOnline = false;
+      userPrefsBox.put('userConnectivityChoice', false);
+    } else {
+      // Going Online
+      _shouldCheckConnectivity = true;
+      userPrefsBox.put('userConnectivityChoice', true);
+      await _checkConnectivity();
+    }
+
+    // 2. Re-initialize Service (reload global lists)
+    await AquiferService().reInitializeResourceData(_isOnline);
+    languages.clear();
+    languages = AquiferService().allLanguages.toList();
+
+    // 3. Update Local State & Resources
+    // If we just went offline, force reset to all available offline resources.
+    // If we went online, just load normal settings (stick to what was chosen or load from prefs).
+
+    await _loadCollectionsAndSettings(forceReset: !_isOnline);
+
+    setState(() {
+      _loadingLanguage = false;
+    });
+
+    _fetchResources();
+  }
+
+  /// Centralized logic for loading collections and determining selected resources
+  Future<void> _loadCollectionsAndSettings({required bool forceReset}) async {
     collections.clear();
-    collections = AquiferService().getResourcesForLanguage(
-      userResourceLanguageCode,
-    );
+    collections = AquiferService()
+        .getResourcesForLanguage(userResourceLanguageCode)
+        .toList();
+
+    // 1. Determine User Resource Codes
     userResourceCodes.clear();
-    final savedCodes = userPrefsBox.get(
-      'resource_prefs_$userResourceLanguageCode',
-    );
-    if (savedCodes != null) {
-      userResourceCodes = List<String>.from(savedCodes);
+
+    if (forceReset) {
+      // Logic: Reset to ALL available collections (likely offline ones)
+      userResourceCodes.addAll(collections.map((c) => c.code).toList());
+      // Save immediately so this preference persists
+      userPrefsBox.put(
+        'resource_prefs_${userResourceLanguageCode.toString()}',
+        userResourceCodes,
+      );
+    } else {
+      // Logic: get from prefs
+      final List<String>? savedRaw = userPrefsBox.get(
+        'resource_prefs_${userResourceLanguageCode.toString()}',
+      );
+
+      if (savedRaw != null) {
+        userResourceCodes.addAll(savedRaw);
+      }
+
+      // Fallbacks if nothing in prefs or all were removed
+      if (userResourceCodes.isEmpty) {
+        userResourceCodes.addAll(
+          collections
+              .where((c) => defaultResources.contains(c.code))
+              .map((c) => c.code)
+              .toList(),
+        );
+      }
+      // second fallback
+      if (userResourceCodes.isEmpty && collections.isNotEmpty) {
+        userResourceCodes.add(collections.first.code);
+      }
+      // and save what we've done
+      userPrefsBox.put(
+        'resource_prefs_${userResourceLanguageCode.toString()}',
+        userResourceCodes,
+      );
     }
 
-    // Fallback: If no codes selected (empty saved list or no save), try defaults
-    if (userResourceCodes.isEmpty) {
-      userResourceCodes = collections
-          .where((c) => c.code.startsWith('Tyndale'))
-          .map((c) => c.code)
-          .toList();
-    }
-
-    // Safety net: If still empty but we have collections, select the first one
-    if (userResourceCodes.isEmpty && collections.isNotEmpty) {
-      userResourceCodes.add(collections.first.code);
-    }
+    // 2. Update Language Object & Direction
     language = AquiferService().allLanguages.firstWhere(
       (l) => l.id == userResourceLanguageCode,
       orElse: () => AquiferService().allLanguages.first,
     );
+
     if (language.scriptDirection == 'LTR') {
       textDirection = TextDirection.ltr;
       alignment = Alignment.centerLeft;
@@ -488,11 +582,6 @@ class _ResourceColumnState extends State<ResourceColumn> {
       textDirection = TextDirection.rtl;
       alignment = Alignment.centerRight;
     }
-    // update the content after lang is changed
-    setState(() {
-      _loadingLanguage = false;
-    });
-    updateContent();
   }
 
   // Initial fetch of resources.
@@ -509,7 +598,6 @@ class _ResourceColumnState extends State<ResourceColumn> {
     }
 
     setState(() {
-      print('fetching resources');
       _loadingResources = true;
       _isFetching = true;
     });
@@ -562,7 +650,7 @@ class _ResourceColumnState extends State<ResourceColumn> {
   void updateContent() {
     if (_isOnline) {
       userPrefsBox.put(
-        'resource_prefs_$userResourceLanguageCode',
+        'resource_prefs_${userResourceLanguageCode.toString()}',
         userResourceCodes,
       );
     }
@@ -729,6 +817,10 @@ class _ResourceColumnState extends State<ResourceColumn> {
                         } else {
                           userResourceCodes.add(code);
                         }
+                        userPrefsBox.put(
+                          'resource_prefs_${userResourceLanguageCode.toString()}',
+                          userResourceCodes,
+                        );
                       },
                       // update the content after user changes resources
                       onShouldUpdateContent: updateContent,
@@ -758,7 +850,10 @@ class _ResourceColumnState extends State<ResourceColumn> {
                       widget.deleteColumn(widget.bibleReference.key),
                   canDelete: true,
                   trailingControls: [
-                    if (!kIsWeb)
+                    // useless on web, don't show it
+                    // only show if offline content is available
+                    if (!kIsWeb &&
+                        _hasOfflineContent.contains(userResourceLanguageCode))
                       Tooltip(
                         message: _isOnline
                             ? 'Disconnect (Go Offline)'
@@ -769,36 +864,7 @@ class _ResourceColumnState extends State<ResourceColumn> {
                                 ? WindowsIcons.wifi
                                 : WindowsIcons.wifi_error4,
                           ),
-                          onPressed: () async {
-                            setState(() {
-                              _loadingLanguage = true;
-                            });
-
-                            // Toggle intended state
-                            if (_isOnline) {
-                              // user is online and choosing offline - set to offline
-                              _shouldCheckConnectivity = false;
-                              _isOnline = false;
-                              //save for later
-                              userPrefsBox.put('userConnectivityChoice', false);
-                            } else {
-                              _shouldCheckConnectivity = true;
-                              userPrefsBox.put('userConnectivityChoice', true);
-                              await _checkConnectivity();
-                            }
-
-                            await AquiferService().reInitializeResourceData(
-                              _isOnline,
-                            );
-                            languages.clear();
-                            languages = AquiferService().allLanguages.toList();
-
-                            setState(() {
-                              _loadingLanguage = false;
-                            });
-
-                            _fetchResources();
-                          },
+                          onPressed: _toggleConnectivity,
                         ),
                       ),
 
@@ -815,29 +881,14 @@ class _ResourceColumnState extends State<ResourceColumn> {
                           },
                         ),
                       ),
-                    // if (kDebugMode)
-                    //   Tooltip(
-                    //     message: 'Test getting list of resources',
-                    //     child: IconButton(
-                    //       icon: Icon(
-                    //         FluentIcons.app_icon_default,
-                    //         color: Colors.orange,
-                    //       ),
-                    //       onPressed: () {
-                    //         AquiferService()
-                    //             .streamResourcesForChapter(
-                    //               connected: _isOnline,
-                    //               langId: userResourceLanguageCode,
-                    //               resourceCollectionCodes: [
-                    //                 'TyndaleStudyNotes',
-                    //               ],
-                    //               book: 'GEN',
-                    //               chapter: '1',
-                    //             )
-                    //             .listen((event) => print(event));
-                    //       },
-                    //     ),
-                    //   ),
+                    if (kDebugMode)
+                      Tooltip(
+                        message: 'List UserPrefsBox keys',
+                        child: IconButton(
+                          icon: Icon(FluentIcons.list, color: Colors.orange),
+                          onPressed: listUserPrefsBoxKeys,
+                        ),
+                      ),
                   ],
                 ),
                 if (_isFetchingPrevious)
@@ -877,9 +928,7 @@ class _ResourceColumnState extends State<ResourceColumn> {
                                           metrics.minScrollExtent &&
                                       notification.dragDetails != null) {
                                     // User is dragging at the top edge
-                                    print(
-                                      'Top edge drag (simulate overscroll)',
-                                    );
+
                                     _fetchPreviousChapter();
                                   }
                                 }

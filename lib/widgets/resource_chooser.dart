@@ -101,33 +101,6 @@ class _ResourceChooserState extends State<ResourceChooser> {
                   },
                 ),
               );
-              // return StatefulBuilder(
-              //   builder: (context, setStateChild) {
-              //     return MenuFlyout(
-              //       items: resourceCollections.map((collection) {
-              //         return ToggleMenuFlyoutItem(
-              //           text: Text(
-              //             collection.availableLanguages
-              //                 .where((l) => l.id == widget.langId)
-              //                 .first
-              //                 .displayName,
-              //           ),
-              //           value: resourceCodes.contains(collection.code),
-              //           onChanged: (v) {
-              //             setState(() {
-              //               if (v) {
-              //                 resourceCodes.add(collection.code);
-              //               } else {
-              //                 resourceCodes.remove(collection.code);
-              //               }
-              //             });
-              //             widget.onChanged(collection.code);
-              //           },
-              //         );
-              //       }).toList(),
-              //     );
-              //   },
-              // );
             },
           );
         },

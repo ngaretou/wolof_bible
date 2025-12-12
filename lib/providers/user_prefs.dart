@@ -2,8 +2,6 @@ import 'dart:core';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
-import 'package:provider/provider.dart';
-import 'package:wolof_bible/providers/column_manager.dart';
 
 import '../logic/data_initializer.dart';
 import '../hive/user_columns_db.dart';

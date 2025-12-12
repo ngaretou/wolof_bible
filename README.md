@@ -102,6 +102,7 @@ to pre-process SAB data into assets
 - Hebrews in Eng showing with 1 chapter - other Bibles good
 - Check if the chapter is in before fetching
 - Double check the UBS images are showing right now
+- test the langs that don't have offline content - what happens 
 
 
 ## Web release

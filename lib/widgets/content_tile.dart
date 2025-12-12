@@ -27,14 +27,37 @@ class ContentTile extends StatefulWidget {
 class _ContentTileState extends State<ContentTile> {
   bool _isExpanded = false;
 
-  final collections = AquiferService().allCollections;
-
   @override
   Widget build(BuildContext context) {
+    final List<ResourceCollectionInfo> collections =
+        AquiferService().allCollections;
     final code = widget.item.resourceCollectionCode;
-    final collection = collections.firstWhere((c) => c.code == code);
+    final collection = collections.firstWhere(
+      (c) => c.code == code,
+      orElse: () => ResourceCollectionInfo(
+        code: code,
+        resourceType: ResourceType.studyNotes,
+        licenseInfo: LicenseInfo(
+          code: code,
+          dates: '',
+          holderName: 'Unknown',
+          holderUrl: '',
+          licenseName: '',
+          licenseUrl: '',
+        ),
+        availableLanguages: [],
+      ),
+    );
     final displayName = collection.availableLanguages
-        .firstWhere((l) => l.id == widget.item.langID)
+        .firstWhere(
+          (l) => l.id == widget.item.langID,
+          orElse: () => AvailableLanguage(
+            id: 0,
+            code: '',
+            displayName: collection.code,
+            scriptDirection: 'LTR',
+          ),
+        )
         .displayName;
     final licenseInfo = collection.licenseInfo;
     final copyrightStatement =
