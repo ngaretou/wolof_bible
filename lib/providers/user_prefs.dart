@@ -1,7 +1,9 @@
 import 'dart:core';
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
+import 'package:provider/provider.dart';
+import 'package:wolof_bible/providers/column_manager.dart';
 
 import '../logic/data_initializer.dart';
 import '../hive/user_columns_db.dart';
@@ -260,7 +262,7 @@ class UserPrefs with ChangeNotifier {
     // printWhatsInBox();
   }
 
-  void addColumn(ColumnType type) {
+  void addColumn(BuildContext context, ColumnType type) {
     int limit = type == ColumnType.scripture ? 9 : 5;
     int currentCount = userColumns.where((c) => c.type == type).length;
 
@@ -271,20 +273,38 @@ class UserPrefs with ChangeNotifier {
       //Which position should this column be in?
       int position = userColumns.length;
 
-      //new default bible reference
-      BibleReference newDefaultRef = BibleReference(
-        key: key,
-        partOfScrollGroup: true,
-        collectionID: type == ColumnType.resource ? '4' : "C01",
-        bookID: 'MAT',
-        chapter: '1',
-        verse: '1',
-        columnIndex: position,
-        type: type,
-      );
+      BibleReference getInitialRef() {
+        BibleReference? firstWherePartOfScrollGroup = userColumns
+            .firstWhereOrNull((element) => element.partOfScrollGroup);
 
-      userColumns.add(newDefaultRef);
-      saveScrollGroupState(newDefaultRef);
+        if (firstWherePartOfScrollGroup != null) {
+          return BibleReference(
+            key: key,
+            partOfScrollGroup: true,
+            collectionID: type == ColumnType.resource ? '4' : "C01",
+            bookID: firstWherePartOfScrollGroup.bookID,
+            chapter: firstWherePartOfScrollGroup.chapter,
+            verse: firstWherePartOfScrollGroup.verse,
+            columnIndex: position,
+            type: type,
+          );
+        } else {
+          return BibleReference(
+            key: key,
+            partOfScrollGroup: true,
+            collectionID: type == ColumnType.resource ? '4' : "C01",
+            bookID: 'MAT',
+            chapter: '1',
+            verse: '1',
+            columnIndex: position,
+            type: type,
+          );
+        }
+      }
+
+      final initialRef = getInitialRef();
+      userColumns.add(initialRef);
+      saveScrollGroupState(initialRef);
       notifyListeners();
     }
   }

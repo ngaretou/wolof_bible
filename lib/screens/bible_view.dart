@@ -28,7 +28,6 @@ class _BibleViewState extends State<BibleView> {
     final columnManager = Provider.of<ColumnManager>(context, listen: true);
 
     // Generate ScriptureColumns from the source of truth
-    // Generate ScriptureColumns from the source of truth
     List<Widget> scriptureWidgets = userPrefs.userColumns
         .where((ref) => ref.type == ColumnType.scripture)
         .map<Widget>((bibleRef) {
