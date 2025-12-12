@@ -922,16 +922,24 @@ class _ResourceColumnState extends State<ResourceColumn> {
                           ? const Icon(FluentIcons.library, size: 64)
                           : NotificationListener(
                               onNotification: (notification) {
-                                if (notification is ScrollUpdateNotification) {
-                                  final metrics = notification.metrics;
-                                  if (metrics.pixels <=
-                                          metrics.minScrollExtent &&
-                                      notification.dragDetails != null) {
-                                    // User is dragging at the top edge
+                                if (kIsWeb) {
+                                  // TODO on web it's USerScrollNotification
+                                  print(notification.toString());
+                                } else {
+                                  if (notification
+                                      is ScrollUpdateNotification) {
+                                    final metrics = notification.metrics;
 
-                                    _fetchPreviousChapter();
+                                    if (metrics.pixels <=
+                                            metrics.minScrollExtent &&
+                                        notification.dragDetails != null) {
+                                      // User is dragging at the top edge
+
+                                      _fetchPreviousChapter();
+                                    }
                                   }
                                 }
+
                                 return false;
                               },
                               child: ScrollablePositionedList.builder(

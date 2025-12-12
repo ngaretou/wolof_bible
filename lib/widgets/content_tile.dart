@@ -350,11 +350,13 @@ $copyrightStatement
                     onPressed: simpleCopy,
                   ),
                   ContextMenuButtonItem(
-                    label: translation.copyWithNumbers,
+                    label: "Select All",
+                    // label: translation.copyWithNumbers,
                     onPressed: selectAll,
                   ),
                   ContextMenuButtonItem(
-                    label: translation.copyWithoutNumbers,
+                    label: "Copy Note",
+                    // label: translation.copyWithoutNumbers,
                     onPressed: copyWholeNote,
                   ),
                 ],
