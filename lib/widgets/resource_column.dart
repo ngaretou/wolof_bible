@@ -31,56 +31,48 @@ class ResourceColumn extends StatefulWidget {
 }
 
 class _ResourceColumnState extends State<ResourceColumn> {
-  TextOverflow textOverflow = TextOverflow.ellipsis;
-  Alignment alignment = Alignment.centerLeft;
-  TextDirection textDirection = TextDirection.ltr;
+  // data
   AquiferService aquiferService = AquiferService();
-  bool _isOnline = false;
   final List<ResourceItem> _resourceItems = [];
-  final ItemScrollController itemScrollController = ItemScrollController();
-  final ItemPositionsListener itemPositionsListener =
-      ItemPositionsListener.create();
-  double baseFontSize = 20;
-  bool isLinked = true;
-  bool _loadingLanguage = false;
-  bool _loadingResources = false;
-  bool _shouldCheckConnectivity = true;
-  int userResourceLanguageCode = 4;
+  ScrollGroup? _scrollGroup;
+  late Future initialization;
   List<ResourceCollectionInfo> collections = [];
   List<ResourceCollectionInfo> selectedCollections = [];
-  late Future initialization;
   List<String> userResourceCodes = [];
   late ResourceLanguage language;
   List<ResourceLanguage> languages = [];
   StreamSubscription<ResourceItem>? _resourceSubscription;
-
-  List<ResourceItem> dummyResourceItems = List.generate(
-    10,
-    (index) => ResourceItem(
-      id: index.toString(),
-      resourceCollectionCode: 'TyndaleStudyNotes',
-      localizedName: 'Dummy Resource Name',
-      resourceType: ResourceType.studyNotes,
-      content:
-          'These verses introduce the Pentateuch (Genesis—Deuteronomy) and teach Israel that the world was created, ordered, and populated by the one true God and not by the gods of surrounding nations. God blessed three specific things: animal life (1:22-25), human life (1:27), and the Sabbath day (2:3). This trilogy of blessings highlights the Creator’s plan: Humankind was made in God’s image to enjoy sovereign dominion over the creatures of the earth and to participate in God’s Sabbath rest.',
-      langID: 1,
-      scriptDirection: 'LTR',
-    ),
-  );
-
   String currentBookID = 'GEN';
   String currentChapter = '1';
-  bool _isScrollGroupListenerInitialized = false;
-  ScrollGroup? _scrollGroup;
-  bool _isProgrammaticScroll = false;
-
+  int userResourceLanguageCode = 4;
   Map<String, dynamic> toc = {}; // Store the Table of Contents
-  bool _isFetchingNext = false;
-  bool _isFetchingPrevious = false;
-
+  // UI
+  final ItemScrollController itemScrollController = ItemScrollController();
+  final ItemPositionsListener itemPositionsListener =
+      ItemPositionsListener.create();
   // Track the range of loaded content for infinite scroll
   ChapterInfo? _firstLoaded;
   ChapterInfo? _lastLoaded;
+  // Text
+  TextOverflow textOverflow = TextOverflow.ellipsis;
+  Alignment alignment = Alignment.centerLeft;
+  TextDirection textDirection = TextDirection.ltr;
+  double baseFontSize = 20;
+  // flags
+  bool _isProgrammaticScroll = false;
+  bool _isOnline = true;
+  bool _shouldCheckConnectivity = true;
+  bool isLinked = true;
+  bool _loadingLanguage = true;
+  bool _isScrollGroupListenerInitialized = false;
+  // initial load or jumping references load - has effect on UI - only used momentarily
+  bool _loadingResources = true;
+  // fetching resources on the fly - has no effect on UI
+  bool _isFetching = true;
+  bool _isFetchingPrevious = false;
+
+  String dummyContent =
+      'These verses introduce the Pentateuch (Genesis—Deuteronomy) and teach Israel that the world was created, ordered, and populated by the one true God and not by the gods of surrounding nations. God blessed three specific things: animal life (1:22-25), human life (1:27), and the Sabbath day (2:3). This trilogy of blessings highlights the Creator’s plan: Humankind was made in God’s image to enjoy sovereign dominion over the creatures of the earth and to participate in God’s Sabbath rest.';
 
   @override
   void dispose() {
@@ -177,7 +169,7 @@ class _ResourceColumnState extends State<ResourceColumn> {
         duration: Duration(milliseconds: 200),
         index: index,
       );
-      Future.delayed(const Duration(milliseconds: 300), () {
+      Future.delayed(const Duration(milliseconds: 1000), () {
         _isProgrammaticScroll = false;
       });
     }
@@ -189,7 +181,6 @@ class _ResourceColumnState extends State<ResourceColumn> {
   }
 
   Future<void> init() async {
-    await _checkConnectivity();
     await _loadTOC();
     setLanguage();
   }
@@ -210,17 +201,28 @@ class _ResourceColumnState extends State<ResourceColumn> {
     _lastLoaded = ChapterInfo(currentBookID, chInt);
 
     userResourceLanguageCode = widget.incomingUserResourceLanguageCode;
-    languages = AquiferService().allLanguages;
+    languages = AquiferService().allLanguages.toList();
     isLinked = widget.bibleReference.partOfScrollGroup;
     initialization = init();
 
     itemPositionsListener.itemPositions.addListener(_handleScroll);
 
+    if (userPrefsBox.get('userConnectivityChoice') == null) {
+      _shouldCheckConnectivity = true;
+      _checkConnectivity(); // to set _is Online
+    } else {
+      _isOnline = userPrefsBox.get('userConnectivityChoice');
+      _shouldCheckConnectivity = _isOnline;
+      _checkConnectivity(); // will check to see if shouldcheck
+    }
     super.initState();
   }
 
   void _handleScroll() {
-    if (_isProgrammaticScroll) return;
+    if (_isProgrammaticScroll || _isFetching) {
+      return;
+    }
+    print('_handleScroll');
 
     final positions = itemPositionsListener.itemPositions.value;
     if (positions.isEmpty || !mounted) return;
@@ -236,20 +238,18 @@ class _ResourceColumnState extends State<ResourceColumn> {
     final lastVisibleIndex = positions
         .map((p) => p.index)
         .reduce((max, p) => p > max ? p : max);
-    final firstVisibleIndex = positions
-        .map((p) => p.index)
-        .reduce((min, p) => p < min ? p : min);
+    // REMOVED: firstVisibleIndex calculation - unused now that previous chapter trigger is moved.
 
     // Fetch Next
-    if (!_isFetchingNext && _resourceItems.length - lastVisibleIndex < 5) {
+    if (!_isFetching && _resourceItems.length - lastVisibleIndex < 5) {
       _fetchNextChapter();
     }
 
     // Fetch Previous
-    // Only if we aren't at the very beginning of the book (checked inside _fetchPreviousChapter)
-    if (!_isFetchingPrevious && firstVisibleIndex < 5) {
-      _fetchPreviousChapter();
-    }
+    // Moved to NotificationListener (Overscroll) to prevent auto-loading
+    // if (!_isFetching && firstVisibleIndex < 5) {
+    //   _fetchPreviousChapter();
+    // }
 
     if (index >= 0 && index < _resourceItems.length) {
       final item = _resourceItems[index];
@@ -280,7 +280,9 @@ class _ResourceColumnState extends State<ResourceColumn> {
   }
 
   Future<void> _fetchNextChapter() async {
-    if (_isFetchingNext || toc.isEmpty || _lastLoaded == null) return;
+    if (_isFetching || toc.isEmpty || _lastLoaded == null) {
+      return;
+    }
 
     // Calculate next chapter
     final nextInfo = ChapterFetchService().getNextChapterInfo(
@@ -291,9 +293,7 @@ class _ResourceColumnState extends State<ResourceColumn> {
 
     if (nextInfo == null) return;
 
-    setState(() {
-      _isFetchingNext = true;
-    });
+    _isFetching = true;
 
     try {
       // Create a temporary subscription to get the list
@@ -321,16 +321,16 @@ class _ResourceColumnState extends State<ResourceColumn> {
     } catch (e) {
       debugPrint('Error fetching next chapter resources: $e');
     } finally {
-      if (mounted) {
-        setState(() {
-          _isFetchingNext = false;
-        });
-      }
+      _isFetching = false;
     }
   }
 
   Future<void> _fetchPreviousChapter() async {
-    if (_isFetchingPrevious || toc.isEmpty || _firstLoaded == null) return;
+    // return;
+    if ((_isFetching || toc.isEmpty || _firstLoaded == null)) {
+      return;
+    }
+    print('fetching previous chapter');
 
     final prevInfo = ChapterFetchService().getPreviousChapterInfo(
       toc,
@@ -340,9 +340,12 @@ class _ResourceColumnState extends State<ResourceColumn> {
 
     if (prevInfo == null) return;
 
-    setState(() {
-      _isFetchingPrevious = true;
-    });
+    _isFetching = true;
+    if (mounted) {
+      setState(() {
+        _isFetchingPrevious = true;
+      });
+    }
 
     try {
       List<ResourceItem> newItems = [];
@@ -364,9 +367,8 @@ class _ResourceColumnState extends State<ResourceColumn> {
 
         // Update tracker regardless?
         // Yes, to prevent re-fetching.
-        setState(() {
-          _firstLoaded = prevInfo;
-        });
+
+        _firstLoaded = prevInfo;
 
         if (newItems.isNotEmpty) {
           final addedCount = newItems.length;
@@ -383,21 +385,26 @@ class _ResourceColumnState extends State<ResourceColumn> {
 
             setState(() {
               _resourceItems.insertAll(0, newItems);
+              _isFetchingPrevious = false;
             });
 
             // Restore position
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (mounted) {
+                _isProgrammaticScroll = true;
                 print('Restoring position');
+
                 itemScrollController.jumpTo(
                   index: oldIndex + addedCount,
                   alignment: oldOffset,
                 );
+                _isProgrammaticScroll = false;
               }
             });
           } else {
             setState(() {
               _resourceItems.insertAll(0, newItems);
+              _isFetchingPrevious = false;
             });
           }
         }
@@ -405,15 +412,12 @@ class _ResourceColumnState extends State<ResourceColumn> {
     } catch (e) {
       debugPrint('Error fetching previous chapter resources: $e');
     } finally {
-      if (mounted) {
-        setState(() {
-          _isFetchingPrevious = false;
-        });
-      }
+      _isFetching = false;
     }
   }
 
   Future<void> _checkConnectivity() async {
+    // don't check on web
     if (kIsWeb) {
       if (mounted) {
         setState(() {
@@ -424,7 +428,7 @@ class _ResourceColumnState extends State<ResourceColumn> {
     }
 
     if (!_shouldCheckConnectivity) {
-      if (mounted) {
+      if (mounted && _isOnline == true) {
         setState(() {
           _isOnline = false;
         });
@@ -485,14 +489,23 @@ class _ResourceColumnState extends State<ResourceColumn> {
     updateContent();
   }
 
+  // Initial fetch of resources.
   Future<void> _fetchResources() async {
-    // if (!_isOnline) return; // Allow offline fetching
-
     await _resourceSubscription?.cancel();
     _resourceItems.clear();
 
+    if (userResourceCodes.isEmpty) {
+      setState(() {
+        _loadingResources = false;
+        _isFetching = false;
+      });
+      return;
+    }
+
     setState(() {
+      print('fetching resources');
       _loadingResources = true;
+      _isFetching = true;
     });
 
     try {
@@ -523,12 +536,14 @@ class _ResourceColumnState extends State<ResourceColumn> {
                 });
               }
             },
-            onDone: () {
-              if (mounted) {
-                setState(() {
-                  _loadingResources = false;
-                });
-              }
+            onDone: () async {
+              debugPrint('End of fetching initial chapter');
+
+              // This was causing the "wild scrolling" by inserting items at the top
+              // while the user is trying to view the current chapter.
+              // Previous chapter will now only load via _handleScroll when viewing top.
+              _loadingResources = false;
+              _isFetching = false;
             },
           );
     } catch (e) {
@@ -553,9 +568,22 @@ class _ResourceColumnState extends State<ResourceColumn> {
   }
 
   Widget _buildLoadingResources() {
+    List<ResourceItem> dummyResourceItems = List.generate(
+      5,
+      (index) => ResourceItem(
+        id: index.toString(),
+        resourceCollectionCode: 'TyndaleStudyNotes',
+        localizedName: 'Dummy Resource Name',
+        resourceType: ResourceType.studyNotes,
+        content: dummyContent,
+        langID: 1,
+        scriptDirection: 'LTR',
+      ),
+    );
     return Skeletonizer(
       enabled: true,
       child: ScrollablePositionedList.builder(
+        shrinkWrap: true,
         itemCount: dummyResourceItems.length,
         itemBuilder: (context, index) {
           return Padding(
@@ -745,17 +773,22 @@ class _ResourceColumnState extends State<ResourceColumn> {
 
                             // Toggle intended state
                             if (_isOnline) {
+                              // user is online and choosing offline - set to offline
                               _shouldCheckConnectivity = false;
+                              _isOnline = false;
+                              //save for later
+                              userPrefsBox.put('userConnectivityChoice', false);
                             } else {
                               _shouldCheckConnectivity = true;
+                              userPrefsBox.put('userConnectivityChoice', true);
+                              await _checkConnectivity();
                             }
-
-                            await _checkConnectivity();
 
                             await AquiferService().reInitializeResourceData(
                               _isOnline,
                             );
-                            languages = AquiferService().allLanguages;
+                            languages.clear();
+                            languages = AquiferService().allLanguages.toList();
 
                             setState(() {
                               _loadingLanguage = false;
@@ -804,6 +837,14 @@ class _ResourceColumnState extends State<ResourceColumn> {
                     //   ),
                   ],
                 ),
+                if (_isFetchingPrevious)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: ProgressBar(),
+                    ),
+                  ),
 
                 // main column
                 Expanded(
@@ -825,16 +866,46 @@ class _ResourceColumnState extends State<ResourceColumn> {
                           ? _buildLoadingResources()
                           : _resourceItems.isEmpty
                           ? const Icon(FluentIcons.library, size: 64)
-                          : ScrollablePositionedList.builder(
-                              itemCount: _resourceItems.length,
-                              itemBuilder: (context, index) {
-                                return ContentTile(
-                                  item: _resourceItems[index],
-                                  baseFontSize: baseFontSize,
-                                );
+                          : NotificationListener(
+                              onNotification: (notification) {
+                                if (notification is ScrollUpdateNotification) {
+                                  final metrics = notification.metrics;
+                                  if (metrics.pixels <=
+                                          metrics.minScrollExtent &&
+                                      notification.dragDetails != null) {
+                                    // User is dragging at the top edge
+                                    print(
+                                      'Top edge drag (simulate overscroll)',
+                                    );
+                                    _fetchPreviousChapter();
+                                  }
+                                }
+                                return false;
+
+                                // if (notification is OverscrollNotification &&
+                                //     notification.overscroll < 0 &&
+                                //     notification.metrics.pixels <=
+                                //         notification.metrics.minScrollExtent &&
+                                //     !_isFetching) {
+                                //   print(
+                                //     'Overscroll detected - fetching previous',
+                                //   );
+                                //   _fetchPreviousChapter();
+                                // }
+                                return false;
                               },
-                              itemScrollController: itemScrollController,
-                              itemPositionsListener: itemPositionsListener,
+                              child: ScrollablePositionedList.builder(
+                                physics: BouncingScrollPhysics(),
+                                itemCount: _resourceItems.length,
+                                itemBuilder: (context, index) {
+                                  return ContentTile(
+                                    item: _resourceItems[index],
+                                    baseFontSize: baseFontSize,
+                                  );
+                                },
+                                itemScrollController: itemScrollController,
+                                itemPositionsListener: itemPositionsListener,
+                              ),
                             ),
                       // : Column(
                       //     mainAxisAlignment: MainAxisAlignment.center,

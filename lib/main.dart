@@ -393,8 +393,22 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
   @override
   Widget build(BuildContext context) {
     // print('MyHomePageState build');
-    // Teaching:
+
     bool? hasSeenOnboarding = userPrefsBox.get('hasSeenOnboarding');
+
+    if (hasSeenOnboarding == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        showDialog(
+          barrierDismissible: true,
+          context: context,
+          builder: (BuildContext context) {
+            return const Center(child: OnboardingPanel());
+          },
+        );
+        //save that the user has seen the onboarding
+        userPrefsBox.put('hasSeenOnboarding', true);
+      });
+    }
 
     return FutureBuilder(
       future: initInterface,
