@@ -351,10 +351,15 @@ class AquiferService {
       return;
     }
 
-    final offlineCapableCodes = {
-      'TyndaleStudyNotes',
-      'TyndaleStudyNotesBookIntros',
-    };
+    // offline only for 1: eng and 4: fra
+    Set<String> offlineCapableCodes = {};
+    if (langId == 1 || langId == 4) {
+      offlineCapableCodes = {
+        'TyndaleStudyNotes',
+        'TyndaleStudyNotesBookIntros',
+      };
+    }
+
     final offlineTargets = resourceCollectionCodes
         .where((code) => offlineCapableCodes.contains(code))
         .toList();
@@ -374,20 +379,26 @@ class AquiferService {
           startVerse: startVerse,
         );
         results.addAll(
-          items.map(
-            (item) => _SortableItem(
+          items.map((item) {
+            final chAndVerse = AquiferService.getChAndVerseFromTitle(
+              item.localizedName,
+            );
+            return _SortableItem(
               priority: _getPriority(item.resourceCollectionCode),
-              verse: AquiferService.getVerseFromTitle(item.localizedName),
+              chapter: chAndVerse.first,
+              verse: chAndVerse.last,
               name: item.localizedName,
               isOffline: true,
               data: item,
-            ),
-          ),
+            );
+          }),
         );
       }
       return results;
     });
 
+    // TODO if type is image, themes, profiles; get the ref from the associations and put it at the first of those refs for the chapter
+    // currently we just put those at the end of the ch
     final Future<List<_SortableItem>> onlineFuture = Future(() async {
       if (!connected || onlineTargets.isEmpty) {
         return [];
@@ -414,9 +425,12 @@ class AquiferService {
       return allMetadata.map((json) {
         final code = json['grouping']?['collectionCode'] ?? '';
         final name = json['localizedName'] ?? '';
+        final chAndVerse = AquiferService.getChAndVerseFromTitle(name);
+
         return _SortableItem(
           priority: _getPriority(code),
-          verse: AquiferService.getVerseFromTitle(name),
+          chapter: chAndVerse.first,
+          verse: chAndVerse.last,
           name: name,
           isOffline: false,
           data: json,
@@ -434,6 +448,9 @@ class AquiferService {
     allItems.sort((a, b) {
       if (a.priority != b.priority) {
         return a.priority.compareTo(b.priority);
+      }
+      if (a.chapter != b.chapter) {
+        return a.chapter.compareTo(b.chapter);
       }
       if (a.verse != b.verse) {
         return a.verse.compareTo(b.verse);
@@ -498,12 +515,12 @@ class AquiferService {
     return 99;
   }
 
-  static int getVerseFromTitle(String name) {
-    final match = RegExp(r'[:\.](\d+)').firstMatch(name);
+  static List<int> getChAndVerseFromTitle(String name) {
+    final match = RegExp(r'(\d+)[:\.](\d+)').firstMatch(name);
     if (match != null) {
-      return int.parse(match.group(1)!);
+      return [int.parse(match.group(1)!), int.parse(match.group(2)!)];
     }
-    return 0;
+    return [0, 0];
   }
 
   Future<bool> checkConnectivity() async {
@@ -762,6 +779,7 @@ final List<String> defaultResources = [
 
 class _SortableItem {
   final int priority;
+  final int chapter;
   final int verse;
   final String name;
   final bool isOffline;
@@ -769,6 +787,7 @@ class _SortableItem {
 
   _SortableItem({
     required this.priority,
+    required this.chapter,
     required this.verse,
     required this.name,
     required this.isOffline,
