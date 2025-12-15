@@ -142,6 +142,10 @@ class Translation {
   String abbreviations;
   String ok;
   String couldNotParse;
+  String downloadApp;
+  String moreApps;
+  String newStudyNotes;
+  String newStudyNotesSub;
 
   Translation({
     required this.langCode,
@@ -178,6 +182,10 @@ class Translation {
     required this.abbreviations,
     required this.ok,
     required this.couldNotParse,
+    required this.downloadApp,
+    required this.moreApps,
+    required this.newStudyNotes,
+    required this.newStudyNotesSub,
   });
 }
 
@@ -350,8 +358,11 @@ Future<void> asyncGetTranslations(BuildContext context) async {
             "includeVerseNumbers": translation['includeVerseNumbers'],
             "abbreviations": translation['abbreviations'],
             "ok": translation['ok'],
-            "copy": translation['copy'],
             "couldNotParse": translation['couldNotParse'],
+            "downloadApp": translation['downloadApp'],
+            "moreApps": translation['moreApps'],
+            "newStudyNotes": translation['newStudyNotes'],
+            "newStudyNotesSub": translation['newStudyNotesSub'],
           });
         }
       }
@@ -394,8 +405,11 @@ Future<void> asyncGetTranslations(BuildContext context) async {
             includeVerseNumbers: translationSupplement['includeVerseNumbers']!,
             abbreviations: translationSupplement['abbreviations']!,
             ok: translationSupplement['ok']!,
-
             couldNotParse: translationSupplement['couldNotParse']!,
+            downloadApp: translationSupplement['downloadApp']!,
+            moreApps: translationSupplement['moreApps']!,
+            newStudyNotes: translationSupplement['newStudyNotes']!,
+            newStudyNotesSub: translationSupplement['newStudyNotesSub']!,
           ),
         );
       } catch (e) {

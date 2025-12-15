@@ -26,8 +26,11 @@
     "includeVerseNumbers": "Include verse numbers?",
     "abbreviations": "Abbreviations",
     "ok": "OK",
-    "copy": "Copy",
-    "couldNotParse": "Could not parse:"
+    "couldNotParse": "Could not parse:",
+    "downloadApp": "Download this app for your computer",
+    "moreApps": "More apps",
+    "newStudyNotes": "New: Study Notes",
+    "newStudyNotesSub": "Click here for a new Resources column that brings you study notes from trusted sources."
   },
   {
     "langCode": "fr",
@@ -56,8 +59,11 @@
     "includeVerseNumbers": "Inclure les numéros de versets ?",
     "abbreviations": "Abréviations",
     "ok": "OK",
-    "copy": "Copier",
-    "couldNotParse": "Impossible d'analyser :"
+    "couldNotParse": "Impossible d'analyser :",
+    "downloadApp": "Installer l’app sur l’ordinateur",
+    "moreApps": "Autres applis",
+    "newStudyNotes": "Nouveau : Notes d’étude",
+    "newStudyNotesSub": "Cliquez ici pour une nouvelle colonne Ressources qui vous apporte des notes d’étude provenant de sources fiables."
   },
   {
     "langCode": "wol",
@@ -86,7 +92,10 @@
     "includeVerseNumbers": "Ñu boole ci nimaroy aaya yi?",
     "abbreviations": "Gàttali téerey yi",
     "ok": "WK",
-    "copy": "Duppi",
-    "couldNotParse": "Manuñu jàngat:"
+    "couldNotParse": "Manuñu jàngat:",
+    "downloadApp": "Yebal appli bi ci sa ordinatër",
+    "moreApps": "Yeneen appli",
+    "newStudyNotes": "Lu bees: Leeral yi",
+    "newStudyNotesSub": "Cuqal fii ngir am pàccub leeral yu bees buy indi njàngat yu jóge fu wóor."
   }
 ]

@@ -22,7 +22,7 @@ class ScrollGroup with ChangeNotifier {
   set setScrollGroupRef(BibleReference ref) {
     void setScrollGroup() {
       scrollGroupBibleReference = ref;
-      print('${ref.bookID} ${ref.chapter} ${ref.verse}');
+      // print('${ref.bookID} ${ref.chapter} ${ref.verse}');
       notifyListeners();
     }
 
