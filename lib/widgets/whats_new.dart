@@ -4,6 +4,8 @@ import '../main.dart';
 class WhatsNew extends StatefulWidget {
   final Widget child;
   final String flag;
+  final FlyoutPlacementMode placementMode;
+  final bool gate;
   final Icon icon;
   final String title;
   final String subtitle;
@@ -15,6 +17,8 @@ class WhatsNew extends StatefulWidget {
     required this.icon,
     required this.title,
     required this.subtitle,
+    required this.placementMode,
+    required this.gate,
   });
 
   @override
@@ -30,7 +34,7 @@ class _WhatsNewState extends State<WhatsNew> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       showTeachingTip(
         flyoutController: flyoutController,
-        placementMode: FlyoutPlacementMode.rightCenter,
+        placementMode: widget.placementMode,
         builder: (context) {
           // userPrefsBox.put('hasSeenResourceIntro', true);
           return TeachingTip(
@@ -47,7 +51,7 @@ class _WhatsNewState extends State<WhatsNew> {
   void initState() {
     // this is the check to see if the user has seen this intro
     bool hasSeen = userPrefsBox.get(widget.flag) ?? false;
-    if (!hasSeen) {
+    if (!hasSeen && widget.gate) {
       userPrefsBox.put(widget.flag, true);
       showResourceIntro();
     }

@@ -408,7 +408,7 @@ class AquiferService {
         onlineTargets.map((code) async {
           try {
             final url =
-                '$baseUrl/resources/search?resourceCollectionCode=$code&bookCode=$book&startChapter=$chapter&endChapter=$chapter&languageCode=${langId == 4 ? 'fra' : 'eng'}&limit=100';
+                '$baseUrl/resources/search?resourceCollectionCode=$code&bookCode=$book&startChapter=$chapter&endChapter=$chapter&languageId=$langId&limit=100';
             final response = await http
                 .get(Uri.parse(url), headers: {'X-App-ID': _appId})
                 .timeout(const Duration(seconds: 10));

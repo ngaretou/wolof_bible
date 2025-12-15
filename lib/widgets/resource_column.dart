@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:wolof_bible/main.dart';
 import 'package:wolof_bible/widgets/resource_chooser.dart';
@@ -219,6 +220,7 @@ class _ResourceColumnState extends State<ResourceColumn> {
 
     itemPositionsListener.itemPositions.addListener(_handleScroll);
 
+    // if online, will always be online as option to set this pref is not available.
     if (userPrefsBox.get('userConnectivityChoice') == null) {
       _shouldCheckConnectivity = true;
       _checkConnectivity(); // to set _is Online
@@ -529,11 +531,17 @@ class _ResourceColumnState extends State<ResourceColumn> {
         .toList();
 
     // 1. Determine User Resource Codes
-    userResourceCodes.clear();
+    try {
+      userResourceCodes.clear();
+    } catch (e) {
+      debugPrint('Error clearing userResourceCodes: $e');
+    }
 
     if (forceReset) {
       // Logic: Reset to ALL available collections (likely offline ones)
-      userResourceCodes.addAll(collections.map((c) => c.code).toList());
+
+      final tempList = collections.map((c) => c.code).toList();
+      userResourceCodes = tempList;
       // Save immediately so this preference persists
       userPrefsBox.put(
         'resource_prefs_${userResourceLanguageCode.toString()}',
@@ -541,12 +549,15 @@ class _ResourceColumnState extends State<ResourceColumn> {
       );
     } else {
       // Logic: get from prefs
-      final List<String>? savedRaw = userPrefsBox.get(
+      List<dynamic>? savedRaw = userPrefsBox.get(
         'resource_prefs_${userResourceLanguageCode.toString()}',
       );
-
       if (savedRaw != null) {
-        userResourceCodes.addAll(savedRaw);
+        try {
+          userResourceCodes.addAll(List<String>.from(savedRaw));
+        } catch (e) {
+          debugPrint('Error getting userResourceCodes from prefs: $e');
+        }
       }
 
       // Fallbacks if nothing in prefs or all were removed
@@ -700,8 +711,59 @@ class _ResourceColumnState extends State<ResourceColumn> {
     );
   }
 
+  Widget overscrollWorkaround({required Widget child}) {
+    if (kIsWeb) {
+      return Listener(
+        onPointerSignal: (event) {
+          if (event is PointerScrollEvent) {
+            // If scrolling up (negative delta)
+            if (event.scrollDelta.dy < 0) {
+              final positions = itemPositionsListener.itemPositions.value;
+              if (positions.isNotEmpty) {
+                // Find the top-most visible item
+                final min = positions.reduce(
+                  (min, pos) =>
+                      pos.itemLeadingEdge < min.itemLeadingEdge ? pos : min,
+                );
+
+                // If the first item is visible and at the top (approx 0)
+                // We use > -0.1 to account for minor precision issues,
+                // meaning it's basically at the top or pulled down slightly.
+                if (min.index == 0 && min.itemLeadingEdge > -0.01) {
+                  _fetchPreviousChapter();
+                }
+              }
+            }
+          }
+        },
+        child: child,
+      );
+    } else {
+      return NotificationListener(
+        onNotification: (notification) {
+          if (notification is ScrollUpdateNotification) {
+            final metrics = notification.metrics;
+
+            if (metrics.pixels <= metrics.minScrollExtent &&
+                notification.dragDetails != null) {
+              // User is dragging at the top edge
+              _fetchPreviousChapter();
+            }
+          }
+          return false;
+        },
+        child: child,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final translation = Provider.of<UserPrefs>(
+      context,
+      listen: true,
+    ).currentTranslation;
+
     return FutureBuilder(
       future: initialization,
       builder: (context, asyncSnapshot) {
@@ -856,8 +918,8 @@ class _ResourceColumnState extends State<ResourceColumn> {
                         _hasOfflineContent.contains(userResourceLanguageCode))
                       Tooltip(
                         message: _isOnline
-                            ? 'Disconnect (Go Offline)'
-                            : 'Connect (Check Internet)',
+                            ? translation.goOffline
+                            : translation.goOnline,
                         child: IconButton(
                           icon: Icon(
                             _isOnline
@@ -920,28 +982,7 @@ class _ResourceColumnState extends State<ResourceColumn> {
                           ? _buildLoadingResources()
                           : _resourceItems.isEmpty
                           ? const Icon(FluentIcons.library, size: 64)
-                          : NotificationListener(
-                              onNotification: (notification) {
-                                if (kIsWeb) {
-                                  // TODO on web it's USerScrollNotification
-                                  print(notification.toString());
-                                } else {
-                                  if (notification
-                                      is ScrollUpdateNotification) {
-                                    final metrics = notification.metrics;
-
-                                    if (metrics.pixels <=
-                                            metrics.minScrollExtent &&
-                                        notification.dragDetails != null) {
-                                      // User is dragging at the top edge
-
-                                      _fetchPreviousChapter();
-                                    }
-                                  }
-                                }
-
-                                return false;
-                              },
+                          : overscrollWorkaround(
                               child: ScrollablePositionedList.builder(
                                 physics: BouncingScrollPhysics(),
                                 itemCount: _resourceItems.length,

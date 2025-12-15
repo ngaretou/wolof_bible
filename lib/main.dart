@@ -394,9 +394,12 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
   Widget build(BuildContext context) {
     // print('MyHomePageState build');
 
-    bool? hasSeenOnboarding = userPrefsBox.get('hasSeenOnboarding');
+    bool hasSeenOnboarding = userPrefsBox.get(
+      'hasSeenOnboarding',
+      defaultValue: false,
+    );
 
-    if (hasSeenOnboarding == null) {
+    if (hasSeenOnboarding == false) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         showDialog(
           barrierDismissible: true,
@@ -404,7 +407,10 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
           builder: (BuildContext context) {
             return const Center(child: OnboardingPanel());
           },
-        );
+        ).then((_) {
+          setState(() {});
+        });
+
         //save that the user has seen the onboarding
         userPrefsBox.put('hasSeenOnboarding', true);
       });
@@ -821,6 +827,10 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
                         subtitle:
                             'Click here for a new Resources column that brings you study notes from trusted sources.',
                         flag: 'hasSeenResourceIntro',
+                        // wait til this is true before showing
+                        gate: hasSeenOnboarding,
+                        placementMode: .rightCenter,
+
                         child: const Icon(FluentIcons.info),
                       ),
                       functionToRun: () {
