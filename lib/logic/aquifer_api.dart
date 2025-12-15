@@ -302,12 +302,33 @@ class AquiferService {
     }
   }
 
+  /// Ensures data is loaded if it hasn't been already
+  Future<void> ensureInitialized(bool connected) async {
+    if (_allCollections.isEmpty || _allLanguages.isEmpty) {
+      await initializeResourceData(connected);
+    }
+  }
+
   /// this globally filters the
   Future<void> initializeResourceData(bool connected) async {
+    // idempotent check
+    if (_allCollections.isNotEmpty && _allLanguages.isNotEmpty) {
+      return;
+    }
+
     // get the two main lists of info
     _allCollections = await loadCollections(connected);
     _allLanguages = await loadLanguages(connected);
+  }
 
+  Future<void> forceRefreshResourceData(bool connected) async {
+    _allCollections.clear();
+    _allLanguages.clear();
+    await initializeResourceData(connected);
+  }
+
+  /// Returns languages that have meaningful data (Tyndale/Biblica notes)
+  List<ResourceLanguage> getDisplayLanguages() {
     // only show languages in the interface that actually have the two main study note collections
     final mainCollections = _allCollections
         .where(
@@ -325,15 +346,9 @@ class AquiferService {
       }
     }
     // finally filter the languages to display to those that have meaningful data
-    _allLanguages = _allLanguages
+    return _allLanguages
         .where((language) => mainCollectionLanguageCodes.contains(language.id))
         .toList();
-  }
-
-  Future<void> reInitializeResourceData(bool connected) async {
-    _allCollections.clear();
-    _allLanguages.clear();
-    await initializeResourceData(connected);
   }
 
   List<ResourceCollectionInfo> getResourcesForLanguage(int langId) {

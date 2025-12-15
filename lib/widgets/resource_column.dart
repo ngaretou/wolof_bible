@@ -38,8 +38,9 @@ class _ResourceColumnState extends State<ResourceColumn> {
   final List<ResourceItem> _resourceItems = [];
   ScrollGroup? _scrollGroup;
   late Future initialization;
+  // our local list of collections for this column
   List<ResourceCollectionInfo> collections = [];
-  List<ResourceCollectionInfo> selectedCollections = [];
+  // List<ResourceCollectionInfo> selectedCollections = [];
   List<String> userResourceCodes = [];
   late ResourceLanguage language;
   List<ResourceLanguage> languages = [];
@@ -194,7 +195,8 @@ class _ResourceColumnState extends State<ResourceColumn> {
 
   Future<void> init() async {
     // Ensure AquiferService knows our connectivity state on startup
-    await AquiferService().reInitializeResourceData(_isOnline);
+    // Ensure AquiferService knows our connectivity state on startup
+    await AquiferService().ensureInitialized(_isOnline);
     await _loadTOC();
     setLanguage();
   }
@@ -215,7 +217,7 @@ class _ResourceColumnState extends State<ResourceColumn> {
     _lastLoaded = ChapterInfo(currentBookID, chInt);
 
     userResourceLanguageCode = widget.incomingUserResourceLanguageCode;
-    languages = AquiferService().allLanguages.toList();
+    languages = AquiferService().getDisplayLanguages();
     isLinked = widget.bibleReference.partOfScrollGroup;
 
     itemPositionsListener.itemPositions.addListener(_handleScroll);
@@ -541,9 +543,9 @@ class _ResourceColumnState extends State<ResourceColumn> {
     }
 
     // 2. Re-initialize Service (reload global lists)
-    await AquiferService().reInitializeResourceData(_isOnline);
+    await AquiferService().forceRefreshResourceData(_isOnline);
     languages.clear();
-    languages = AquiferService().allLanguages.toList();
+    languages = AquiferService().getDisplayLanguages();
 
     // 3. Update Local State & Resources
     // If we just went offline, force reset to all available offline resources.
@@ -616,9 +618,9 @@ class _ResourceColumnState extends State<ResourceColumn> {
     }
 
     // 2. Update Language Object & Direction
-    language = AquiferService().allLanguages.firstWhere(
+    language = AquiferService().getDisplayLanguages().firstWhere(
       (l) => l.id == userResourceLanguageCode,
-      orElse: () => AquiferService().allLanguages.first,
+      orElse: () => AquiferService().getDisplayLanguages().first,
     );
 
     if (language.scriptDirection == 'LTR') {
@@ -955,6 +957,7 @@ class _ResourceColumnState extends State<ResourceColumn> {
                       widget.deleteColumn(widget.bibleReference.key),
                   canDelete: true,
                   trailingControls: [
+                    // online/offline button
                     // useless on web, don't show it
                     // only show if offline content is available
                     if (!kIsWeb &&
@@ -973,27 +976,27 @@ class _ResourceColumnState extends State<ResourceColumn> {
                         ),
                       ),
 
-                    if (kDebugMode)
-                      Tooltip(
-                        message: 'Clear User Preferences',
-                        child: IconButton(
-                          icon: Icon(
-                            FluentIcons.triangle_shape,
-                            color: Colors.orange,
-                          ),
-                          onPressed: () {
-                            userPrefsBox.clear();
-                          },
-                        ),
-                      ),
-                    if (kDebugMode)
-                      Tooltip(
-                        message: 'List UserPrefsBox keys',
-                        child: IconButton(
-                          icon: Icon(FluentIcons.list, color: Colors.orange),
-                          onPressed: listUserPrefsBoxKeys,
-                        ),
-                      ),
+                    // if (kDebugMode)
+                    //   Tooltip(
+                    //     message: 'Clear User Preferences',
+                    //     child: IconButton(
+                    //       icon: Icon(
+                    //         FluentIcons.triangle_shape,
+                    //         color: Colors.orange,
+                    //       ),
+                    //       onPressed: () {
+                    //         userPrefsBox.clear();
+                    //       },
+                    //     ),
+                    //   ),
+                    // if (kDebugMode)
+                    //   Tooltip(
+                    //     message: 'List UserPrefsBox keys',
+                    //     child: IconButton(
+                    //       icon: Icon(FluentIcons.list, color: Colors.orange),
+                    //       onPressed: listUserPrefsBoxKeys,
+                    //     ),
+                    //   ),
                   ],
                 ),
                 if (_isFetchingPrevious)
@@ -1077,11 +1080,12 @@ IconData contentIcon(String code) {
   if (code.contains('Intro')) {
     return FluentIcons.book_answers;
   } else if (code.contains('Themes')) {
-    return FluentIcons.favorite_star_fill;
+    return FluentIcons.venn_diagram;
+    // return FluentIcons.charticulator_spiral;
   } else if (code.contains('Profiles')) {
     return FluentIcons.profile_search;
   } else if (code.contains('Notes')) {
-    return FluentIcons.reading_mode_solid;
+    return FluentIcons.diet_plan_notebook;
   } else if (code.contains('Image')) {
     return FluentIcons.picture_fill;
   } else {
