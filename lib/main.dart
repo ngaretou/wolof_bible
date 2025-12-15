@@ -747,7 +747,7 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
                   items: [
                     PaneItem(
                       body: child!,
-                      icon: const Icon(FluentIcons.reading_mode),
+                      icon: const Icon(FluentIcons.reading_mode_solid),
                       title: Text(appTitle),
                     ),
 
@@ -791,7 +791,7 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
                       title: Text(translation.openResourceColumn),
 
                       icon: WhatsNew(
-                        icon: const Icon(FluentIcons.info),
+                        icon: const Icon(FluentIcons.diet_plan_notebook),
                         title: translation.newStudyNotes,
                         subtitle: translation.newStudyNotesSub,
                         flag: 'hasSeenResourceIntro',
@@ -799,7 +799,7 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
                         gate: hasSeenOnboarding,
                         placementMode: .rightCenter,
 
-                        child: const Icon(FluentIcons.info),
+                        child: const Icon(FluentIcons.diet_plan_notebook),
                       ),
                       functionToRun: () {
                         if (index != 0) {

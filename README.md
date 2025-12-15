@@ -84,14 +84,15 @@ to pre-process SAB data into assets
    * reporting how many results are found in search box 
    * for macOS, double clicking title bar goes 
    * consistent theming for license and bulk verse copy
- * 2.0.6
+ * 2.1.0
    * Pre-processing: Removed identification markers in introductions
    * Included manual assets section in pubspec.yaml different from auto generated
-   * 
+   * Aquifer resources
 
 
 
 ## Todo
+Swahili - has Biblica but not Tyndale - somehow have it sense that and switch to Biblica??
 
 ### Testing
 - About page - click on add resource column - none yet- fine, but when there is one already, not language comes up
@@ -102,7 +103,7 @@ to pre-process SAB data into assets
 ## Web release
 >>increment build number in pubspec.yaml
 rm -rf build/web
-flutter build web 
+flutter build web --base-href "/test/"
 cd build/web
 HASH=$(sha256sum main.dart.js | cut -c1-8)
 mv main.dart.js main.dart.$HASH.js

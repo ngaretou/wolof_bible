@@ -4,6 +4,7 @@ import 'package:flutter_html/flutter_html.dart';
 import 'package:html/parser.dart' as html_parser;
 // ignore: depend_on_referenced_packages
 import 'package:html/dom.dart' as dom;
+import 'package:wolof_bible/widgets/resource_column.dart';
 import '../providers/aquifer_classes.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -29,6 +30,10 @@ class _ContentTileState extends State<ContentTile> {
 
   @override
   Widget build(BuildContext context) {
+    String htmlContent = widget.item.content;
+
+    htmlContent = htmlContent.replaceAll('•', '<br><br>•&nbsp;');
+
     final List<ResourceCollectionInfo> collections =
         AquiferService().allCollections;
     final code = widget.item.resourceCollectionCode;
@@ -80,26 +85,26 @@ ${licenseInfo.licenseName}
     bool isNote = false;
 
     if (code.contains('Intro')) {
-      icon = FluentIcons.book_answers;
+      icon = contentIcon('Intro');
       isNote = false;
     } else if (code.contains('Themes')) {
-      icon = FluentIcons.favorite_star_fill;
+      icon = contentIcon('Themes');
       // accentColor = FluentTheme.of(
       //   context,
       // ).cardColor.lerpWith(Colors.orange, 1);
 
       isNote = false;
     } else if (code.contains('Profiles')) {
-      icon = FluentIcons.profile_search;
+      icon = contentIcon('Profiles');
 
       isNote = false;
     } else if (code.contains('Notes')) {
-      icon = FluentIcons.reading_mode_solid;
+      icon = contentIcon('Notes');
       // accentColor = FluentTheme.of(context).cardColor.lerpWith(Colors.blue, .1);
 
       isNote = true;
     } else if (code.contains('Image')) {
-      icon = FluentIcons.picture_fill;
+      icon = contentIcon('Image');
       // accentColor = FluentTheme.of(
       //   context,
       // ).cardColor.lerpWith(Colors.green, .1);
@@ -167,6 +172,7 @@ ${licenseInfo.licenseName}
     }
 
     Widget noteBody() {
+      // this is the italicized source of the note at bottom of card
       Widget noteSource() {
         return Tooltip(
           message: '$copyrightStatement\n(${translation.copy})',
@@ -214,7 +220,7 @@ ${licenseInfo.licenseName}
       Widget contentWidget;
       if (widget.item.resourceType == ResourceType.images) {
         contentWidget = buildImageContent();
-      } else if (!isNote && widget.item.content.length > 600) {
+      } else if (!isNote && htmlContent.length > 600) {
         if (_isExpanded) {
           // Expanded view: Scrollable SizedBox
           contentWidget = Column(
@@ -225,7 +231,7 @@ ${licenseInfo.licenseName}
                 child: SingleChildScrollView(
                   child: Column(
                     children: [
-                      Html(data: widget.item.content, style: htmlStyles),
+                      Html(data: htmlContent, style: htmlStyles),
                       noteSource(),
                     ],
                   ),
@@ -251,7 +257,7 @@ ${licenseInfo.licenseName}
             mainAxisSize: MainAxisSize.min,
             children: [
               Html(
-                data: '${widget.item.content.substring(0, 600)}...',
+                data: '${htmlContent.substring(0, 600)}...',
                 style: htmlStyles,
               ),
               const SizedBox(height: 8),
@@ -273,7 +279,7 @@ ${licenseInfo.licenseName}
         // Short content, standard display
         contentWidget = Column(
           children: [
-            Html(data: widget.item.content, style: htmlStyles),
+            Html(data: htmlContent, style: htmlStyles),
             noteSource(),
           ],
         );
@@ -302,7 +308,7 @@ ${licenseInfo.licenseName}
                 final fullNote =
                     '''
 ${widget.item.localizedName} 
-${htmlToPlainText(widget.item.content)} 
+${htmlToPlainText(htmlContent)} 
 
 $copyrightStatement
 ''';
