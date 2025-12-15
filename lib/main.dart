@@ -393,7 +393,7 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
   @override
   Widget build(BuildContext context) {
     // print('MyHomePageState build');
-
+    final translation = Provider.of<UserPrefs>(context, listen: true).currentTranslation;
     bool hasSeenOnboarding = userPrefsBox.get(
       'hasSeenOnboarding',
       defaultValue: false,
@@ -429,7 +429,7 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
             if (kIsWeb)
               PaneItemAction(
                 icon: const Icon(FluentIcons.download),
-                title: const Text('Yebal appli bi ci sa ordinatër'),
+                title: Text(translation.downloadApp),
                 onTap: () {
                   showDialog(
                     barrierDismissible: true,
@@ -453,7 +453,7 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
             //More apps
             _LinkPaneItemAction(
               icon: const Icon(FluentIcons.app_icon_default),
-              title: const Text('Yeneen appli'),
+              title:  Text(translation.moreApps),
               link: 'https://sng.al/app',
               body: const SizedBox.shrink(),
             ),
@@ -512,18 +512,8 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
                   ? const Icon(FluentIcons.sunny)
                   : const Icon(FluentIcons.clear_night),
               title: FluentTheme.of(context).brightness == Brightness.dark
-                  ? Text(
-                      Provider.of<UserPrefs>(
-                        context,
-                        listen: true,
-                      ).currentTranslation.lightTheme,
-                    )
-                  : Text(
-                      Provider.of<UserPrefs>(
-                        context,
-                        listen: true,
-                      ).currentTranslation.darkTheme,
-                    ),
+                  ? Text(translation.lightTheme)
+                  : Text(translation.darkTheme),
               onTap: () {
                 Future<void> saveThemeMode(String themeMode) async {
                   Box userPrefsBox = await Hive.openBox('userPrefs');
@@ -561,20 +551,14 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
               body: const About(),
               icon: const Icon(FluentIcons.info),
               title: Text(
-                Provider.of<UserPrefs>(
-                  context,
-                  listen: true,
-                ).currentTranslation.about,
+                translation.about,
               ),
             ),
             PaneItem(
               body: Settings(controller: settingsController),
               icon: const Icon(FluentIcons.settings),
               title: Text(
-                Provider.of<UserPrefs>(
-                  context,
-                  listen: true,
-                ).currentTranslation.settings,
+                translation.settings,
               ),
             ),
           ];
@@ -771,10 +755,7 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
                     RunFunctionPaneItemAction(
                       body: About(),
                       title: Text(
-                        Provider.of<UserPrefs>(
-                          context,
-                          listen: true,
-                        ).currentTranslation.search,
+                        translation.search,
                       ),
                       icon: const Icon(FluentIcons.search),
                       functionToRun: () {
@@ -793,10 +774,7 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
                     RunFunctionPaneItemAction(
                       body: const About(),
                       title: Text(
-                        Provider.of<UserPrefs>(
-                          context,
-                          listen: true,
-                        ).currentTranslation.addColumn,
+                        translation.addColumn,
                       ),
                       icon: const Icon(FluentIcons.calculator_addition),
                       functionToRun: () {
@@ -815,17 +793,14 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
                     RunFunctionPaneItemAction(
                       body: const About(),
                       title: Text(
-                        Provider.of<UserPrefs>(
-                          context,
-                          listen: true,
-                        ).currentTranslation.openResourceColumn,
+                        translation.openResourceColumn,
                       ),
 
                       icon: WhatsNew(
                         icon: const Icon(FluentIcons.info),
-                        title: 'New: Study Notes',
+                        title: translation.newStudyNotes,
                         subtitle:
-                            'Click here for a new Resources column that brings you study notes from trusted sources.',
+                           translation.newStudyNotesSub,
                         flag: 'hasSeenResourceIntro',
                         // wait til this is true before showing
                         gate: hasSeenOnboarding,
