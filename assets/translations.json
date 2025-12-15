@@ -30,7 +30,10 @@
     "downloadApp": "Download this app for your computer",
     "moreApps": "More apps",
     "newStudyNotes": "New: Study Notes",
-    "newStudyNotesSub": "Click here for a new Resources column that brings you study notes from trusted sources."
+    "newStudyNotesSub": "Click here for a new Resources column that brings you study notes from trusted sources.",
+    "noInternet": "No internet connection detected",
+    "timeout": "Request timed out", 
+    "switchingToOfflineMode": "Switching to offline mode."
   },
   {
     "langCode": "fr",
@@ -63,7 +66,10 @@
     "downloadApp": "Installer l’app sur l’ordinateur",
     "moreApps": "Autres applis",
     "newStudyNotes": "Nouveau : Notes d’étude",
-    "newStudyNotesSub": "Cliquez ici pour une nouvelle colonne Ressources qui vous apporte des notes d’étude provenant de sources fiables."
+    "newStudyNotesSub": "Cliquez ici pour une nouvelle colonne Ressources qui vous apporte des notes d’étude provenant de sources fiables.",
+    "noInternet": "Aucune connexion Internet détectée",
+    "timeout": "Délai d'attente de la requête dépassé",
+    "switchingToOfflineMode": "Passage en mode hors ligne"
   },
   {
     "langCode": "wol",
@@ -96,6 +102,9 @@
     "downloadApp": "Yebal appli bi ci sa ordinatër",
     "moreApps": "Yeneen appli",
     "newStudyNotes": "Lu bees: Leeral yi",
-    "newStudyNotesSub": "Cuqal fii ngir am pàccub leeral yu bees buy indi njàngat yu jóge fu wóor."
+    "newStudyNotesSub": "Cuqal fii ngir am pàccub leeral yu bees buy indi njàngat yu jóge fu wóor.",
+    "noInternet": "Mel na ni internet bi doxul",
+    "timeout": "Xar nañu lu yagg ba ëpp; internet bi doxul",
+    "switchingToOfflineMode": "Ñungiy jàll ci doxalin bu ñàkk internet"
   }
 ]

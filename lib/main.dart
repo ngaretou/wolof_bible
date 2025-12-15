@@ -393,7 +393,7 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
   @override
   Widget build(BuildContext context) {
     // print('MyHomePageState build');
-    final translation = Provider.of<UserPrefs>(context, listen: true).currentTranslation;
+
     bool hasSeenOnboarding = userPrefsBox.get(
       'hasSeenOnboarding',
       defaultValue: false,
@@ -422,6 +422,10 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: ProgressRing());
         } else {
+          final translation = Provider.of<UserPrefs>(
+            context,
+            listen: true,
+          ).currentTranslation;
           List<NavigationPaneItem> finalNavPaneItems = [];
 
           //For Wolof only and on web only on kaddugyalla.com
@@ -453,7 +457,7 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
             //More apps
             _LinkPaneItemAction(
               icon: const Icon(FluentIcons.app_icon_default),
-              title:  Text(translation.moreApps),
+              title: Text(translation.moreApps),
               link: 'https://sng.al/app',
               body: const SizedBox.shrink(),
             ),
@@ -550,16 +554,12 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
             PaneItem(
               body: const About(),
               icon: const Icon(FluentIcons.info),
-              title: Text(
-                translation.about,
-              ),
+              title: Text(translation.about),
             ),
             PaneItem(
               body: Settings(controller: settingsController),
               icon: const Icon(FluentIcons.settings),
-              title: Text(
-                translation.settings,
-              ),
+              title: Text(translation.settings),
             ),
           ];
 
@@ -754,9 +754,7 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
                     //Search
                     RunFunctionPaneItemAction(
                       body: About(),
-                      title: Text(
-                        translation.search,
-                      ),
+                      title: Text(translation.search),
                       icon: const Icon(FluentIcons.search),
                       functionToRun: () {
                         if (index != 0) {
@@ -773,9 +771,7 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
                     //Add Column
                     RunFunctionPaneItemAction(
                       body: const About(),
-                      title: Text(
-                        translation.addColumn,
-                      ),
+                      title: Text(translation.addColumn),
                       icon: const Icon(FluentIcons.calculator_addition),
                       functionToRun: () {
                         if (index != 0) {
@@ -792,15 +788,12 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
                     //Open Resource Column
                     RunFunctionPaneItemAction(
                       body: const About(),
-                      title: Text(
-                        translation.openResourceColumn,
-                      ),
+                      title: Text(translation.openResourceColumn),
 
                       icon: WhatsNew(
                         icon: const Icon(FluentIcons.info),
                         title: translation.newStudyNotes,
-                        subtitle:
-                           translation.newStudyNotesSub,
+                        subtitle: translation.newStudyNotesSub,
                         flag: 'hasSeenResourceIntro',
                         // wait til this is true before showing
                         gate: hasSeenOnboarding,

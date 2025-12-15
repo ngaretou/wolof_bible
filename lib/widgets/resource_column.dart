@@ -295,6 +295,35 @@ class _ResourceColumnState extends State<ResourceColumn> {
     }
   }
 
+  void _handleConnectivityError(dynamic error) {
+    if (!mounted) return;
+
+    // Only handle if we think we are online
+    if (_isOnline) {
+      _toggleConnectivity();
+
+      displayInfoBar(
+        context,
+        builder: (context, close) {
+          final translation = Provider.of<UserPrefs>(
+            context,
+            listen: true,
+          ).currentTranslation;
+
+          return InfoBar(
+            title: Text(translation.noInternet),
+            content: Text(translation.switchingToOfflineMode),
+            action: IconButton(
+              icon: const Icon(FluentIcons.clear),
+              onPressed: close,
+            ),
+            severity: InfoBarSeverity.warning,
+          );
+        },
+      );
+    }
+  }
+
   Future<void> _fetchNextChapter() async {
     if (_isFetching || toc.isEmpty || _lastLoaded == null) {
       return;
@@ -338,6 +367,9 @@ class _ResourceColumnState extends State<ResourceColumn> {
         });
       }
     } catch (e) {
+      if (e is AquiferConnectivityException) {
+        _handleConnectivityError(e);
+      }
       debugPrint('Error fetching next chapter resources: $e');
     } finally {
       _isFetching = false;
@@ -439,6 +471,9 @@ class _ResourceColumnState extends State<ResourceColumn> {
         }
       }
     } catch (e) {
+      if (e is AquiferConnectivityException) {
+        _handleConnectivityError(e);
+      }
       debugPrint('Error fetching previous chapter resources: $e');
       _isFetchingPrevious = false;
     } finally {
@@ -634,7 +669,11 @@ class _ResourceColumnState extends State<ResourceColumn> {
               }
             },
             onError: (e) {
-              debugPrint('Error fetching resources: $e');
+              if (e is AquiferConnectivityException) {
+                _handleConnectivityError(e);
+              } else {
+                debugPrint('Error fetching resources: $e');
+              }
               if (mounted) {
                 setState(() {
                   _loadingResources = false;
@@ -649,7 +688,11 @@ class _ResourceColumnState extends State<ResourceColumn> {
             },
           );
     } catch (e) {
-      debugPrint('Error starting resource stream: $e');
+      if (e is AquiferConnectivityException) {
+        _handleConnectivityError(e);
+      } else {
+        debugPrint('Error starting resource stream: $e');
+      }
       if (mounted) {
         setState(() {
           _loadingResources = false;

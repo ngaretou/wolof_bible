@@ -92,10 +92,11 @@ to pre-process SAB data into assets
 
 
 ## Todo
-- translations for 
-- Check if the chapter is in before fetching
-- Double check the UBS images are showing right now
-- test the langs that don't have offline content - what happens 
+
+### Testing
+- About page - click on add resource column - none yet- fine, but when there is one already, not language comes up
+- Are the suggested/all resources buttons working right? I saw profiles in French when looking at suggested. 
+- test teh new offline functionality
 
 
 ## Web release
