@@ -294,7 +294,7 @@ class Settings extends StatelessWidget {
                         }
                       }
                     },
-                    content: Text(translation.viewSuggestedCollections),
+                    content: Text(translation.viewAllCollections),
                   ),
                 ),
               ],

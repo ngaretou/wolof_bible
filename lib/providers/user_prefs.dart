@@ -276,7 +276,7 @@ class UserPrefs with ChangeNotifier {
           return BibleReference(
             key: key,
             partOfScrollGroup: true,
-            collectionID: type == ColumnType.resource ? '4' : "C01",
+            collectionID: type == ColumnType.resource ? '4' : 'C01',
             bookID: firstWherePartOfScrollGroup.bookID,
             chapter: firstWherePartOfScrollGroup.chapter,
             verse: firstWherePartOfScrollGroup.verse,
@@ -287,7 +287,7 @@ class UserPrefs with ChangeNotifier {
           return BibleReference(
             key: key,
             partOfScrollGroup: true,
-            collectionID: type == ColumnType.resource ? '4' : "C01",
+            collectionID: type == ColumnType.resource ? '4' : 'C01',
             bookID: 'MAT',
             chapter: '1',
             verse: '1',

@@ -7,6 +7,16 @@ import '../secrets.dart';
 import '../providers/aquifer_classes.dart';
 import 'package:wolof_bible/main.dart';
 import 'package:flutter/services.dart' show rootBundle;
+import 'dart:io'; // for SocketException
+import 'dart:async'; // for TimeoutException
+
+/// Custom exception for connectivity issues
+class AquiferConnectivityException implements Exception {
+  final String message;
+  AquiferConnectivityException(this.message);
+  @override
+  String toString() => message;
+}
 
 const String baseUrl = 'https://aquifer-proxy.corey-garrett.workers.dev';
 
@@ -412,12 +422,24 @@ class AquiferService {
             final response = await http
                 .get(Uri.parse(url), headers: {'X-App-ID': _appId})
                 .timeout(const Duration(seconds: 10));
+
+            if (response.statusCode != 200) {
+              throw AquiferConnectivityException(
+                'Status ${response.statusCode}',
+              );
+            }
+
             final decoded = json.decode(response.body);
             if (decoded is Map && decoded.containsKey('items')) {
               final data = decoded['items'] as List;
               allMetadata.addAll(data.map((e) => e as Map<String, dynamic>));
             }
+          } on SocketException catch (_) {
+            throw AquiferConnectivityException('No internet connection');
+          } on TimeoutException catch (_) {
+            throw AquiferConnectivityException('Request timed out');
           } catch (e) {
+            if (e is AquiferConnectivityException) rethrow;
             debugPrint('Error fetching metadata for $code: $e');
           }
         }),
@@ -488,8 +510,17 @@ class AquiferService {
                 chapter: int.tryParse(chapter) ?? 0,
                 verse: item.verse,
               );
+            } else {
+              throw AquiferConnectivityException(
+                'Status ${response.statusCode}',
+              );
             }
+          } on SocketException catch (_) {
+            throw AquiferConnectivityException('No internet connection');
+          } on TimeoutException catch (_) {
+            throw AquiferConnectivityException('Request timed out');
           } catch (e) {
+            if (e is AquiferConnectivityException) rethrow;
             debugPrint('Error fetching specific resource: $e');
           }
           return null;

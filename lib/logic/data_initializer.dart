@@ -146,6 +146,9 @@ class Translation {
   String moreApps;
   String newStudyNotes;
   String newStudyNotesSub;
+  String noInternet;
+  String timeout;
+  String switchingToOfflineMode;
 
   Translation({
     required this.langCode,
@@ -186,6 +189,9 @@ class Translation {
     required this.moreApps,
     required this.newStudyNotes,
     required this.newStudyNotesSub,
+    required this.noInternet,
+    required this.timeout,
+    required this.switchingToOfflineMode,
   });
 }
 
@@ -330,40 +336,48 @@ Future<void> asyncGetTranslations(BuildContext context) async {
       translationSupplement = {};
       for (var translation in translationData) {
         if (translation['langCode'] == langCode) {
-          translationSupplement.addAll({
-            'langCode': translation['langCode'],
-            "addColumn": translation['addColumn'],
-            "settingsTheme": translation['settingsTheme'],
-            "systemTheme": translation['systemTheme'],
-            "lightTheme": translation['lightTheme'],
-            "darkTheme": translation['darkTheme'],
-            "copyWithNumbers": translation['copyWithNumbers'],
-            "copyWithoutNumbers": translation['copyWithoutNumbers'],
-            "strictSearch": translation['strictSearch'],
-            "fuzzySearch": translation['fuzzySearch'],
-            "openResourceColumn": translation['openResourceColumn'],
-            "goOnline": translation['goOnline'],
-            "goOffline": translation['goOffline'],
-            "copyNote": translation['copyNote'],
-            "resourceCollections": translation['resourceCollections'],
-            "viewSuggestedCollections": translation['viewSuggestedCollections'],
-            "viewAllCollections": translation['viewAllCollections'],
-            "bulkVerseCopy": translation['bulkVerseCopy'],
-            "instructions": translation['instructions'],
-            "bulkVerseCopyInstructions":
-                translation['bulkVerseCopyInstructions'],
-            "close": translation['close'],
-            "seeAllAbbreviations": translation['seeAllAbbreviations'],
-            "chooseCollection": translation['chooseCollection'],
-            "includeVerseNumbers": translation['includeVerseNumbers'],
-            "abbreviations": translation['abbreviations'],
-            "ok": translation['ok'],
-            "couldNotParse": translation['couldNotParse'],
-            "downloadApp": translation['downloadApp'],
-            "moreApps": translation['moreApps'],
-            "newStudyNotes": translation['newStudyNotes'],
-            "newStudyNotesSub": translation['newStudyNotesSub'],
-          });
+          try {
+            translationSupplement.addAll({
+              'langCode': translation['langCode'],
+              "addColumn": translation['addColumn'],
+              "settingsTheme": translation['settingsTheme'],
+              "systemTheme": translation['systemTheme'],
+              "lightTheme": translation['lightTheme'],
+              "darkTheme": translation['darkTheme'],
+              "copyWithNumbers": translation['copyWithNumbers'],
+              "copyWithoutNumbers": translation['copyWithoutNumbers'],
+              "strictSearch": translation['strictSearch'],
+              "fuzzySearch": translation['fuzzySearch'],
+              "openResourceColumn": translation['openResourceColumn'],
+              "goOnline": translation['goOnline'],
+              "goOffline": translation['goOffline'],
+              "copyNote": translation['copyNote'],
+              "resourceCollections": translation['resourceCollections'],
+              "viewSuggestedCollections":
+                  translation['viewSuggestedCollections'],
+              "viewAllCollections": translation['viewAllCollections'],
+              "bulkVerseCopy": translation['bulkVerseCopy'],
+              "instructions": translation['instructions'],
+              "bulkVerseCopyInstructions":
+                  translation['bulkVerseCopyInstructions'],
+              "close": translation['close'],
+              "seeAllAbbreviations": translation['seeAllAbbreviations'],
+              "chooseCollection": translation['chooseCollection'],
+              "includeVerseNumbers": translation['includeVerseNumbers'],
+              "abbreviations": translation['abbreviations'],
+              "ok": translation['ok'],
+              "couldNotParse": translation['couldNotParse'],
+              "downloadApp": translation['downloadApp'],
+              "moreApps": translation['moreApps'],
+              "newStudyNotes": translation['newStudyNotes'],
+              "newStudyNotesSub": translation['newStudyNotesSub'],
+              "noInternet": translation['noInternet'],
+              "timeout": translation['timeout'],
+              "switchingToOfflineMode": translation['switchingToOfflineMode'],
+            });
+          } catch (e) {
+            debugPrint('Error adding translation supplement: ${e.toString()}');
+          }
         }
       }
       // ----
@@ -410,6 +424,10 @@ Future<void> asyncGetTranslations(BuildContext context) async {
             moreApps: translationSupplement['moreApps']!,
             newStudyNotes: translationSupplement['newStudyNotes']!,
             newStudyNotesSub: translationSupplement['newStudyNotesSub']!,
+            noInternet: translationSupplement['noInternet']!,
+            timeout: translationSupplement['timeout']!,
+            switchingToOfflineMode:
+                translationSupplement['switchingToOfflineMode']!,
           ),
         );
       } catch (e) {

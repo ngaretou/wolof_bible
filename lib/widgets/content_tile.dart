@@ -169,7 +169,7 @@ ${licenseInfo.licenseName}
     Widget noteBody() {
       Widget noteSource() {
         return Tooltip(
-          message: '$copyrightStatement\n(Click to copy)',
+          message: '$copyrightStatement\n(${translation.copy})',
           child: GestureDetector(
             onTap: () {
               Clipboard.setData(ClipboardData(text: copyrightStatement));
