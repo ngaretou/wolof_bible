@@ -139,9 +139,6 @@ class UserPrefs with ChangeNotifier {
           } catch (e) {
             // If clear fails, the box might be corrupted. Delete file.
             // Note: deleteFromDisk closes the box. We need to reopen.
-            // For now, let's assume clear works or just rely on main to open it next time?
-            // But we need it NOW.
-            // Let's stick to clear() as it usually works even with schema mismatch as long as we don't read items.
             // If we really need to delete:
             await main.userColumnsBox.deleteFromDisk();
             main.userColumnsBox = await Hive.openBox<UserColumnsDB>(

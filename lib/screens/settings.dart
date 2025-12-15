@@ -89,27 +89,21 @@ class Settings extends StatelessWidget {
 
     const spacer = SizedBox(height: 10.0);
     const biggerSpacer = SizedBox(height: 40.0);
+    final translation = Provider.of<UserPrefs>(
+      context,
+      listen: true,
+    ).currentTranslation;
 
     // final supportedLocales = const AppLocalizationDelegate().supportedLocales;
     // final currentLocale =
     //     appTheme.locale ?? Localizations.maybeLocaleOf(context);
 
     return ScaffoldPage.scrollable(
-      header: PageHeader(
-        title: Text(
-          Provider.of<UserPrefs>(
-            context,
-            listen: true,
-          ).currentTranslation.settings,
-        ),
-      ),
+      header: PageHeader(title: Text(translation.settings)),
       scrollController: controller,
       children: [
         Text(
-          Provider.of<UserPrefs>(
-            context,
-            listen: true,
-          ).currentTranslation.settingsInterfaceLanguage,
+          translation.settingsInterfaceLanguage,
           style: FluentTheme.of(context).typography.subtitle,
         ),
         spacer,
@@ -138,10 +132,7 @@ class Settings extends StatelessWidget {
         ),
         biggerSpacer,
         Text(
-          Provider.of<UserPrefs>(
-            context,
-            listen: false,
-          ).currentTranslation.settingsTheme,
+          translation.settingsTheme,
           style: FluentTheme.of(context).typography.subtitle,
         ),
         spacer,
@@ -150,22 +141,13 @@ class Settings extends StatelessWidget {
           final mode = ThemeMode.values[index];
           switch (index) {
             case 0:
-              label = Provider.of<UserPrefs>(
-                context,
-                listen: false,
-              ).currentTranslation.systemTheme;
+              label = translation.systemTheme;
               break;
             case 1:
-              label = Provider.of<UserPrefs>(
-                context,
-                listen: false,
-              ).currentTranslation.lightTheme;
+              label = translation.lightTheme;
               break;
             case 2:
-              label = Provider.of<UserPrefs>(
-                context,
-                listen: false,
-              ).currentTranslation.darkTheme;
+              label = translation.darkTheme;
               break;
             default:
           }
@@ -258,7 +240,7 @@ class Settings extends StatelessWidget {
         ),
         biggerSpacer,
         Text(
-          'Resource Collections',
+          translation.resourceCollections,
           style: FluentTheme.of(context).typography.subtitle,
         ),
         spacer,
@@ -291,7 +273,7 @@ class Settings extends StatelessWidget {
                         AquiferService().reInitializeResourceData(true);
                       }
                     },
-                    content: const Text('View suggested resource collections'),
+                    content: Text(translation.viewSuggestedCollections),
                   ),
                 ),
                 Padding(
@@ -301,7 +283,8 @@ class Settings extends StatelessWidget {
                     onChanged: (value) {
                       if (value) {
                         box.put('useDefaultResourcesOnly', false);
-                        AquiferService().reInitializeResourceData(true);
+                        // not necessary to do here - will do on column reload anyway
+                        // AquiferService().reInitializeResourceData(true);
 
                         final keys = userPrefsBox.keys;
                         for (var key in keys) {
@@ -311,7 +294,7 @@ class Settings extends StatelessWidget {
                         }
                       }
                     },
-                    content: const Text('View all resource collections'),
+                    content: Text(translation.viewSuggestedCollections),
                   ),
                 ),
               ],

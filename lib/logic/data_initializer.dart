@@ -126,6 +126,22 @@ class Translation {
   String strictSearch;
   String fuzzySearch;
   String openResourceColumn;
+  String goOnline;
+  String goOffline;
+  String copyNote;
+  String resourceCollections;
+  String viewSuggestedCollections;
+  String viewAllCollections;
+  String bulkVerseCopy;
+  String instructions;
+  String bulkVerseCopyInstructions;
+  String close;
+  String seeAllAbbreviations;
+  String chooseCollection;
+  String includeVerseNumbers;
+  String abbreviations;
+  String ok;
+  String couldNotParse;
 
   Translation({
     required this.langCode,
@@ -146,6 +162,22 @@ class Translation {
     required this.strictSearch,
     required this.fuzzySearch,
     required this.openResourceColumn,
+    required this.goOnline,
+    required this.goOffline,
+    required this.copyNote,
+    required this.resourceCollections,
+    required this.viewSuggestedCollections,
+    required this.viewAllCollections,
+    required this.bulkVerseCopy,
+    required this.instructions,
+    required this.bulkVerseCopyInstructions,
+    required this.close,
+    required this.seeAllAbbreviations,
+    required this.chooseCollection,
+    required this.includeVerseNumbers,
+    required this.abbreviations,
+    required this.ok,
+    required this.couldNotParse,
   });
 }
 
@@ -302,6 +334,24 @@ Future<void> asyncGetTranslations(BuildContext context) async {
             "strictSearch": translation['strictSearch'],
             "fuzzySearch": translation['fuzzySearch'],
             "openResourceColumn": translation['openResourceColumn'],
+            "goOnline": translation['goOnline'],
+            "goOffline": translation['goOffline'],
+            "copyNote": translation['copyNote'],
+            "resourceCollections": translation['resourceCollections'],
+            "viewSuggestedCollections": translation['viewSuggestedCollections'],
+            "viewAllCollections": translation['viewAllCollections'],
+            "bulkVerseCopy": translation['bulkVerseCopy'],
+            "instructions": translation['instructions'],
+            "bulkVerseCopyInstructions":
+                translation['bulkVerseCopyInstructions'],
+            "close": translation['close'],
+            "seeAllAbbreviations": translation['seeAllAbbreviations'],
+            "chooseCollection": translation['chooseCollection'],
+            "includeVerseNumbers": translation['includeVerseNumbers'],
+            "abbreviations": translation['abbreviations'],
+            "ok": translation['ok'],
+            "copy": translation['copy'],
+            "couldNotParse": translation['couldNotParse'],
           });
         }
       }
@@ -327,6 +377,25 @@ Future<void> asyncGetTranslations(BuildContext context) async {
             strictSearch: translationSupplement['strictSearch']!,
             fuzzySearch: translationSupplement['fuzzySearch']!,
             openResourceColumn: translationSupplement['openResourceColumn']!,
+            goOnline: translationSupplement['goOnline']!,
+            goOffline: translationSupplement['goOffline']!,
+            copyNote: translationSupplement['copyNote']!,
+            resourceCollections: translationSupplement['resourceCollections']!,
+            viewSuggestedCollections:
+                translationSupplement['viewSuggestedCollections']!,
+            viewAllCollections: translationSupplement['viewAllCollections']!,
+            bulkVerseCopy: translationSupplement['bulkVerseCopy']!,
+            instructions: translationSupplement['instructions']!,
+            bulkVerseCopyInstructions:
+                translationSupplement['bulkVerseCopyInstructions']!,
+            close: translationSupplement['close']!,
+            seeAllAbbreviations: translationSupplement['seeAllAbbreviations']!,
+            chooseCollection: translationSupplement['chooseCollection']!,
+            includeVerseNumbers: translationSupplement['includeVerseNumbers']!,
+            abbreviations: translationSupplement['abbreviations']!,
+            ok: translationSupplement['ok']!,
+
+            couldNotParse: translationSupplement['couldNotParse']!,
           ),
         );
       } catch (e) {

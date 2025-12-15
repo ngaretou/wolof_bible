@@ -69,7 +69,7 @@ ${licenseInfo.licenseName}
 ''';
     final translation = Provider.of<UserPrefs>(
       context,
-      listen: true,
+      listen: false,
     ).currentTranslation;
     String lastSelectedText = '';
     Color accentColor = FluentTheme.of(context).accentColor;
@@ -294,9 +294,9 @@ ${licenseInfo.licenseName}
                 resetSelection();
               }
 
-              Future<void> selectAll() async {
-                regionState.selectAll();
-              }
+              // Future<void> selectAll() async {
+              //   regionState.selectAll();
+              // }
 
               Future<void> copyWholeNote() async {
                 final fullNote =
@@ -349,14 +349,13 @@ $copyrightStatement
                     label: translation.copy,
                     onPressed: simpleCopy,
                   ),
+                  // ContextMenuButtonItem(
+                  //   label: "Select Note",
+                  //   // label: translation.copyWithNumbers,
+                  //   onPressed: selectAll,
+                  // ),
                   ContextMenuButtonItem(
-                    label: "Select All",
-                    // label: translation.copyWithNumbers,
-                    onPressed: selectAll,
-                  ),
-                  ContextMenuButtonItem(
-                    label: "Copy Note",
-                    // label: translation.copyWithoutNumbers,
+                    label: translation.copyNote,
                     onPressed: copyWholeNote,
                   ),
                 ],
