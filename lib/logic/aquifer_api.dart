@@ -3,6 +3,7 @@ import 'dart:collection';
 import 'package:flutter/foundation.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:package_info_plus/package_info_plus.dart';
 import '../secrets.dart';
 import '../providers/aquifer_classes.dart';
 import 'package:wolof_bible/main.dart';
@@ -69,6 +70,9 @@ class AquiferService {
           final frenchLanguage = responseJson.removeAt(frenchLanguageIndex);
           responseJson.insert(0, frenchLanguage);
         }
+        // for now don't show Swahili - langID 12 - it's freaking out
+        // TODO check to see if Swahili works in the future
+        responseJson.removeWhere((e) => e['id'] == 12);
         // save to offline
         userPrefsBox.put('resourceLanguages', responseJson);
         userPrefsBox.put('resourceLanguagesLastUpdated', DateTime.now());
@@ -258,10 +262,17 @@ class AquiferService {
           userPrefsBox.get('useDefaultResourcesOnly') ?? true;
       // we're online
       final DateTime? lastUpdated = userPrefsBox.get('collectionsLastUpdated');
+      final String lastBuildNumber = userPrefsBox.get(
+        'lastBuildNumber',
+        defaultValue: '0',
+      );
+      final packageInfo = await PackageInfo.fromPlatform();
+      final String currentBuildNumber = packageInfo.buildNumber;
+      userPrefsBox.put('lastBuildNumber', currentBuildNumber);
+      // let's only update collection info every 30 days _or_ when there's a new release
 
-      // let's only update collection info every 30 days
-
-      if (lastUpdated == null ||
+      if (currentBuildNumber != lastBuildNumber ||
+          lastUpdated == null ||
           lastUpdated.isBefore(
             // DateTime.now().subtract(const Duration(days: 0)), // testing
             DateTime.now().subtract(const Duration(days: 30)), // production

@@ -370,7 +370,7 @@ class _ResourceColumnState extends State<ResourceColumn> {
       }
     } catch (e) {
       if (e is AquiferConnectivityException) {
-        _handleConnectivityError(e);
+        // _handleConnectivityError(e);
       }
       debugPrint('Error fetching next chapter resources: $e');
     } finally {
@@ -960,8 +960,9 @@ class _ResourceColumnState extends State<ResourceColumn> {
                     // online/offline button
                     // useless on web, don't show it
                     // only show if offline content is available
-                    if (!kIsWeb &&
-                        _hasOfflineContent.contains(userResourceLanguageCode))
+                    if (!kIsWeb
+                    // && _hasOfflineContent.contains(userResourceLanguageCode)
+                    )
                       Tooltip(
                         message: _isOnline
                             ? translation.goOffline
@@ -976,19 +977,16 @@ class _ResourceColumnState extends State<ResourceColumn> {
                         ),
                       ),
 
-                    // if (kDebugMode)
-                    //   Tooltip(
-                    //     message: 'Clear User Preferences',
-                    //     child: IconButton(
-                    //       icon: Icon(
-                    //         FluentIcons.triangle_shape,
-                    //         color: Colors.orange,
-                    //       ),
-                    //       onPressed: () {
-                    //         userPrefsBox.clear();
-                    //       },
-                    //     ),
-                    //   ),
+                    if (kDebugMode)
+                      Tooltip(
+                        message: 'Clear User Preferences',
+                        child: IconButton(
+                          icon: Icon(FluentIcons.delete, color: Colors.orange),
+                          onPressed: () {
+                            userPrefsBox.clear();
+                          },
+                        ),
+                      ),
                     // if (kDebugMode)
                     //   Tooltip(
                     //     message: 'List UserPrefsBox keys',
