@@ -237,7 +237,7 @@ Kàddug Yàlla+ app code © 2025 Foundational LLC.
                 content: const FluentLicensePage(),
                 actions: [
                   Button(
-                    child: const Text('Close'),
+                    child: Text(translation.close),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ],
@@ -262,7 +262,7 @@ Kàddug Yàlla+ app code © 2025 Foundational LLC.
                 content: const BulkVerseCopy(),
                 actions: [
                   Button(
-                    child: const Text('Close'),
+                    child: Text(translation.close),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ],
