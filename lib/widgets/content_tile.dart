@@ -347,7 +347,7 @@ $copyrightStatement
               // the defaults
               // final buttonItems = regionState.contextMenuButtonItems;
 
-              return AdaptiveTextSelectionToolbar.buttonItems(
+              return FluentTextSelectionToolbar(
                 anchors: regionState.contextMenuAnchors,
 
                 buttonItems: [

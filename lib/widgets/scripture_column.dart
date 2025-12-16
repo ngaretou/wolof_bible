@@ -1004,7 +1004,10 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
 
     if (!collectionExists) {
       // this is bad - close the column
-      widget.deleteColumn(widget.key);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        widget.deleteColumn(widget.key);
+      });
+
       // return const Expanded(child: Center(child: ProgressRing()));
     }
 
@@ -1388,7 +1391,7 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
                                   //     regionState.contextMenuButtonItems;
 
                                   // Add your own "Copy with Ref" button
-                                  return AdaptiveTextSelectionToolbar.buttonItems(
+                                  return FluentTextSelectionToolbar(
                                     anchors: regionState.contextMenuAnchors,
                                     buttonItems: [
                                       ContextMenuButtonItem(
