@@ -95,6 +95,8 @@ to pre-process SAB data into assets
 
 
 ## Todo
+* When you come in to ResourceCol offline - it seems not to get that first time and gives you online resoruces
+* Viewing arabic - go offline - what happens? On Windows it goes to empty view. 
 * Add Swahili back in
 
 ### Testing

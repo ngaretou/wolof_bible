@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -801,7 +802,7 @@ class _ResourceColumnState extends State<ResourceColumn> {
   }
 
   Widget overscrollWorkaround({required Widget child}) {
-    if (kIsWeb) {
+    Widget listenerVersion() {
       return Listener(
         onPointerSignal: (event) {
           if (event is PointerScrollEvent) {
@@ -827,6 +828,12 @@ class _ResourceColumnState extends State<ResourceColumn> {
         },
         child: child,
       );
+    }
+
+    if (kIsWeb) {
+      return listenerVersion();
+    } else if (Platform.isWindows) {
+      return listenerVersion();
     } else {
       return NotificationListener(
         onNotification: (notification) {
