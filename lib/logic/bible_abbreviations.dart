@@ -9,14 +9,72 @@ class BibleAbbreviations {
   /// Canonical Paratext 3‑letter code → list of known variants
   static final Map<String, List<String>> _variants = {
     // Old Testament
-    "GEN": ["Gen", "Gen.", "Gn", "Ge", "Genese", "Genesis", "GEN"],
-    "EXO": ["Ex", "Exod", "Exo", "Ex.", "Exode", "Exodus", "EXO"],
-    "LEV": ["Lev", "Le", "Lv", "Levitique", "Leviticus", "LEV"],
-    "NUM": ["Num", "Nu", "Nm", "Nb", "Nombres", "Numbers", "NUM"],
-    "DEU": ["Deut", "De", "Dt", "Deuteronome", "Deuteronomy", "DEU"],
-    "JOS": ["Josh", "Jos", "Jsh", "Josue", "Joshua", "JOS"],
-    "JDG": ["Judg", "Jdg", "Jg", "Jdgs", "Juges", "Judges", "JDG"],
-    "RUT": ["Ruth", "Rth", "Ru", "RUT"],
+    "GEN": [
+      "Gen",
+      "Gen.",
+      "Gn",
+      "Ge",
+      "Genese",
+      "Genesis",
+      "GEN",
+      "Njalbeen ga",
+      "Nja",
+    ],
+    "EXO": [
+      "Ex",
+      "Exod",
+      "Exo",
+      "Ex.",
+      "Exode",
+      "Exodus",
+      "EXO",
+      "Mucc ga",
+      "Muc",
+    ],
+    "LEV": [
+      "Lev",
+      "Le",
+      "Lv",
+      "Levitique",
+      "Leviticus",
+      "LEV",
+      "Sarxalkat yi",
+      "Sar",
+    ],
+    "NUM": [
+      "Num",
+      "Nu",
+      "Nm",
+      "Nb",
+      "Nombres",
+      "Numbers",
+      "NUM",
+      "Mandin ma",
+      "Man",
+    ],
+    "DEU": [
+      "Deut",
+      "De",
+      "Dt",
+      "Deuteronome",
+      "Deuteronomy",
+      "DEU",
+      "Baamtug yoon wi",
+      "Baa",
+    ],
+    "JOS": ["Josh", "Jos", "Jsh", "Josue", "Joshua", "JOS", "Yosuwe", "Yos"],
+    "JDG": [
+      "Judg",
+      "Jdg",
+      "Jg",
+      "Jdgs",
+      "Juges",
+      "Judges",
+      "JDG",
+      "Njiit ya",
+      "Nji",
+    ],
+    "RUT": ["Ruth", "Rth", "Ru", "RUT", "Ruut", "Ruu"],
     "1SA": [
       "1 Sam.",
       "1 Sm",
@@ -30,7 +88,8 @@ class BibleAbbreviations {
       "1st Samuel",
       "First Samuel",
       "1 Samuel",
-      "1SA"
+      "1SA",
+      "1.Samiyel",
     ],
     "2SA": [
       "2 Sam.",
@@ -45,7 +104,8 @@ class BibleAbbreviations {
       "2nd Samuel",
       "Second Samuel",
       "2 Samuel",
-      "2SA"
+      "2SA",
+      "2.Samiyel",
     ],
     "1KI": [
       "1 Kings",
@@ -59,7 +119,9 @@ class BibleAbbreviations {
       "1st Kings",
       "First Kings",
       "1 Rois",
-      "1KI"
+      "1KI",
+      "1.Buur ya",
+      "1Bu",
     ],
     "2KI": [
       "2 Kings",
@@ -73,7 +135,9 @@ class BibleAbbreviations {
       "2nd Kings",
       "Second Kings",
       "2 Rois",
-      "2KI"
+      "2KI",
+      "2.Buur ya",
+      "2Bu",
     ],
     "1CH": [
       "1 Chron.",
@@ -89,7 +153,9 @@ class BibleAbbreviations {
       "First Chronicles",
       "1 Chroniques",
       "1 Chronicles",
-      "1CH"
+      "1CH",
+      "1.Jaar-jaar ya",
+      "1Ja",
     ],
     "2CH": [
       "2 Chron.",
@@ -105,12 +171,14 @@ class BibleAbbreviations {
       "Second Chronicles",
       "2 Chroniques",
       "2 Chronicles",
-      "2CH"
+      "2CH",
+      "2.Jaar-jaar ya",
+      "2Ja",
     ],
-    "EZR": ["Ezra", "Ezr.", "Ez.", "Esdras", "EZR"],
-    "NEH": ["Neh.", "Ne.", "Nehemie", "Nehemiah", "NEH"],
-    "EST": ["Est.", "Esth.", "Es.", "Esther", "EST"],
-    "JOB": ["Job", "Jb.", "JOB"],
+    "EZR": ["Ezra", "Ezr.", "Ez.", "Esdras", "EZR", "Esra", "Esr"],
+    "NEH": ["Neh.", "Ne.", "Nehemie", "Nehemiah", "NEH", "Neyemi", "Ney"],
+    "EST": ["Est.", "Esth.", "Es.", "Esther", "EST", "Esteer", "Est"],
+    "JOB": ["Job", "Jb.", "JOB", "Ayooba", "Ayo"],
     "PSA": [
       "Ps.",
       "Psalm",
@@ -121,9 +189,21 @@ class BibleAbbreviations {
       "Psaume",
       "Psaumes",
       "Psalms",
-      "PSA"
+      "PSA",
+      "Taalifi cant",
+      "Taa",
     ],
-    "PRO": ["Prov", "Pro.", "Prv.", "Pr.", "Proverbes", "Proverbs", "PRO"],
+    "PRO": [
+      "Prov",
+      "Pro.",
+      "Prv.",
+      "Pr.",
+      "Proverbes",
+      "Proverbs",
+      "PRO",
+      "Kaddu yu xelu",
+      "Kxe",
+    ],
     "ECC": [
       "Eccles.",
       "Eccle.",
@@ -132,7 +212,9 @@ class BibleAbbreviations {
       "Qoh.",
       "Ecclesiaste",
       "Ecclesiastes",
-      "ECC"
+      "ECC",
+      "Kadduy waare",
+      "Kwa",
     ],
     "SNG": [
       "Song",
@@ -144,33 +226,79 @@ class BibleAbbreviations {
       "Cantique",
       "Cantique des cantiques",
       "Song of Solomon",
-      "SNG"
+      "SNG",
+      "Ngen-gi-woy",
+      "Nge",
     ],
-    "ISA": ["Isa.", "Is.", "Esaie", "Isaiah", "ISA"],
-    "JER": ["Jer.", "Je.", "Jr.", "Jeremie", "Jeremiah", "JER"],
-    "LAM": ["Lam.", "La.", "Lamentations", "LAM", "Lamentation de Jérémie"],
-    "EZK": ["Ezek.", "Eze.", "Ezk.", "Ezechiel", "Ezekiel", "EZK"],
-    "DAN": ["Dan.", "Da.", "Dn.", "Daniel", "DAN"],
-    "HOS": ["Hos.", "Ho.", "Osee", "Hosea", "HOS"],
-    "JOL": ["Joel", "Jl.", "JOL"],
-    "AMO": ["Amos", "Am.", "AMO"],
-    "OBA": ["Obad.", "Ob.", "Abdias", "Obadiah", "OBA"],
-    "JON": ["Jonah", "Jnh.", "Jon.", "Jonas", "JON"],
-    "MIC": ["Mic.", "Mc.", "Michee", "Micah", "MIC"],
-    "NAM": ["Nah.", "Na.", "Nahum", "NAM"],
-    "HAB": ["Hab.", "Hb.", "Habacuc", "Habakkuk", "HAB"],
-    "ZEP": ["Zeph.", "Zep.", "Zp.", "Sophonie", "Zephaniah", "ZEP"],
-    "HAG": ["Hag.", "Hg.", "Aggee", "Haggai", "HAG"],
-    "ZEC": ["Zech.", "Zec.", "Zc.", "Zacharie", "Zechariah", "ZEC"],
-    "MAL": ["Mal.", "Ml.", "Malachie", "Malachi", "MAL"],
+    "ISA": ["Isa.", "Is.", "Esaie", "Isaiah", "ISA", "Esayi", "Esa"],
+    "JER": [
+      "Jer.",
+      "Je.",
+      "Jr.",
+      "Jeremie",
+      "Jeremiah",
+      "JER",
+      "Yeremi",
+      "Yer",
+    ],
+    "LAM": [
+      "Lam.",
+      "La.",
+      "Lamentations",
+      "LAM",
+      "Lamentation de Jérémie",
+      "Jooytu",
+      "Joo",
+    ],
+    "EZK": [
+      "Ezek.",
+      "Eze.",
+      "Ezk.",
+      "Ezechiel",
+      "Ezekiel",
+      "EZK",
+      "Esekiyel",
+      "Ese",
+    ],
+    "DAN": ["Dan.", "Da.", "Dn.", "Daniel", "DAN", "Dañeel", "Dan"],
+    "HOS": ["Hos.", "Ho.", "Osee", "Hosea", "HOS", "Ose"],
+    "JOL": ["Joel", "Jl.", "JOL", "Yowel", "Yow"],
+    "AMO": ["Amos", "Am.", "AMO", "Amo"],
+    "OBA": ["Obad.", "Ob.", "Abdias", "Obadiah", "OBA", "Abdiyas", "Abd"],
+    "JON": ["Jonah", "Jnh.", "Jon.", "Jonas", "JON", "Yunus", "Yun"],
+    "MIC": ["Mic.", "Mc.", "Michee", "Micah", "MIC", "Mise", "Mis"],
+    "NAM": ["Nah.", "Na.", "Nahum", "NAM", "Nawum", "Naw"],
+    "HAB": ["Hab.", "Hb.", "Habacuc", "Habakkuk", "HAB", "Abakug", "Aba"],
+    "ZEP": [
+      "Zeph.",
+      "Zep.",
+      "Zp.",
+      "Sophonie",
+      "Zephaniah",
+      "ZEP",
+      "Sofoni",
+      "Sof",
+    ],
+    "HAG": ["Hag.", "Hg.", "Aggee", "Haggai", "HAG", "Ase"],
+    "ZEC": [
+      "Zech.",
+      "Zec.",
+      "Zc.",
+      "Zacharie",
+      "Zechariah",
+      "ZEC",
+      "Sakkaryaa",
+      "Sak",
+    ],
+    "MAL": ["Mal.", "Ml.", "Malachie", "Malachi", "MAL", "Malasi", "Mal"],
 
     // New Testament
-    "MAT": ["Matt.", "Mt.", "Matthieu", "Matthew", "MAT"],
+    "MAT": ["Matt.", "Mt.", "Matthieu", "Matthew", "MAT", "Mace", "Mac"],
     "MRK": ["Mark", "Mrk", "Mar", "Mk", "Mr", "Marc", "MRK"],
-    "LUK": ["Luke", "Luk", "Lk", "Luc", "LUK"],
-    "JHN": ["John", "Joh", "Jhn", "Jn", "Jean", "JHN"],
-    "ACT": ["Acts", "Act", "Ac", "Actes", "ACT"],
-    "ROM": ["Rom.", "Ro.", "Rm.", "Romains", "Romans", "ROM"],
+    "LUK": ["Luke", "Luk", "Lk", "Luc", "LUK", "Luug", "Luu"],
+    "JHN": ["John", "Joh", "Jhn", "Jn", "Jean", "JHN", "Yowaan", "Yow"],
+    "ACT": ["Acts", "Act", "Ac", "Actes", "ACT", "Jef ya", "Jef"],
+    "ROM": ["Rom.", "Ro.", "Rm.", "Romains", "Romans", "ROM", "Room", "Roo"],
     "1CO": [
       "1 Cor.",
       "1 Co.",
@@ -182,7 +310,9 @@ class BibleAbbreviations {
       "First Corinthians",
       "1 Corinthiens",
       "1 Corinthians",
-      "1CO"
+      "1CO",
+      "1.Korent",
+      "1Ko",
     ],
     "2CO": [
       "2 Cor.",
@@ -195,12 +325,23 @@ class BibleAbbreviations {
       "Second Corinthians",
       "2 Corinthiens",
       "2 Corinthians",
-      "2CO"
+      "2CO",
+      "2.Korent",
+      "2Ko",
     ],
-    "GAL": ["Gal.", "Ga.", "Galates", "Galatians", "GAL"],
-    "EPH": ["Eph.", "Ephes.", "Ephesiens", "Ephesians", "EPH"],
-    "PHP": ["Phil.", "Php.", "Pp.", "Philippiens", "Philippians", "PHP"],
-    "COL": ["Col.", "Co.", "Colossiens", "Colossians", "COL"],
+    "GAL": ["Gal.", "Ga.", "Galates", "Galatians", "GAL", "Galasi"],
+    "EPH": ["Eph.", "Ephes.", "Ephesiens", "Ephesians", "EPH", "Efes", "Efe"],
+    "PHP": [
+      "Phil.",
+      "Php.",
+      "Pp.",
+      "Philippiens",
+      "Philippians",
+      "PHP",
+      "Filib",
+      "Fil",
+    ],
+    "COL": ["Col.", "Co.", "Colossiens", "Colossians", "COL", "Kolos", "Kol"],
     "1TH": [
       "1 Thess.",
       "1 Thes.",
@@ -214,7 +355,9 @@ class BibleAbbreviations {
       "First Thessalonians",
       "1 Thessaloniciens",
       "1 Thessalonians",
-      "1TH"
+      "1TH",
+      "1.Tesalonig",
+      "1Th",
     ],
     "2TH": [
       "2 Thess.",
@@ -229,7 +372,9 @@ class BibleAbbreviations {
       "Second Thessalonians",
       "2 Thessaloniciens",
       "2 Thessalonians",
-      "2TH"
+      "2TH",
+      "2.Tesalonig",
+      "2Th",
     ],
     "1TI": [
       "1 Tim.",
@@ -242,7 +387,9 @@ class BibleAbbreviations {
       "First Timothy",
       "1 Timothee",
       "1 Timothy",
-      "1TI"
+      "1TI",
+      "1.Timote",
+      "1Ti",
     ],
     "2TI": [
       "2 Tim.",
@@ -255,12 +402,14 @@ class BibleAbbreviations {
       "Second Timothy",
       "2 Timothee",
       "2 Timothy",
-      "2TI"
+      "2TI",
+      "2.Timote",
+      "2Ti",
     ],
     "TIT": ["Titus", "Tit", "Ti", "Tite", "TIT"],
-    "PHM": ["Philem.", "Phm.", "Pm.", "Philemon", "PHM"],
-    "HEB": ["Heb.", "Hebreux", "Hebrews", "HEB"],
-    "JAS": ["James", "Jas", "Jm", "Jacques", "JAS"],
+    "PHM": ["Philem.", "Phm.", "Pm.", "Philemon", "PHM", "Filemon", "Fil"],
+    "HEB": ["Heb.", "Hebreux", "Hebrews", "HEB", "Yawut ya", "Yaw"],
+    "JAS": ["James", "Jas", "Jm", "Jacques", "JAS", "Yanqooba", "Yan"],
     "1PE": [
       "1 Pet.",
       "1 Pe.",
@@ -277,7 +426,9 @@ class BibleAbbreviations {
       "First Peter",
       "1 Pierre",
       "1 Peter",
-      "1PE"
+      "1PE",
+      "1.Piyeer",
+      "1Pe",
     ],
     "2PE": [
       "2 Pet.",
@@ -295,7 +446,9 @@ class BibleAbbreviations {
       "Second Peter",
       "2 Pierre",
       "2 Peter",
-      "2PE"
+      "2PE",
+      "2.Piyeer",
+      "2Pe",
     ],
     "1JN": [
       "1 John",
@@ -314,7 +467,9 @@ class BibleAbbreviations {
       "1st John",
       "First John",
       "1 Jean",
-      "1JN"
+      "1JN",
+      "1.Yowaan",
+      "1Yo",
     ],
     "2JN": [
       "2 John",
@@ -333,7 +488,9 @@ class BibleAbbreviations {
       "2nd John",
       "Second John",
       "2 Jean",
-      "2JN"
+      "2JN",
+      "2.Yowaan",
+      "2Yo",
     ],
     "3JN": [
       "3 John",
@@ -352,10 +509,21 @@ class BibleAbbreviations {
       "3rd John",
       "Third John",
       "3 Jean",
-      "3JN"
+      "3JN",
+      "3.Yowaan",
+      "3Yo",
     ],
-    "JUD": ["Jude", "Jud.", "Jd.", "JUD"],
-    "REV": ["Rev", "Re", "The Revelation", "Apocalypse", "Revelation", "REV"]
+    "JUD": ["Jude", "Jud.", "Jd.", "JUD", "Yudd", "Yud"],
+    "REV": [
+      "Rev",
+      "Re",
+      "The Revelation",
+      "Apocalypse",
+      "Revelation",
+      "REV",
+      "Peenu ma",
+      "Pee",
+    ],
   };
 
   static Map<String, List<String>> get abbreviations {
@@ -365,13 +533,12 @@ class BibleAbbreviations {
   /// Flat lookup map: variant → canonical
   static final Map<String, String> _lookup = _buildLookup();
 
-  
-
   /// Normalize input: lowercase, strip punctuation/whitespace
   static String _normalize(String input) {
-    return removeDiacritics(input)
-        .toLowerCase()
-        .replaceAll(RegExp(r'[^a-z0-9]'), ''); // keep only alphanumerics
+    return removeDiacritics(input).toLowerCase().replaceAll(
+      RegExp(r'[^a-z0-9]'),
+      '',
+    ); // keep only alphanumerics
   }
 
   /// Build lookup map from variants

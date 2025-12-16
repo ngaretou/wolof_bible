@@ -4,6 +4,7 @@ import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_acrylic/flutter_acrylic.dart';
 import 'package:provider/provider.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import '../logic/aquifer_api.dart';
 import '../main.dart';
 import '../logic/data_initializer.dart';
 import '../providers/user_prefs.dart';
@@ -31,10 +32,7 @@ bool get kIsWindowEffectsSupported {
       ].contains(defaultTargetPlatform);
 }
 
-const linuxWindowEffects = [
-  WindowEffect.disabled,
-  WindowEffect.transparent,
-];
+const linuxWindowEffects = [WindowEffect.disabled, WindowEffect.transparent];
 
 const windowsWindowEffects = [
   WindowEffect.disabled,
@@ -91,40 +89,40 @@ class Settings extends StatelessWidget {
 
     const spacer = SizedBox(height: 10.0);
     const biggerSpacer = SizedBox(height: 40.0);
+    final translation = Provider.of<UserPrefs>(
+      context,
+      listen: true,
+    ).currentTranslation;
 
     // final supportedLocales = const AppLocalizationDelegate().supportedLocales;
     // final currentLocale =
     //     appTheme.locale ?? Localizations.maybeLocaleOf(context);
 
     return ScaffoldPage.scrollable(
-      header: PageHeader(
-          title: Text(Provider.of<UserPrefs>(context, listen: true)
-              .currentTranslation
-              .settings)),
+      header: PageHeader(title: Text(translation.settings)),
       scrollController: controller,
       children: [
         Text(
-            Provider.of<UserPrefs>(context, listen: true)
-                .currentTranslation
-                .settingsInterfaceLanguage,
-            style: FluentTheme.of(context).typography.subtitle),
+          translation.settingsInterfaceLanguage,
+          style: FluentTheme.of(context).typography.subtitle,
+        ),
         spacer,
         SizedBox(
           width: 150,
           child: ComboBox<String>(
             isExpanded: true,
             items: translations
-                .map((e) => ComboBoxItem<String>(
-                      value: e.langCode,
-                      child: Text(
-                        e.langName,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ))
+                .map(
+                  (e) => ComboBoxItem<String>(
+                    value: e.langCode,
+                    child: Text(e.langName, overflow: TextOverflow.ellipsis),
+                  ),
+                )
                 .toList(),
-            value: Provider.of<UserPrefs>(context, listen: false)
-                .currentTranslation
-                .langCode,
+            value: Provider.of<UserPrefs>(
+              context,
+              listen: false,
+            ).currentTranslation.langCode,
             onChanged: (value) {
               Provider.of<UserPrefs>(context, listen: false).setUserLang =
                   value!;
@@ -134,29 +132,22 @@ class Settings extends StatelessWidget {
         ),
         biggerSpacer,
         Text(
-            Provider.of<UserPrefs>(context, listen: false)
-                .currentTranslation
-                .settingsTheme,
-            style: FluentTheme.of(context).typography.subtitle),
+          translation.settingsTheme,
+          style: FluentTheme.of(context).typography.subtitle,
+        ),
         spacer,
         ...List.generate(ThemeMode.values.length, (index) {
           String label = '';
           final mode = ThemeMode.values[index];
           switch (index) {
             case 0:
-              label = Provider.of<UserPrefs>(context, listen: false)
-                  .currentTranslation
-                  .systemTheme;
+              label = translation.systemTheme;
               break;
             case 1:
-              label = Provider.of<UserPrefs>(context, listen: false)
-                  .currentTranslation
-                  .lightTheme;
+              label = translation.lightTheme;
               break;
             case 2:
-              label = Provider.of<UserPrefs>(context, listen: false)
-                  .currentTranslation
-                  .darkTheme;
+              label = translation.darkTheme;
               break;
             default:
           }
@@ -185,7 +176,8 @@ class Settings extends StatelessWidget {
             ),
           );
         }),
-        biggerSpacer,
+        spacer,
+
         // Text(
         //   'Navigation Pane Display Mode',
         //   style: FluentTheme.of(context).typography.subtitle,
@@ -231,19 +223,85 @@ class Settings extends StatelessWidget {
         // Text('Accent Color',
         //     style: FluentTheme.of(context).typography.subtitle),
         // spacer,
-        Wrap(children: [
-          // Tooltip(
-          //   message: accentColorNames[0],
-          //   child: _buildColorBlock(appTheme, systemAccentColor, 0),
-          // ),
-          ...List.generate(Colors.accentColors.length, (index) {
-            final color = Colors.accentColors[index];
-            return Tooltip(
-              message: accentColorNames[index + 1],
-              child: _buildColorBlock(appTheme, color, index),
+        Wrap(
+          children: [
+            // Tooltip(
+            //   message: accentColorNames[0],
+            //   child: _buildColorBlock(appTheme, systemAccentColor, 0),
+            // ),
+            ...List.generate(Colors.accentColors.length, (index) {
+              final color = Colors.accentColors[index];
+              return Tooltip(
+                message: accentColorNames[index + 1],
+                child: _buildColorBlock(appTheme, color, index),
+              );
+            }),
+          ],
+        ),
+        biggerSpacer,
+        Text(
+          translation.resourceCollections,
+          style: FluentTheme.of(context).typography.subtitle,
+        ),
+        spacer,
+        ValueListenableBuilder(
+          valueListenable: userPrefsBox.listenable(
+            keys: ['useDefaultResourcesOnly'],
+          ),
+          builder: (context, box, widget) {
+            bool useDefault = box.get('useDefaultResourcesOnly') ?? true;
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8.0),
+                  child: RadioButton(
+                    checked: useDefault,
+                    onChanged: (value) {
+                      if (value) {
+                        // reset the prefs for resource collections to show
+                        // otherwise you have resources you can't turn off shown
+                        // just delete the prefs and they will reinitialize
+                        final keys = userPrefsBox.keys;
+                        for (var key in keys) {
+                          if (key.startsWith('resource_prefs_')) {
+                            userPrefsBox.delete(key);
+                          }
+                        }
+                        box.put('useDefaultResourcesOnly', true);
+                        AquiferService().forceRefreshResourceData(true);
+                      }
+                    },
+                    content: Text(translation.viewSuggestedCollections),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8.0),
+                  child: RadioButton(
+                    checked: !useDefault,
+                    onChanged: (value) {
+                      if (value) {
+                        box.put('useDefaultResourcesOnly', false);
+                        // not necessary to do here - will do on column reload anyway
+                        AquiferService().forceRefreshResourceData(true);
+
+                        final keys = userPrefsBox.keys;
+                        for (var key in keys) {
+                          if (key.startsWith('resource_prefs_')) {
+                            userPrefsBox.delete(key);
+                          }
+                        }
+                      }
+                    },
+                    content: Text(translation.viewAllCollections),
+                  ),
+                ),
+              ],
             );
-          }),
-        ]),
+          },
+        ),
+
         // if (kIsWindowEffectsSupported) ...[
         //   biggerSpacer,
         //   Text(

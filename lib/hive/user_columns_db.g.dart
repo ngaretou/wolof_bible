@@ -23,13 +23,14 @@ class UserColumnsDBAdapter extends TypeAdapter<UserColumnsDB> {
       ..bookID = fields[3] as String?
       ..chapter = fields[4] as String?
       ..verse = fields[5] as String?
-      ..columnIndex = fields[6] as int;
+      ..columnIndex = fields[6] as int
+      ..columnType = fields[7] as String?;
   }
 
   @override
   void write(BinaryWriter writer, UserColumnsDB obj) {
     writer
-      ..writeByte(7)
+      ..writeByte(8)
       ..writeByte(0)
       ..write(obj.key)
       ..writeByte(1)
@@ -43,7 +44,9 @@ class UserColumnsDBAdapter extends TypeAdapter<UserColumnsDB> {
       ..writeByte(5)
       ..write(obj.verse)
       ..writeByte(6)
-      ..write(obj.columnIndex);
+      ..write(obj.columnIndex)
+      ..writeByte(7)
+      ..write(obj.columnType);
   }
 
   @override
