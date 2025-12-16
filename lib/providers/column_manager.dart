@@ -1,31 +1,12 @@
-import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'user_prefs.dart';
 
 class ColumnManager with ChangeNotifier {
-  bool readyToAddColumn = false;
-  bool readyToToggleSearch = false;
-  bool timeToRebuildColumns = false;
-
-  void addColumn() {
-    readyToAddColumn = true;
-    print('addColumn in provider');
-    notifyListeners();
-    Timer(const Duration(seconds: 1), () => readyToAddColumn = false);
-  }
+  bool isSearchOpen = false;
 
   void toggleSearch() {
-    readyToToggleSearch = true;
-    // // print('openSearch in provider');
+    isSearchOpen = !isSearchOpen;
     notifyListeners();
-    Timer(const Duration(seconds: 1), () => readyToToggleSearch = false);
-  }
-
-  void deleteColumnRebuildCall() {
-    timeToRebuildColumns = true;
-    // // print('timeToRebuildColumns in provider');
-    notifyListeners();
-    Timer(const Duration(seconds: 1), () => timeToRebuildColumns = false);
   }
 }
 
@@ -41,14 +22,15 @@ class ScrollGroup with ChangeNotifier {
   set setScrollGroupRef(BibleReference ref) {
     void setScrollGroup() {
       scrollGroupBibleReference = ref;
-
+      // print('${ref.bookID} ${ref.chapter} ${ref.verse}');
       notifyListeners();
     }
 
     if (scrollGroupBibleReference == null) {
       setScrollGroup();
     } else {
-      bool same = (scrollGroupBibleReference!.bookID == ref.bookID &&
+      bool same =
+          (scrollGroupBibleReference!.bookID == ref.bookID &&
           scrollGroupBibleReference!.chapter == ref.chapter &&
           scrollGroupBibleReference!.verse == ref.verse);
 

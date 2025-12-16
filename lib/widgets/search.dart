@@ -11,13 +11,17 @@ import '../logic/search_service.dart';
 import '../logic/verse_composer.dart';
 import '../providers/column_manager.dart';
 import '../providers/user_prefs.dart';
+import 'search_options_button.dart';
 
 class SearchWidget extends StatefulWidget {
   final Function closeSearch;
   final String? comboBoxFont;
 
-  const SearchWidget(
-      {super.key, required this.closeSearch, required this.comboBoxFont});
+  const SearchWidget({
+    super.key,
+    required this.closeSearch,
+    required this.comboBoxFont,
+  });
 
   @override
   State<SearchWidget> createState() => _SearchWidgetState();
@@ -25,7 +29,7 @@ class SearchWidget extends StatefulWidget {
 
 class _SearchWidgetState extends State<SearchWidget> {
   final _searchController = TextEditingController();
-  final _expanderKey = GlobalKey<ExpanderState>();
+
   final _searchService = SearchService();
   final ValueNotifier<int> _resultCountNotifier = ValueNotifier(0);
   bool fuzzy = true;
@@ -67,241 +71,207 @@ class _SearchWidgetState extends State<SearchWidget> {
       _streamBuilderKey = UniqueKey();
       _resultsStream = _searchService
           .search(
-        collectionIds: _collectionsToSearch,
-        query: searchRequest,
-        collectionLanguages: collectionLanguages,
-        isFuzzySearch: fuzzy,
-      )
-          .scan<List<SearchResult>>(
-              (acc, value, _) => acc..add(value), []).doOnData((results) {
-        _resultCountNotifier.value = results.length;
-      });
+            collectionIds: _collectionsToSearch,
+            query: searchRequest,
+            collectionLanguages: collectionLanguages,
+            isFuzzySearch: fuzzy,
+          )
+          .scan<List<SearchResult>>((acc, value, _) => acc..add(value), [])
+          .doOnData((results) {
+            _resultCountNotifier.value = results.length;
+          });
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    TextStyle searchControlsStyle = DefaultTextStyle.of(context).style.copyWith(
-          fontFamily: widget.comboBoxFont,
-          fontSize: 16,
-        );
-
-    final checkBoxes = List.generate(collections.length, (i) {
-      return Checkbox(
-        checked: _collectionsToSearch.contains(collections[i].id),
-        onChanged: (bool? value) {
-          setState(() {
-            if (_collectionsToSearch.contains(collections[i].id)) {
-              _collectionsToSearch
-                  .removeWhere((element) => element == collections[i].id);
-            } else {
-              _collectionsToSearch.add(collections[i].id);
-            }
-          });
-        },
-        content: Text(collections[i].name, style: searchControlsStyle),
-      );
-    });
-
-    final searchKind = [
-      Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Divider(),
-      ),
-      RadioButton(
-          checked: fuzzy,
-          onChanged: (val) {
-            setState(() {
-              fuzzy = true;
-            });
-          },
-          content: Text(Provider.of<UserPrefs>(context, listen: false)
-              .currentTranslation
-              .fuzzySearch)),
-      SizedBox(height: 8),
-      RadioButton(
-        checked: !fuzzy,
-        onChanged: (val) {
-          setState(() {
-            fuzzy = false;
-          });
-        },
-        content: Text(Provider.of<UserPrefs>(context, listen: false)
-            .currentTranslation
-            .strictSearch),
-      )
-    ];
+    TextStyle searchControlsStyle = DefaultTextStyle.of(
+      context,
+    ).style.copyWith(fontFamily: widget.comboBoxFont, fontSize: 16);
 
     return SizedBox(
-        width: 300,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            //Search tool card
-            Padding(
-              padding:
-                  const EdgeInsets.only(top: 5.0, right: 5, left: 5, bottom: 5),
-              child: Card(
-                backgroundColor:
-                    FluentTheme.of(context).brightness == Brightness.dark
-                        ? null
-                        : FluentTheme.of(context)
-                            .cardColor
-                            .lerpWith(Colors.grey, .1),
-                padding: const EdgeInsets.only(
-                    top: 12, bottom: 12, left: 12, right: 12),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: TextFormBox(
-                                  style: searchControlsStyle,
-                                  onEditingComplete: () => searchFunction(
-                                      _searchController.value.text),
-                                  maxLines: 1,
-                                  controller: _searchController,
-                                  suffixMode: OverlayVisibilityMode.always,
-                                  expands: false,
-                                  suffix: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.center,
-                                    children: [
-                                      ValueListenableBuilder<int>(
-                                        valueListenable: _resultCountNotifier,
-                                        builder: (context, count, child) {
-                                          if (count == 0) {
-                                            return const SizedBox.shrink();
-                                          }
-                                          return Padding(
-                                            padding: const EdgeInsets.symmetric(
-                                                horizontal: 8.0),
-                                            child: Text(
-                                              count.toString(),
-                                              style: TextStyle(
-                                                  color: Colors.grey[100]),
+      width: 300,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          //Search tool card
+          Padding(
+            padding: const EdgeInsets.only(
+              top: 5.0,
+              right: 5,
+              left: 5,
+              bottom: 5,
+            ),
+            child: Card(
+              backgroundColor:
+                  FluentTheme.of(context).brightness == Brightness.dark
+                  ? null
+                  : FluentTheme.of(context).cardColor.lerpWith(Colors.grey, .1),
+              padding: const EdgeInsets.only(
+                top: 12,
+                bottom: 12,
+                left: 12,
+                right: 12,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextFormBox(
+                                style: searchControlsStyle,
+                                onEditingComplete: () => searchFunction(
+                                  _searchController.value.text,
+                                ),
+                                maxLines: 1,
+                                controller: _searchController,
+                                suffixMode: OverlayVisibilityMode.always,
+                                expands: false,
+                                suffix: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    ValueListenableBuilder<int>(
+                                      valueListenable: _resultCountNotifier,
+                                      builder: (context, count, child) {
+                                        if (count == 0) {
+                                          return const SizedBox.shrink();
+                                        }
+                                        return Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8.0,
+                                          ),
+                                          child: Text(
+                                            count.toString(),
+                                            style: TextStyle(
+                                              color: Colors.grey[100],
                                             ),
-                                          );
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                    if (_searchController.text.isNotEmpty)
+                                      IconButton(
+                                        icon: const Icon(
+                                          material.Icons.backspace,
+                                        ),
+                                        onPressed: () {
+                                          _searchController.clear();
+                                          setState(() {
+                                            _resultsStream = null;
+                                            _resultCountNotifier.value = 0;
+                                          });
                                         },
                                       ),
-                                      if (_searchController.text.isNotEmpty)
-                                        IconButton(
-                                          icon: const Icon(
-                                              material.Icons.backspace),
-                                          onPressed: () {
-                                            _searchController.clear();
-                                            setState(() {
-                                              _resultsStream = null;
-                                              _resultCountNotifier.value = 0;
-                                            });
-                                          },
-                                        ),
-                                    ],
-                                  ),
-                                  placeholder: Provider.of<UserPrefs>(context,
-                                          listen: false)
-                                      .currentTranslation
-                                      .search,
-                                  placeholderStyle:
-                                      searchControlsStyle.copyWith(
-                                          color: DefaultTextStyle.of(context)
-                                              .style
-                                              .color!
-                                              .withAlpha(100)),
+                                  ],
+                                ),
+                                placeholder: Provider.of<UserPrefs>(
+                                  context,
+                                  listen: false,
+                                ).currentTranslation.search,
+                                placeholderStyle: searchControlsStyle.copyWith(
+                                  color: DefaultTextStyle.of(
+                                    context,
+                                  ).style.color!.withAlpha(100),
                                 ),
                               ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Expander(
-                            key: _expanderKey,
-                            leading: Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(vertical: 8.0),
-                              child: Button(
-                                child: Text(
-                                    Provider.of<UserPrefs>(context,
-                                            listen: false)
-                                        .currentTranslation
-                                        .search,
-                                    style: searchControlsStyle),
-                                onPressed: () => searchFunction(
-                                    _searchController.value.text),
-                              ),
                             ),
-                            header: const Text(''),
-                            content: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [...checkBoxes, ...searchKind]),
-                          ),
-                        ],
-                      ),
+                            const SizedBox(width: 8),
+                            ValueListenableBuilder<TextEditingValue>(
+                              valueListenable: _searchController,
+                              builder: (context, value, child) {
+                                return IconButton(
+                                  icon: const Icon(FluentIcons.search),
+                                  onPressed: value.text.length <= 3
+                                      ? null
+                                      : () => searchFunction(value.text),
+                                );
+                              },
+                            ),
+                            const SizedBox(width: 8),
+                            SearchOptionsButton(
+                              selectedCollections: _collectionsToSearch,
+                              onCollectionsChanged: (newCollections) {
+                                setState(() {
+                                  _collectionsToSearch = newCollections;
+                                });
+                              },
+                              fuzzy: fuzzy,
+                              onFuzzyChanged: (newFuzzy) {
+                                setState(() {
+                                  fuzzy = newFuzzy;
+                                });
+                              },
+                              font: widget.comboBoxFont,
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                    IconButton(
-                      onPressed: () {
-                        widget.closeSearch();
-                      },
-                      icon: const Icon(FluentIcons.calculator_multiply),
-                    ),
-                  ],
-                ),
+                  ),
+                  IconButton(
+                    onPressed: () {
+                      widget.closeSearch();
+                    },
+                    icon: const Icon(FluentIcons.calculator_multiply),
+                  ),
+                ],
               ),
             ),
-            Expanded(
-              child: () {
-                if (_resultsStream == null) {
-                  return const Center(
-                      child: Icon(FluentIcons.search, size: 40));
-                }
+          ),
+          Expanded(
+            child: () {
+              if (_resultsStream == null) {
+                return const Center(child: Icon(FluentIcons.search, size: 40));
+              }
 
-                return StreamBuilder<List<SearchResult>>(
-                  key: _streamBuilderKey,
-                  stream: _resultsStream,
-                  builder: (context, snapshot) {
-                    if (snapshot.hasError) {
-                      return Center(child: Text('Error: ${snapshot.error}'));
-                    }
+              return StreamBuilder<List<SearchResult>>(
+                key: _streamBuilderKey,
+                stream: _resultsStream,
+                builder: (context, snapshot) {
+                  if (snapshot.hasError) {
+                    return Center(child: Text('Error: ${snapshot.error}'));
+                  }
 
-                    switch (snapshot.connectionState) {
-                      case ConnectionState.none:
-                      case ConnectionState.waiting:
-                        return const Center(child: ProgressRing());
-                      case ConnectionState.active:
-                      case ConnectionState.done:
-                        final results = snapshot.data ?? [];
-                        if (results.isEmpty) {
-                          return const Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(FluentIcons.sad, size: 40),
-                                SizedBox(height: 10),
-                                Text('No results found.'),
-                              ],
-                            ),
-                          );
-                        }
-                        return ListView.builder(
-                          itemCount: results.length,
-                          itemBuilder: (ctx, i) => SearchResultTile(
-                            result: results[i],
+                  switch (snapshot.connectionState) {
+                    case ConnectionState.none:
+                    case ConnectionState.waiting:
+                      return const Center(child: ProgressRing());
+                    case ConnectionState.active:
+                    case ConnectionState.done:
+                      final results = snapshot.data ?? [];
+                      if (results.isEmpty) {
+                        return const Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(FluentIcons.sad, size: 40),
+                              SizedBox(height: 10),
+                              Text('No results found.'),
+                            ],
                           ),
                         );
-                    }
-                  },
-                );
-              }(),
-            ),
-          ],
-        ));
+                      }
+                      return ListView.builder(
+                        itemCount: results.length,
+                        itemBuilder: (ctx, i) =>
+                            SearchResultTile(result: results[i]),
+                      );
+                  }
+                },
+              );
+            }(),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -319,10 +289,12 @@ class _SearchResultTileState extends State<SearchResultTile> {
 
   @override
   Widget build(BuildContext context) {
-    final Collection thisCollection =
-        collections.firstWhere((c) => c.id == widget.result.collection);
-    final Book thisBook =
-        thisCollection.books.firstWhere((b) => b.id == widget.result.book);
+    final Collection thisCollection = collections.firstWhere(
+      (c) => c.id == widget.result.collection,
+    );
+    final Book thisBook = thisCollection.books.firstWhere(
+      (b) => b.id == widget.result.book,
+    );
 
     final String resultsFont = thisCollection.fonts.first.fontFamily;
     final ui.TextDirection textDirection = thisCollection.textDirection == 'LTR'
@@ -337,12 +309,13 @@ class _SearchResultTileState extends State<SearchResultTile> {
       fontSize: 20,
       color: DefaultTextStyle.of(context).style.color,
     );
-    final TextStyle refStyle = DefaultTextStyle.of(context)
-        .style
-        .copyWith(fontFamily: resultsFont, fontStyle: FontStyle.italic);
+    final TextStyle refStyle = DefaultTextStyle.of(
+      context,
+    ).style.copyWith(fontFamily: resultsFont, fontStyle: FontStyle.italic);
 
-    final String chVsSeparator =
-        textDirection == ui.TextDirection.rtl ? '\u{200F}.' : '.';
+    final String chVsSeparator = textDirection == ui.TextDirection.rtl
+        ? '\u{200F}.'
+        : '.';
 
     // Create a dummy ParsedLine to use the existing verseComposer
     final dummyLine = ParsedLine(
@@ -367,9 +340,9 @@ class _SearchResultTileState extends State<SearchResultTile> {
       child: MouseRegion(
         onEnter: (event) {
           setState(() {
-            cardColor = FluentTheme.of(context)
-                .cardColor
-                .lerpWith(FluentTheme.of(context).accentColor, .3);
+            cardColor = FluentTheme.of(
+              context,
+            ).cardColor.lerpWith(FluentTheme.of(context).accentColor, .3);
           });
         },
         onExit: (event) {
@@ -381,17 +354,19 @@ class _SearchResultTileState extends State<SearchResultTile> {
         child: GestureDetector(
           onTap: () {
             BibleReference ref = BibleReference(
-                key: UniqueKey(),
-                partOfScrollGroup: true,
-                collectionID: widget.result.collection,
-                bookID: widget.result.book,
-                chapter: widget.result.chapter,
-                verse: widget.result.verse,
-                columnIndex:
-                    1); //This is dummy data as we dont care about the columnIndex here, just the ref
+              key: UniqueKey(),
+              partOfScrollGroup: true,
+              collectionID: widget.result.collection,
+              bookID: widget.result.book,
+              chapter: widget.result.chapter,
+              verse: widget.result.verse,
+              columnIndex: 1,
+            ); //This is dummy data as we dont care about the columnIndex here, just the ref
 
-            final scrollGroup =
-                Provider.of<ScrollGroup>(context, listen: false);
+            final scrollGroup = Provider.of<ScrollGroup>(
+              context,
+              listen: false,
+            );
             // to get all columns to follow, the search fn becomes the leader
             scrollGroup.setActiveColumnKey = UniqueKey();
             scrollGroup.setScrollGroupRef = ref;
@@ -412,22 +387,23 @@ class _SearchResultTileState extends State<SearchResultTile> {
                 const SizedBox(height: 10),
                 const Divider(),
                 Wrap(
-                    alignment: WrapAlignment.end,
-                    textDirection: textDirection,
-                    children: [
-                      Text(
-                        '${thisBook.name} ${widget.result.chapter}$chVsSeparator${widget.result.verse}  |  ',
-                        style: refStyle,
-                        textDirection: textDirection,
-                        textAlign: textAlign,
-                      ),
-                      Text(
-                        thisCollection.name,
-                        style: refStyle,
-                        textDirection: textDirection,
-                        textAlign: textAlign,
-                      ),
-                    ]),
+                  alignment: WrapAlignment.end,
+                  textDirection: textDirection,
+                  children: [
+                    Text(
+                      '${thisBook.name} ${widget.result.chapter}$chVsSeparator${widget.result.verse}  |  ',
+                      style: refStyle,
+                      textDirection: textDirection,
+                      textAlign: textAlign,
+                    ),
+                    Text(
+                      thisCollection.name,
+                      style: refStyle,
+                      textDirection: textDirection,
+                      textAlign: textAlign,
+                    ),
+                  ],
+                ),
               ],
             ),
           ),

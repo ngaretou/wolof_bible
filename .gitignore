@@ -1,5 +1,6 @@
 #Corey edit
 sfm_parser/bin/text_utils.dart
+secrets.dart
 test
 pubspec.lock
 **/android/key.properties
