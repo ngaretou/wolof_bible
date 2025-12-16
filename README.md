@@ -88,6 +88,9 @@ to pre-process SAB data into assets
    * Pre-processing: Removed identification markers in introductions
    * Included manual assets section in pubspec.yaml different from auto generated
    * Aquifer resources
+ * 2.1.1
+   * Removed Swahili as it's experiencing problems on the Aquifer side
+   * 
 
 
 

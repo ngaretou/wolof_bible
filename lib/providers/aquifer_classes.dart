@@ -38,12 +38,14 @@ class AvailableLanguage {
   final String code; // language code
   final String displayName; // name of resource in that language
   final String scriptDirection; // language script direction
+  final int resourceItemCount; // number of resources in THIS COLLECTION in this language
 
   AvailableLanguage({
     required this.id,
     required this.code,
     required this.displayName,
     this.scriptDirection = 'LTR',
+    this.resourceItemCount = 0,
   });
 
   factory AvailableLanguage.fromJson(Map<String, dynamic> json) {
@@ -52,6 +54,7 @@ class AvailableLanguage {
       code: json['languageCode'],
       displayName: json['displayName'],
       scriptDirection: json['scriptDirection'] ?? 'LTR',
+      resourceItemCount: json['resourceItemCount'] ?? 0,
     );
   }
 }
