@@ -327,8 +327,8 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
   Future<void> callInterfaceInitialization() async {
     await asyncGetTranslations(context);
     // for resource data in resource column
-    bool connected = await AquiferService().checkConnectivity();
-    await AquiferService().initializeResourceData(connected);
+    // for resource data in resource column
+    await AquiferService().initializeResourceData();
   }
 
   late Future<void> initCollections = callInititalization();

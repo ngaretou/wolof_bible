@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter/foundation.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:flutter/gestures.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:wolof_bible/main.dart';
@@ -33,13 +34,12 @@ class ResourceColumn extends StatefulWidget {
 
 class _ResourceColumnState extends State<ResourceColumn> {
   // data
-  static final List<int> _hasOfflineContent = [1, 4]; //langIds
-  AquiferService aquiferService = AquiferService();
+  // static final List<int> _hasOfflineContent = [1, 4]; //langIds
   final List<ResourceItem> _resourceItems = [];
   ScrollGroup? _scrollGroup;
   late Future initialization;
   // our local list of collections for this column
-  List<ResourceCollectionInfo> collections = [];
+  List<ResourceCollectionInfo> resources = [];
   // List<ResourceCollectionInfo> selectedCollections = [];
   List<String> userResourceCodes = [];
   late ResourceLanguage language;
@@ -64,6 +64,7 @@ class _ResourceColumnState extends State<ResourceColumn> {
   // flags
   bool _isProgrammaticScroll = false;
   bool _isOnline = true;
+  late ValueListenable<Box> _connectivityListenable;
   bool _shouldCheckConnectivity = true;
   bool isLinked = true;
   bool _loadingLanguage = true;
@@ -83,6 +84,8 @@ class _ResourceColumnState extends State<ResourceColumn> {
     if (_isScrollGroupListenerInitialized) {
       _scrollGroup?.removeListener(_onScrollGroupChanged);
     }
+    _connectivityListenable.removeListener(_onConnectivityChanged);
+    _scrollGroup?.removeListener(_handleScroll);
     super.dispose();
   }
 
@@ -195,10 +198,22 @@ class _ResourceColumnState extends State<ResourceColumn> {
 
   Future<void> init() async {
     // Ensure AquiferService knows our connectivity state on startup
-    // Ensure AquiferService knows our connectivity state on startup
-    await AquiferService().ensureInitialized(_isOnline);
+    await AquiferService()
+        .ensureInitialized(); // No longer needs connected state
     await _loadTOC();
-    setLanguage();
+
+    // if online, will always be online as option to set this pref is not available.
+    if (userPrefsBox.get('userConnectivityChoice') == null) {
+      _shouldCheckConnectivity = true;
+      await _checkConnectivity(); // to set _is Online
+    } else {
+      _isOnline = userPrefsBox.get('userConnectivityChoice');
+      // if they've chosen to be online we should check connectivity
+      // if they've chosen offline, don't even check
+      _shouldCheckConnectivity = _isOnline;
+      await _checkConnectivity(); // will check to see if shouldcheck is true
+    }
+    await setLanguage();
   }
 
   Future<void> _loadTOC() async {
@@ -222,17 +237,11 @@ class _ResourceColumnState extends State<ResourceColumn> {
 
     itemPositionsListener.itemPositions.addListener(_handleScroll);
 
-    // if online, will always be online as option to set this pref is not available.
-    if (userPrefsBox.get('userConnectivityChoice') == null) {
-      _shouldCheckConnectivity = true;
-      _checkConnectivity(); // to set _is Online
-    } else {
-      _isOnline = userPrefsBox.get('userConnectivityChoice');
-      // if they've chosen to be online we should check connectivity
-      // if they've chosen offline, don't even check
-      _shouldCheckConnectivity = _isOnline;
-      _checkConnectivity(); // will check to see if shouldcheck is true
-    }
+    _connectivityListenable = userPrefsBox.listenable(
+      keys: ['userConnectivityChoice'],
+    );
+    _connectivityListenable.addListener(_onConnectivityChanged);
+
     initialization = init();
     super.initState();
   }
@@ -302,7 +311,7 @@ class _ResourceColumnState extends State<ResourceColumn> {
 
     // Only handle if we think we are online
     if (_isOnline) {
-      _toggleConnectivity();
+      _toggleConnectivity(false);
 
       displayInfoBar(
         context,
@@ -516,7 +525,7 @@ class _ResourceColumnState extends State<ResourceColumn> {
     });
 
     // Normal language switch: load from prefs, no forced reset
-    await _loadCollectionsAndSettings(forceReset: false);
+    await _loadCollectionsAndSettings();
 
     setState(() {
       _loadingLanguage = false;
@@ -524,71 +533,96 @@ class _ResourceColumnState extends State<ResourceColumn> {
     updateContent();
   }
 
-  Future<void> _toggleConnectivity() async {
+  void _onConnectivityChanged() {
+    bool? newVal = userPrefsBox.get('userConnectivityChoice');
+    if (newVal != null && newVal != _isOnline) {
+      _toggleConnectivity(newVal);
+    }
+  }
+
+  Future<void> _toggleConnectivity(bool newStatus) async {
+    print("Toggling connectivity to: $newStatus for column ${widget.key}");
     setState(() {
       _loadingLanguage = true;
     });
 
     // 1. Toggle Connectivity State
-    if (_isOnline) {
+    if (!newStatus) {
       // Going Offline
       _shouldCheckConnectivity = false;
       _isOnline = false;
-      userPrefsBox.put('userConnectivityChoice', false);
+      // We don't save here - saving triggers the change
     } else {
       // Going Online
       _shouldCheckConnectivity = true;
-      userPrefsBox.put('userConnectivityChoice', true);
-      await _checkConnectivity();
+      _isOnline = true; // Optimistically set to true
+      await _checkConnectivity(); // Verify
     }
 
     // 2. Re-initialize Service (reload global lists)
-    await AquiferService().forceRefreshResourceData(_isOnline);
-    languages.clear();
-    languages = AquiferService().getDisplayLanguages();
+    // No need to force refresh data - we just filter what we have locally now!
 
     // 3. Update Local State & Resources
     // If we just went offline, force reset to all available offline resources.
     // If we went online, just load normal settings (stick to what was chosen or load from prefs).
 
-    await _loadCollectionsAndSettings(forceReset: !_isOnline);
+    await _loadCollectionsAndSettings();
 
-    setState(() {
-      _loadingLanguage = false;
-    });
+    if (mounted) {
+      setState(() {
+        _loadingLanguage = false;
+      });
 
-    _fetchResources();
+      _fetchResources();
+    }
   }
 
   /// Centralized logic for loading collections and determining selected resources
-  Future<void> _loadCollectionsAndSettings({required bool forceReset}) async {
-    collections.clear();
-    collections = AquiferService()
+  /// forceReset _of available resources_
+  Future<void> _loadCollectionsAndSettings() async {
+    // Reload languages based on connectivity
+    var allLangs = AquiferService().getDisplayLanguages();
+    languages.clear();
+    if (_isOnline) {
+      languages.addAll(allLangs);
+    } else {
+      // Hardcoded offline languages for now
+      languages.addAll(offlineLanguages);
+    }
+
+    // if offline make sure userResourceLanguageCode is valid offline
+    if (!_isOnline) {
+      bool isOfflineLanguage = offlineLanguages.any(
+        (l) => l.id == userResourceLanguageCode,
+      );
+
+      if (!isOfflineLanguage) {
+        userResourceLanguageCode = languages.first.id;
+      }
+    }
+
+    // Reload resources based on connectivity
+    resources.clear();
+    var allResources = AquiferService()
         .getResourcesForLanguage(userResourceLanguageCode)
         .toList();
 
-    // 1. Determine User Resource Codes
-    try {
-      userResourceCodes.clear();
-    } catch (e) {
-      debugPrint('Error clearing userResourceCodes: $e');
+    if (_isOnline) {
+      resources.addAll(allResources);
+    } else {
+      resources.addAll(offlineResources);
     }
 
-    if (forceReset) {
-      // Logic: Reset to ALL available collections (likely offline ones)
+    // 1. Determine User Resource Codes
+    userResourceCodes.clear();
 
-      final tempList = collections.map((c) => c.code).toList();
-      userResourceCodes = tempList;
-      // Save immediately so this preference persists
-      userPrefsBox.put(
-        'resource_prefs_${userResourceLanguageCode.toString()}',
-        userResourceCodes,
-      );
-    } else {
+    String userCodesData =
+        'resource_prefs_${userResourceLanguageCode.toString()}';
+    if (_isOnline) {
       // Logic: get from prefs
-      List<dynamic>? savedRaw = userPrefsBox.get(
-        'resource_prefs_${userResourceLanguageCode.toString()}',
-      );
+
+      final savedRaw = userPrefsBox.get(userCodesData);
+
       if (savedRaw != null) {
         try {
           userResourceCodes.addAll(List<String>.from(savedRaw));
@@ -599,22 +633,32 @@ class _ResourceColumnState extends State<ResourceColumn> {
 
       // Fallbacks if nothing in prefs or all were removed
       if (userResourceCodes.isEmpty) {
-        userResourceCodes.addAll(
-          collections
-              .where((c) => defaultResources.contains(c.code))
-              .map((c) => c.code)
-              .toList(),
-        );
+        // if you don't have so many resources, just load them all
+        if (resources.length < 4) {
+          userResourceCodes.addAll(resources.map((c) => c.code).toList());
+        } else {
+          userResourceCodes.addAll(
+            resources
+                .where((c) => defaultResources.contains(c.code))
+                .map((c) => c.code)
+                .toList(),
+          );
+        }
       }
       // second fallback
-      if (userResourceCodes.isEmpty && collections.isNotEmpty) {
-        userResourceCodes.add(collections.first.code);
+      if (userResourceCodes.isEmpty && resources.isNotEmpty) {
+        userResourceCodes.add(resources.first.code);
       }
       // and save what we've done
-      userPrefsBox.put(
-        'resource_prefs_${userResourceLanguageCode.toString()}',
-        userResourceCodes,
-      );
+      userPrefsBox.put(userCodesData, userResourceCodes);
+    } else {
+      // Logic: Reset to ALL available collections
+      // this is when we have been online and want to go offline
+      // final tempList = resources.map((c) => c.code).toList();
+      final tempList = offlineResources.map((c) => c.code).toList();
+      userResourceCodes = tempList;
+      // Save immediately so this preference persists
+      userPrefsBox.put(userCodesData, userResourceCodes);
     }
 
     // 2. Update Language Object & Direction
@@ -913,25 +957,33 @@ class _ResourceColumnState extends State<ResourceColumn> {
                                   .toList(),
                             ),
                     ),
+
                     // small gear icon setting for choosing resources for the selected lang
-                    ResourceChooser(
-                      resourceCodes: userResourceCodes,
-                      langId: userResourceLanguageCode,
-                      textDirection: textDirection,
-                      onChanged: (code) {
-                        if (userResourceCodes.contains(code)) {
-                          userResourceCodes.remove(code);
-                        } else {
-                          userResourceCodes.add(code);
-                        }
-                        userPrefsBox.put(
-                          'resource_prefs_${userResourceLanguageCode.toString()}',
-                          userResourceCodes,
-                        );
-                      },
-                      // update the content after user changes resources
-                      onShouldUpdateContent: updateContent,
-                    ),
+                    _loadingLanguage
+                        ? IconButton(
+                            icon: Icon(FluentIcons.settings),
+                            onPressed: null,
+                          )
+                        // resource language chooser
+                        : ResourceChooser(
+                            resourceCodes: userResourceCodes,
+                            resources: resources,
+                            langId: userResourceLanguageCode,
+                            textDirection: textDirection,
+                            onChanged: (code) {
+                              if (userResourceCodes.contains(code)) {
+                                userResourceCodes.remove(code);
+                              } else {
+                                userResourceCodes.add(code);
+                              }
+                              userPrefsBox.put(
+                                'resource_prefs_${userResourceLanguageCode.toString()}',
+                                userResourceCodes,
+                              );
+                            },
+                            // update the content after user changes resources
+                            onShouldUpdateContent: updateContent,
+                          ),
                   ],
                   onFontIncrease: () {
                     if (baseFontSize < 50) {
@@ -973,7 +1025,13 @@ class _ResourceColumnState extends State<ResourceColumn> {
                                 ? WindowsIcons.wifi
                                 : WindowsIcons.wifi_error4,
                           ),
-                          onPressed: _toggleConnectivity,
+                          onPressed: () {
+                            // This will trigger the Hive listener to update all columns
+                            userPrefsBox.put(
+                              'userConnectivityChoice',
+                              !_isOnline,
+                            );
+                          },
                         ),
                       ),
 
@@ -987,14 +1045,37 @@ class _ResourceColumnState extends State<ResourceColumn> {
                           },
                         ),
                       ),
-                    // if (kDebugMode)
-                    //   Tooltip(
-                    //     message: 'List UserPrefsBox keys',
-                    //     child: IconButton(
-                    //       icon: Icon(FluentIcons.list, color: Colors.orange),
-                    //       onPressed: listUserPrefsBoxKeys,
-                    //     ),
-                    //   ),
+                    if (kDebugMode)
+                      Tooltip(
+                        message: 'List UserPrefsBox keys',
+                        child: IconButton(
+                          icon: Icon(FluentIcons.list, color: Colors.orange),
+                          onPressed: listUserPrefsBoxKeys,
+                        ),
+                      ),
+                    if (kDebugMode)
+                      Tooltip(
+                        message: 'Check out current codes for lang',
+                        child: IconButton(
+                          icon: Icon(
+                            FluentIcons.query_list,
+                            color: Colors.orange,
+                          ),
+                          onPressed: () {
+                            try {
+                              String userCodesData =
+                                  'resource_prefs_${userResourceLanguageCode.toString()}';
+                              print(userCodesData);
+                              final savedRaw = userPrefsBox.get(userCodesData);
+                              print(savedRaw);
+                            } catch (e) {
+                              debugPrint(
+                                'Error getting userResourceCodes from prefs: $e',
+                              );
+                            }
+                          },
+                        ),
+                      ),
                   ],
                 ),
                 if (_isFetchingPrevious)

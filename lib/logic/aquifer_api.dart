@@ -89,48 +89,98 @@ class AquiferService {
   }
 
   /// returns all languages in aquifer, regardless of whether there is content or not
-  Future<List<ResourceLanguage>> loadLanguages(bool connected) async {
+  Future<List<ResourceLanguage>> loadLanguages() async {
     // only initialize once per session
     if (_allLanguages.isNotEmpty) return _allLanguages;
-    // if we're offline, just use the offline languages
-    if (!connected) {
-      return offlineLanguages.toList();
-    } else {
-      // we're online, and could get languages, but let's only check once a month max
+
+    List<ResourceLanguage> loadedLanguages = [];
+
+    // Always add offline languages
+    loadedLanguages.addAll(offlineLanguages);
+
+    // Try to get online/cached languages
+    try {
       final resourceLangData = userPrefsBox.get('resourceLanguages');
-      // not doing anything with the data yet, just checking it's there
       if (resourceLangData != null) {
         final DateTime lastUpdated = userPrefsBox.get(
           'resourceLanguagesLastUpdated',
         );
-        if (lastUpdated.isBefore(
-          // DateTime.now().subtract(const Duration(days: 0)), // testing
-          DateTime.now().subtract(const Duration(days: 30)), // production
-        )) {
-          // if it's been a month, let's get the latest languages
-          return await refreshLanguagesFromAquifer();
+
+        // Check if we should update from network
+        bool shouldRefresh = lastUpdated.isBefore(
+          DateTime.now().subtract(const Duration(days: 30)),
+        );
+
+        if (shouldRefresh) {
+          // If we can fetch fresh data, do it
+          try {
+            List<ResourceLanguage> freshLangs =
+                await refreshLanguagesFromAquifer();
+            if (freshLangs.isNotEmpty) {
+              // Replace or merge? For now let's just use fresh ones as source of truth for online
+              // But we must deduplicate against offline languages if they share IDs
+              for (var lang in freshLangs) {
+                if (!loadedLanguages.any((l) => l.id == lang.id)) {
+                  loadedLanguages.add(lang);
+                }
+              }
+            }
+          } catch (e) {
+            // If fetch fails, fall back to cached
+            List<Map<String, dynamic>> savedResourceLanguages =
+                (resourceLangData as List)
+                    .map((e) => Map<String, dynamic>.from(e))
+                    .toList();
+            for (var json in savedResourceLanguages) {
+              var lang = ResourceLanguage.fromJson(json);
+              if (!loadedLanguages.any((l) => l.id == lang.id)) {
+                loadedLanguages.add(lang);
+              }
+            }
+          }
         } else {
-          // only deal with the data if we're going to use it
-          List<Map<String, dynamic>>? savedResourceLanguages =
+          // Use cached data
+          List<Map<String, dynamic>> savedResourceLanguages =
               (resourceLangData as List)
                   .map((e) => Map<String, dynamic>.from(e))
                   .toList();
-
-          return savedResourceLanguages
-              .map((e) => ResourceLanguage.fromJson(e))
-              .toList();
+          for (var json in savedResourceLanguages) {
+            var lang = ResourceLanguage.fromJson(json);
+            if (!loadedLanguages.any((l) => l.id == lang.id)) {
+              loadedLanguages.add(lang);
+            }
+          }
         }
       } else {
-        // we're online and there's no saved languages - get online languages
-        return await refreshLanguagesFromAquifer();
+        // No cache, try to fetch
+        try {
+          List<ResourceLanguage> freshLangs =
+              await refreshLanguagesFromAquifer();
+          for (var lang in freshLangs) {
+            if (!loadedLanguages.any((l) => l.id == lang.id)) {
+              loadedLanguages.add(lang);
+            }
+          }
+        } catch (e) {
+          // ignore, just use offline found so far
+        }
       }
+    } catch (e) {
+      debugPrint("Error loading languages: $e");
     }
+
+    return loadedLanguages;
   }
 
   // multiple collection metadata retrieval
-  Future<List<ResourceCollectionInfo>> loadCollections(bool connected) async {
+  Future<List<ResourceCollectionInfo>> loadCollections() async {
     // only initialize when needed
     if (_allCollections.isNotEmpty) return _allCollections;
+
+    List<ResourceCollectionInfo> loadedCollections = [];
+
+    // 1. Always start with offline resources
+    loadedCollections.addAll(offlineResources);
 
     /// Get the metadata for a single collection from Aquifer and save it to Hive
     Future<ResourceCollectionInfo?> refreshCollectionInfoFromAquifer(
@@ -255,12 +305,10 @@ class AquiferService {
       }
     }
 
-    if (!connected) {
-      return offlineResources.toList();
-    } else {
+    // Attempt to load online/cached data and merge
+    try {
       bool useDefaultResourcesOnly =
           userPrefsBox.get('useDefaultResourcesOnly') ?? true;
-      // we're online
       final DateTime? lastUpdated = userPrefsBox.get('collectionsLastUpdated');
       final String lastBuildNumber = userPrefsBox.get(
         'lastBuildNumber',
@@ -269,19 +317,23 @@ class AquiferService {
       final packageInfo = await PackageInfo.fromPlatform();
       final String currentBuildNumber = packageInfo.buildNumber;
       userPrefsBox.put('lastBuildNumber', currentBuildNumber);
-      // let's only update collection info every 30 days _or_ when there's a new release
 
+      // Check logic
       if (currentBuildNumber != lastBuildNumber ||
           lastUpdated == null ||
           lastUpdated.isBefore(
-            // DateTime.now().subtract(const Duration(days: 0)), // testing
-            DateTime.now().subtract(const Duration(days: 30)), // production
+            DateTime.now().subtract(const Duration(days: 30)),
           )) {
+        // Refresh from network
         try {
+          // If we are truly offline, this might fail, which is caught below
           List<ResourceCollectionInfo> aquiferCollections =
               await refreshCollectionListFromAquifer();
+
+          // Filter if needed
+          List<ResourceCollectionInfo> relevant;
           if (useDefaultResourcesOnly) {
-            return aquiferCollections
+            relevant = aquiferCollections
                 .where(
                   (collection) => defaultResources.any(
                     (resource) => resource == collection.code,
@@ -289,53 +341,72 @@ class AquiferService {
                 )
                 .toList();
           } else {
-            return aquiferCollections;
+            relevant = aquiferCollections;
+          }
+
+          // Merge
+          for (var col in relevant) {
+            // Deduplicate against offline
+            if (!loadedCollections.any((c) => c.code == col.code)) {
+              loadedCollections.add(col);
+            }
           }
         } catch (e) {
-          // fallback to local collections if we can't get online
-          return offlineResources.toList();
+          // Fallback to offline only (already loaded)
         }
       } else {
+        // Load from Hive
         try {
+          List<ResourceCollectionInfo> hiveCollections;
           if (useDefaultResourcesOnly) {
-            return loadCollectionsFromHive(defaultResources);
+            hiveCollections = loadCollectionsFromHive(defaultResources);
           } else {
             List<String> allCollectionCodes = userPrefsBox.get(
               'allCollectionCodes',
             );
-            return loadCollectionsFromHive(allCollectionCodes);
+            hiveCollections = loadCollectionsFromHive(allCollectionCodes);
+          }
+
+          // Merge
+          for (var col in hiveCollections) {
+            if (!loadedCollections.any((c) => c.code == col.code)) {
+              loadedCollections.add(col);
+            }
           }
         } catch (e) {
-          // fallback to local collections if we can't get hive or local
-          return offlineResources.toList();
+          // Fallback
         }
       }
+    } catch (e) {
+      debugPrint("Error loading collections: $e");
     }
+
+    return loadedCollections;
   }
 
   /// Ensures data is loaded if it hasn't been already
-  Future<void> ensureInitialized(bool connected) async {
+  Future<void> ensureInitialized() async {
     if (_allCollections.isEmpty || _allLanguages.isEmpty) {
-      await initializeResourceData(connected);
+      await initializeResourceData();
     }
   }
 
   /// this globally filters the
-  Future<void> initializeResourceData(bool connected) async {
+  Future<void> initializeResourceData() async {
     // idempotent check
     if (_allCollections.isNotEmpty && _allLanguages.isNotEmpty) {
       return;
     }
 
     // get the two main lists of info
-    _allCollections = await loadCollections(connected);
-    _allLanguages = await loadLanguages(connected);
+    _allCollections = await loadCollections();
+    _allLanguages = await loadLanguages();
   }
 
-  Future<void> forceRefreshResourceData(bool connected) async {
+  Future<void> forceRefreshResourceData() async {
     _allCollections.clear();
     _allLanguages.clear();
-    await initializeResourceData(connected);
+    await initializeResourceData();
   }
 
   /// Returns languages that have meaningful data (Tyndale/Biblica notes)
@@ -783,13 +854,13 @@ final List<AvailableLanguage> offlineNoteLanguages = [
   AvailableLanguage(
     id: 4,
     code: 'fra',
-    displayName: 'Notes d\'étude',
+    displayName: 'Notes d\'étude Tyndale - hors ligne',
     scriptDirection: 'LTR',
   ),
   AvailableLanguage(
     id: 1,
     code: 'eng',
-    displayName: 'Study Notes',
+    displayName: 'Tyndale Study Notes - offline',
     scriptDirection: 'LTR',
   ),
 ];
@@ -798,13 +869,13 @@ final List<AvailableLanguage> offlineIntroLanguages = [
   AvailableLanguage(
     id: 4,
     code: 'fra',
-    displayName: 'Introductions',
+    displayName: 'Introductions Tyndale - hors ligne',
     scriptDirection: 'LTR',
   ),
   AvailableLanguage(
     id: 1,
     code: 'eng',
-    displayName: 'Introductions',
+    displayName: 'Tyndale Introductions - offline',
     scriptDirection: 'LTR',
   ),
 ];

@@ -270,7 +270,7 @@ class Settings extends StatelessWidget {
                           }
                         }
                         box.put('useDefaultResourcesOnly', true);
-                        AquiferService().forceRefreshResourceData(true);
+                        AquiferService().forceRefreshResourceData();
                       }
                     },
                     content: Text(translation.viewSuggestedCollections),
@@ -284,7 +284,7 @@ class Settings extends StatelessWidget {
                       if (value) {
                         box.put('useDefaultResourcesOnly', false);
                         // not necessary to do here - will do on column reload anyway
-                        AquiferService().forceRefreshResourceData(true);
+                        AquiferService().forceRefreshResourceData();
 
                         final keys = userPrefsBox.keys;
                         for (var key in keys) {

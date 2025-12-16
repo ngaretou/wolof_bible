@@ -1,18 +1,19 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:wolof_bible/widgets/resource_column.dart';
-import '../logic/aquifer_api.dart';
 import '../providers/aquifer_classes.dart';
 
 class ResourceChooser extends StatefulWidget {
   final void Function(String) onChanged;
   final void Function() onShouldUpdateContent;
-  final List<String> resourceCodes;
+  final List<ResourceCollectionInfo> resources; // all resources
+  final List<String> resourceCodes; // chosen resources
   final int langId;
   final TextDirection textDirection;
   const ResourceChooser({
     super.key,
     required this.onChanged,
     required this.onShouldUpdateContent,
+    required this.resources,
     required this.resourceCodes,
     required this.langId,
     required this.textDirection,
@@ -28,8 +29,6 @@ class _ResourceChooserState extends State<ResourceChooser> {
   @override
   Widget build(BuildContext context) {
     final itemsController = FlyoutController();
-    List<ResourceCollectionInfo> resourceCollections = AquiferService()
-        .getResourcesForLanguage(widget.langId);
 
     itemsController.addListener(() {
       if (!itemsController.isOpen) {
@@ -62,7 +61,7 @@ class _ResourceChooserState extends State<ResourceChooser> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        children: resourceCollections.map((collection) {
+                        children: widget.resources.map((collection) {
                           return Padding(
                             padding: const EdgeInsets.all(6.0),
                             child: ToggleSwitch(
