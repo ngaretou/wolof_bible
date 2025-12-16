@@ -18,6 +18,10 @@ class About extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final translation = Provider.of<UserPrefs>(
+      context,
+      listen: false,
+    ).currentTranslation;
     // const isRunningWithWasm = bool.fromEnvironment('dart.tool.dart2wasm');
 
     // // print('about page build');
@@ -39,14 +43,16 @@ class About extends StatelessWidget {
       //get the document into a usable iterable
       final document = XmlDocument.parse(xmlFileString);
       //This is the info for all collectionsp
-      Iterable<XmlElement> xmlCollections =
-          document.getElement('app-definition')!.findAllElements('books');
+      Iterable<XmlElement> xmlCollections = document
+          .getElement('app-definition')!
+          .findAllElements('books');
 
       for (XmlElement xmlCollection in xmlCollections) {
         String id = xmlCollection.getAttribute('id').toString();
 
-        Iterable<XmlElement>? xmlMetadata =
-            xmlCollection.getElement('metadata')?.findAllElements('meta');
+        Iterable<XmlElement>? xmlMetadata = xmlCollection
+            .getElement('metadata')
+            ?.findAllElements('meta');
 
         if (xmlMetadata != null) {
           for (XmlElement xmlMeta in xmlMetadata) {
@@ -94,14 +100,16 @@ class About extends StatelessWidget {
 
       //Get the main about page html
 
-      String aboutPageHtml =
-          await assetBundle.loadString("assets/project/data/about/about.txt");
+      String aboutPageHtml = await assetBundle.loadString(
+        "assets/project/data/about/about.txt",
+      );
 
       //Now for each of the copyright texts we have, check to see if the appbuilder wants that text in the about page
       for (var k in copyrights.keys) {
         //check to see if the corresponding variable is present: e.g. %copyright-all:C01%
-        RegExpMatch? match =
-            RegExp('%copyright-all:$k%').firstMatch(aboutPageHtml);
+        RegExpMatch? match = RegExp(
+          '%copyright-all:$k%',
+        ).firstMatch(aboutPageHtml);
 
         //If present, replace variable with copyright text
         if (match != null) {
@@ -109,34 +117,44 @@ class About extends StatelessWidget {
               '<br><hr style="margin-top: 0px; margin-bottom: 10px;"><h2>${collections.where((element) => element.id == k).first.name}</h2><br>${copyrights[k]}<br>';
 
           aboutPageHtml = aboutPageHtml.replaceAll(
-              RegExp('%copyright-all:$k%'), composedCopyrightStatement);
+            RegExp('%copyright-all:$k%'),
+            composedCopyrightStatement,
+          );
         }
       }
 
       //Now all html is in
       //Clean up other variables
       aboutPageHtml = aboutPageHtml.replaceAll(RegExp(r'%app-name%'), appName);
-      aboutPageHtml =
-          aboutPageHtml.replaceAll(RegExp(r'%version-name%'), versionName);
-      aboutPageHtml =
-          aboutPageHtml.replaceAll(RegExp(r'%program-type%'), programType);
       aboutPageHtml = aboutPageHtml.replaceAll(
-          RegExp(r'%program-version%'), programVersion);
+        RegExp(r'%version-name%'),
+        versionName,
+      );
+      aboutPageHtml = aboutPageHtml.replaceAll(
+        RegExp(r'%program-type%'),
+        programType,
+      );
+      aboutPageHtml = aboutPageHtml.replaceAll(
+        RegExp(r'%program-version%'),
+        programVersion,
+      );
 
       //Replace any \n line breaks with html breaks
       aboutPageHtml = aboutPageHtml.replaceAll(RegExp(r'\\n'), '<br>');
 
       //Clean up any variables for collections that have them but there is no text for them
-      aboutPageHtml =
-          aboutPageHtml.replaceAll(RegExp('%copyright-all:C0\\d%'), '');
+      aboutPageHtml = aboutPageHtml.replaceAll(
+        RegExp('%copyright-all:C0\\d%'),
+        '',
+      );
 
-//       String styleBlock = '''<style>
-//   body h2 {
-//     margin-top: 0;
-//     color: blue;
-//   }
-// </style>
-// ''';
+      //       String styleBlock = '''<style>
+      //   body h2 {
+      //     margin-top: 0;
+      //     color: blue;
+      //   }
+      // </style>
+      // ''';
       // return styleBlock + aboutPageHtml;
 
       String appCopyright = '''
@@ -153,21 +171,26 @@ Kàddug Yàlla+ app code © 2025 Foundational LLC.
     Widget htmlToDisplay() {
       return FutureBuilder(
         future: htmlToRender,
-        builder: (ctx, snapshot) => snapshot.connectionState ==
-                ConnectionState.waiting
+        builder: (ctx, snapshot) =>
+            snapshot.connectionState == ConnectionState.waiting
             ? const Center(child: ProgressRing())
             //this is actually where the business happens; HTML just takes the data and renders it
             //SelectableHtml makes it selectable but you lose some formatting
             : Html(
                 data: snapshot.data.toString(),
-                onLinkTap: (String? url, Map<String, String> attributes,
-                    element) async {
-                  if (url != null) {
-                    await canLaunchUrl(Uri.parse(url))
-                        ? await launchUrl(Uri.parse(url))
-                        : throw 'Could not launch $url';
-                  }
-                }),
+                onLinkTap:
+                    (
+                      String? url,
+                      Map<String, String> attributes,
+                      element,
+                    ) async {
+                      if (url != null) {
+                        await canLaunchUrl(Uri.parse(url))
+                            ? await launchUrl(Uri.parse(url))
+                            : throw 'Could not launch $url';
+                      }
+                    },
+              ),
       );
     }
 
@@ -182,75 +205,79 @@ Kàddug Yàlla+ app code © 2025 Foundational LLC.
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
           FutureBuilder(
-              future: getPackageInfo(),
-              builder: (ctx, snapshot) => snapshot.connectionState ==
-                      ConnectionState.waiting
-                  ? const Center(child: ProgressBar())
-                  : Text(
-                      '${packageInfo.version} (${packageInfo.buildNumber})')),
+            future: getPackageInfo(),
+            builder: (ctx, snapshot) =>
+                snapshot.connectionState == ConnectionState.waiting
+                ? const Center(child: ProgressBar())
+                : Text('${packageInfo.version} (${packageInfo.buildNumber})'),
+          ),
           const SizedBox(width: 20),
           IconButton(
-              onPressed: () {
-                showDialog(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return const Center(child: OnboardingPanel());
-                    });
-              },
-              icon: const Icon(FluentIcons.info))
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return const Center(child: OnboardingPanel());
+                },
+              );
+            },
+            icon: const Icon(FluentIcons.info),
+          ),
         ],
       ),
       htmlToDisplay(),
       Button(
-          onPressed: () {
-            showDialog(
-              context: context,
-              builder: (context) {
-                return ContentDialog(
-                  constraints: BoxConstraints(maxWidth: 800, maxHeight: 600),
-                  title: const Text('Licenses'),
-                  content: const FluentLicensePage(),
-                  actions: [
-                    Button(
-                      child: const Text('Close'),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                  ],
-                );
-              },
-            );
-          },
-          child: const Text('Licenses')),
+        onPressed: () {
+          showDialog(
+            context: context,
+            builder: (context) {
+              return ContentDialog(
+                constraints: BoxConstraints(maxWidth: 800, maxHeight: 600),
+                title: const Text('Licenses'),
+                content: const FluentLicensePage(),
+                actions: [
+                  Button(
+                    child: Text(translation.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              );
+            },
+          );
+        },
+        child: const Text('Licenses'),
+      ),
       const SizedBox(height: 20),
       Button(
-          onPressed: () {
-            showDialog(
-                context: context,
-                builder: (context) {
-                  return ContentDialog(
-                    constraints: BoxConstraints(
-                        maxWidth: double.infinity, maxHeight: double.infinity),
-                    title: const Text('Bulk Verse Copy'),
-                    content: const BulkVerseCopy(),
-                    actions: [
-                      Button(
-                        child: const Text('Close'),
-                        onPressed: () => Navigator.pop(context),
-                      )
-                    ],
-                  );
-                });
-          },
-          child: const Text('Bulk Verse Copy')),
+        onPressed: () {
+          showDialog(
+            context: context,
+            builder: (context) {
+              return ContentDialog(
+                constraints: BoxConstraints(
+                  maxWidth: double.infinity,
+                  maxHeight: double.infinity,
+                ),
+                title: Text(translation.bulkVerseCopy),
+                content: const BulkVerseCopy(),
+                actions: [
+                  Button(
+                    child: Text(translation.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              );
+            },
+          );
+        },
+        child: Text(translation.bulkVerseCopy),
+      ),
     ];
 
     return ScaffoldPage.scrollable(
-        header: PageHeader(
-          title: Text(Provider.of<UserPrefs>(context, listen: false)
-              .currentTranslation
-              .about),
-        ),
-        children: pageContent);
+      header: PageHeader(title: Text(translation.about)),
+      children: pageContent,
+    );
   }
 }
 
@@ -289,7 +316,8 @@ class _FluentLicensePageState extends State<FluentLicensePage> {
             return Expander(
               header: Text(license.packages.join(', ')),
               content: SelectableText(
-                  license.paragraphs.map((p) => p.text).join('\n\n')),
+                license.paragraphs.map((p) => p.text).join('\n\n'),
+              ),
             );
           },
         );

@@ -11,10 +11,7 @@ class VerseOffset {
   final ParsedLine line;
   final Offset offset; // Offset within the ParagraphBuilder widget.
 
-  VerseOffset({
-    required this.line,
-    required this.offset,
-  });
+  VerseOffset({required this.line, required this.offset});
 }
 
 class ParagraphBuilder extends StatefulWidget {
@@ -26,14 +23,15 @@ class ParagraphBuilder extends StatefulWidget {
 
   final Function(List<VerseOffset>)? onLayoutCalculated;
 
-  const ParagraphBuilder(
-      {super.key,
-      required this.paragraph,
-      required this.addDivider,
-      required this.fontName,
-      required this.textDirection,
-      required this.fontSize,
-      this.onLayoutCalculated});
+  const ParagraphBuilder({
+    super.key,
+    required this.paragraph,
+    required this.addDivider,
+    required this.fontName,
+    required this.textDirection,
+    required this.fontSize,
+    this.onLayoutCalculated,
+  });
 
   @override
   State<ParagraphBuilder> createState() => _ParagraphBuilderState();
@@ -81,8 +79,9 @@ class _ParagraphBuilderState extends State<ParagraphBuilder> {
     TextStyle italicStyle = mainTextStyle.copyWith(fontStyle: FontStyle.italic);
 
     TextStyle introStyle = mainTextStyle.copyWith(
-        fontStyle: FontStyle.italic,
-        color: FluentTheme.of(context).accentColor);
+      fontStyle: FontStyle.italic,
+      color: FluentTheme.of(context).accentColor,
+    );
 
     List<InlineSpan> styledParagraphFragments = [];
     StringBuffer plainTextBuffer = StringBuffer();
@@ -182,11 +181,12 @@ class _ParagraphBuilderState extends State<ParagraphBuilder> {
       }
 
       final composed = verseComposer(
-          line: line,
-          computedTextStyle: computedTextStyle,
-          includeFootnotes: true,
-          context: context,
-          tileOnTap: () {});
+        line: line,
+        computedTextStyle: computedTextStyle,
+        includeFootnotes: true,
+        context: context,
+        tileOnTap: () {},
+      );
 
       plainTextBuffer.write(composed.versesAsString);
       return composed.versesAsSpans;
@@ -197,9 +197,10 @@ class _ParagraphBuilderState extends State<ParagraphBuilder> {
       return TextSpan(
         text: paragraphFragment,
         style: mainTextStyle.copyWith(
-            fontSize: fontScaling == null ? fontSize : fontSize * fontScaling,
-            fontStyle: italics == null ? FontStyle.normal : FontStyle.italic,
-            color: DefaultTextStyle.of(context).style.color),
+          fontSize: fontScaling == null ? fontSize : fontSize * fontScaling,
+          fontStyle: italics == null ? FontStyle.normal : FontStyle.italic,
+          color: DefaultTextStyle.of(context).style.color,
+        ),
       );
     }
 
@@ -213,18 +214,21 @@ class _ParagraphBuilderState extends State<ParagraphBuilder> {
         // For now, all intro lines are treated the same.
         switch (line.verseStyle) {
           case 'ili':
-            styledParagraphFragments
-                .add(TextSpan(text: "•\t", style: introStyle));
-            styledParagraphFragments
-                .addAll(processLine(line, paraStyle: introStyle));
+            styledParagraphFragments.add(
+              TextSpan(text: "•\t", style: introStyle),
+            );
+            styledParagraphFragments.addAll(
+              processLine(line, paraStyle: introStyle),
+            );
           //
 
           default:
             // The user wants each intro line to be an indented paragraph.
             // The indentation is added automatically for non-poetry paragraphs later.
 
-            styledParagraphFragments
-                .addAll(processLine(line, paraStyle: introStyle));
+            styledParagraphFragments.addAll(
+              processLine(line, paraStyle: introStyle),
+            );
         }
       } catch (e) {
         debugPrint('Error adding intro');
@@ -266,8 +270,9 @@ class _ParagraphBuilderState extends State<ParagraphBuilder> {
             break;
           case 'mr':
             if (line.verseText != '') {
-              styledParagraphFragments
-                  .add(s(line.verseText, fontScaling: .9, italics: true));
+              styledParagraphFragments.add(
+                s(line.verseText, fontScaling: .9, italics: true),
+              );
             }
             header = true;
             break;
@@ -290,8 +295,9 @@ class _ParagraphBuilderState extends State<ParagraphBuilder> {
           case 'd':
           case 'r':
             if (line.verseText != '') {
-              styledParagraphFragments
-                  .addAll(processLine(line, paraStyle: italicStyle));
+              styledParagraphFragments.addAll(
+                processLine(line, paraStyle: italicStyle),
+              );
             }
             break;
           default:
@@ -308,7 +314,9 @@ class _ParagraphBuilderState extends State<ParagraphBuilder> {
     if (!poetry && !header) {
       const indent = '    ';
       styledParagraphFragments.insert(
-          0, TextSpan(text: indent, style: mainTextStyle));
+        0,
+        TextSpan(text: indent, style: mainTextStyle),
+      );
       indentAdded = true;
     }
 
@@ -328,11 +336,12 @@ class _ParagraphBuilderState extends State<ParagraphBuilder> {
       if (span is WidgetSpan) {
         // The WidgetSpan is the footnote. Replace it with a simple TextSpan for layout.
         // The footnote is just a '*'
-        layoutSpans.add(TextSpan(
+        layoutSpans.add(
+          TextSpan(
             text: '*',
-            style: mainTextStyle.copyWith(
-              color: accentTextColor,
-            )));
+            style: mainTextStyle.copyWith(color: accentTextColor),
+          ),
+        );
       } else {
         layoutSpans.add(span);
       }
@@ -359,11 +368,10 @@ class _ParagraphBuilderState extends State<ParagraphBuilder> {
       // Make sure the character index is valid.
       if (charIndex < textPainter.text!.toPlainText().length) {
         final offset = textPainter.getOffsetForCaret(
-            TextPosition(offset: charIndex), Rect.zero);
-        offsets.add(VerseOffset(
-          line: line,
-          offset: offset,
-        ));
+          TextPosition(offset: charIndex),
+          Rect.zero,
+        );
+        offsets.add(VerseOffset(line: line, offset: offset));
       }
     });
 
@@ -378,8 +386,9 @@ class _ParagraphBuilderState extends State<ParagraphBuilder> {
 
     bool ltrText = widget.textDirection == ui.TextDirection.ltr;
     TextAlign paraAlignment = ltrText ? TextAlign.left : TextAlign.right;
-    bool header =
-        widget.paragraph.first.verseStyle.contains(RegExp(r'(s|mt|mr)'));
+    bool header = widget.paragraph.first.verseStyle.contains(
+      RegExp(r'(s|mt|mr)'),
+    );
     final ParsedLine currentFirstVerse = widget.paragraph.first;
     bool isPoetry = currentFirstVerse.verseStyle.contains(RegExp(r'q'));
 
@@ -410,21 +419,23 @@ class _ParagraphBuilderState extends State<ParagraphBuilder> {
           return Padding(
             padding: const EdgeInsets.only(top: 48),
             child: Container(
-                padding: const EdgeInsets.only(top: 36),
-                decoration: BoxDecoration(
-                  border: Border(
-                    top: BorderSide(
-                      color: FluentTheme.of(context)
-                          .accentColor, // Change to your desired color
-                      width: 2.0, // Thickness of the border
-                    ),
+              padding: const EdgeInsets.only(top: 36),
+              decoration: BoxDecoration(
+                border: Border(
+                  top: BorderSide(
+                    color: FluentTheme.of(
+                      context,
+                    ).accentColor, // Change to your desired color
+                    width: 2.0, // Thickness of the border
                   ),
                 ),
+              ),
 
-                // padding: EdgeInsets.all(20),
-                // height: 1,
-                // color: FluentTheme.of(context).cardColor,
-                child: para),
+              // padding: EdgeInsets.all(20),
+              // height: 1,
+              // color: FluentTheme.of(context).cardColor,
+              child: para,
+            ),
           );
         } else {
           return para;

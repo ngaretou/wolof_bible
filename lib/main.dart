@@ -15,13 +15,14 @@ import 'package:url_launcher/link.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:pwa_install/pwa_install.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'dart:io';
 import 'package:macos_window_utils/macos_window_utils.dart' as macos;
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
+import 'package:wolof_bible/logic/aquifer_api.dart';
+import 'package:wolof_bible/widgets/whats_new.dart';
 import 'firebase_options.dart';
 
 import 'screens/about.dart';
@@ -60,13 +61,13 @@ void main() async {
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
   PWAInstall().setup(
-      //   installCallback: () {
-      //   debugPrint('APP INSTALLED!');
-      // }
-      );
+    //   installCallback: () {
+    //   debugPrint('APP INSTALLED!');
+    // }
+  );
 
-// Hive stores its files in ApplicationDocumentsDirectory - for most platforms this works great, but Windows it stores these three files in the Documents directory. Yuck.
-// We've changed that now wtih await Hive.initFlutter('KaddugYalla'); but clean it up if a user has that old version.
+  // Hive stores its files in ApplicationDocumentsDirectory - for most platforms this works great, but Windows it stores these three files in the Documents directory. Yuck.
+  // We've changed that now wtih await Hive.initFlutter('KaddugYalla'); but clean it up if a user has that old version.
 
   if (!kIsWeb && Platform.isWindows) {
     List<String> filesToMove = [
@@ -75,7 +76,7 @@ void main() async {
       'usercolumnsdb.hive',
       'usercolumnsdb.lock',
       'userprefs.hive',
-      'userprefs.lock'
+      'userprefs.lock',
     ];
 
     String dir = (await getApplicationDocumentsDirectory()).path;
@@ -188,16 +189,10 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(
-          create: (ctx) => UserPrefs(),
-        ),
-        ChangeNotifierProvider(
-          create: (ctx) => ScrollGroup(),
-        ),
+        ChangeNotifierProvider(create: (ctx) => UserPrefs()),
+        ChangeNotifierProvider(create: (ctx) => ScrollGroup()),
         //This seems a bit hacky but there are two buttons in the navpane that are hard to reference so this provider helps there
-        ChangeNotifierProvider(
-          create: (ctx) => ColumnManager(),
-        ),
+        ChangeNotifierProvider(create: (ctx) => ColumnManager()),
         // only macos
       ],
       child: const MyApp(),
@@ -221,8 +216,10 @@ class MyApp extends StatelessWidget {
       // scrollbarPressingColor: Color.fromARGB(204, 18, 98, 54),
       // radius: const Radius.circular(100.0),
       // hoveringRadius: const Radius.circular(100.0),
-      mainAxisMargin: 4.0, hoveringMainAxisMargin: 4.0,
-      crossAxisMargin: 2.0, hoveringCrossAxisMargin: 2.0,
+      mainAxisMargin: 4.0,
+      hoveringMainAxisMargin: 4.0,
+      crossAxisMargin: 2.0,
+      hoveringCrossAxisMargin: 2.0,
       minThumbLength: 48.0,
       // trackBorderColor: Color.fromARGB(85, 126, 126, 126),
       // hoveringTrackBorderColor: Color.fromARGB(85, 126, 126, 126),
@@ -244,39 +241,40 @@ class MyApp extends StatelessWidget {
         }
 
         SystemChrome.setSystemUIOverlayStyle(style);
-        // print('about to hit FutureBuilder line 191');
+        // print('about to hit Future Builder line 191');
         return FluentApp(
           title: appTitle,
           themeMode: appTheme.mode,
           debugShowCheckedModeBanner: false,
-          home: MyHomePage(
-            appTheme: appTheme,
-          ),
+          home: MyHomePage(appTheme: appTheme),
           color: appTheme.color,
           // color: Colors.black,
           darkTheme: FluentThemeData(
-              brightness: Brightness.dark,
-              accentColor: appTheme.color,
-              visualDensity: VisualDensity.standard,
-              // focusTheme: FocusThemeData(
-              //   glowFactor: is10footScreen() ? 2.0 : 0.0,
-              // ),
-              scrollbarTheme: scrollBarTheme,
-              selectionColor: appTheme.color.darkest),
+            brightness: Brightness.dark,
+            accentColor: appTheme.color,
+            visualDensity: VisualDensity.standard,
+            // focusTheme: FocusThemeData(
+            //   glowFactor: is10footScreen() ? 2.0 : 0.0,
+            // ),
+            scrollbarTheme: scrollBarTheme,
+            selectionColor: appTheme.color.darkest,
+          ),
           theme: FluentThemeData(
-              accentColor: appTheme.color,
-              visualDensity: VisualDensity.standard,
-              // focusTheme: FocusThemeData(
-              //   glowFactor: is10footScreen() ? 2.0 : 0.0,
-              // ),
-              scrollbarTheme: scrollBarTheme,
-              selectionColor: appTheme.color.lightest),
+            accentColor: appTheme.color,
+            visualDensity: VisualDensity.standard,
+            // focusTheme: FocusThemeData(
+            //   glowFactor: is10footScreen() ? 2.0 : 0.0,
+            // ),
+            scrollbarTheme: scrollBarTheme,
+            selectionColor: appTheme.color.lightest,
+          ),
           builder: (context, child) {
             return Directionality(
               textDirection: appTheme.textDirection,
               child: NavigationPaneTheme(
                 data: NavigationPaneThemeData(
-                  backgroundColor: appTheme.windowEffect !=
+                  backgroundColor:
+                      appTheme.windowEffect !=
                           flutter_acrylic.WindowEffect.disabled
                       ? Colors.transparent
                       : null,
@@ -315,9 +313,7 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
     myProgress.value = progress;
   }
 
-  Future<List<Collection>> callInititalization() async {
-    // String response = await asyncGetProjectName(context);
-    // appTitle = response;
+  Future<void> callInititalization() async {
     UserPrefs userPrefs = Provider.of<UserPrefs>(context, listen: false);
     if (collections.isEmpty) {
       collections = await collectionsFromXML(context, updateProgress);
@@ -325,18 +321,22 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
 
     await userPrefs.loadUserPrefs(collections);
 
-    return collections;
+    return;
   }
 
   Future<void> callInterfaceInitialization() async {
     await asyncGetTranslations(context);
+    // for resource data in resource column
+    bool connected = await AquiferService().checkConnectivity();
+    await AquiferService().initializeResourceData(connected);
   }
 
-  late Future<List<Collection>> initCollections = callInititalization();
-  late Future<void> initInterface = callInterfaceInitialization();
+  late Future<void> initCollections = callInititalization();
+  late Future<void> initInterface;
 
   @override
   void initState() {
+    initInterface = callInterfaceInitialization();
     // print('MyHomePageState initState');
     windowManager.addListener(this);
 
@@ -350,6 +350,7 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
     super.dispose();
   }
 
+  // this works for Windows but for macos we've got the macos_window_delegate.dart file
   Future<void> saveWindowSize() async {
     Size media = await windowManager.getSize();
     userPrefsBox.put('windowHeight', media.height);
@@ -361,6 +362,15 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
     if (isDesktop) {
       saveWindowSize();
     }
+    super.onWindowResize();
+  }
+
+  @override
+  void onWindowResized() {
+    if (isDesktop) {
+      saveWindowSize();
+    }
+    super.onWindowResized();
   }
 
   //This works as far as it goes - the problem is that it can't detect when we are already in full screen.
@@ -383,16 +393,24 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
   @override
   Widget build(BuildContext context) {
     // print('MyHomePageState build');
-    bool? hasSeenOnboarding = userPrefsBox.get('hasSeenOnboarding');
 
-    if (hasSeenOnboarding == null) {
+    bool hasSeenOnboarding = userPrefsBox.get(
+      'hasSeenOnboarding',
+      defaultValue: false,
+    );
+
+    if (hasSeenOnboarding == false) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         showDialog(
-            barrierDismissible: true,
-            context: context,
-            builder: (BuildContext context) {
-              return const Center(child: OnboardingPanel());
-            });
+          barrierDismissible: true,
+          context: context,
+          builder: (BuildContext context) {
+            return const Center(child: OnboardingPanel());
+          },
+        ).then((_) {
+          setState(() {});
+        });
+
         //save that the user has seen the onboarding
         userPrefsBox.put('hasSeenOnboarding', true);
       });
@@ -404,25 +422,30 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: ProgressRing());
         } else {
+          final translation = Provider.of<UserPrefs>(
+            context,
+            listen: true,
+          ).currentTranslation;
           List<NavigationPaneItem> finalNavPaneItems = [];
 
           //For Wolof only and on web only on kaddugyalla.com
           List<NavigationPaneItem> wolofWebOnlyNavPaneItems = [
             if (kIsWeb)
               PaneItemAction(
-                  icon: const Icon(FluentIcons.download),
-                  title: const Text('Yebal appli bi ci sa ordinatër'),
-                  onTap: () {
-                    showDialog(
-                        barrierDismissible: true,
-                        context: context,
-                        builder: (BuildContext context) {
-                          return const Center(
-                              child: OnboardingPanel(
-                            appDownloadOnly: true,
-                          ));
-                        });
-                  }),
+                icon: const Icon(FluentIcons.download),
+                title: Text(translation.downloadApp),
+                onTap: () {
+                  showDialog(
+                    barrierDismissible: true,
+                    context: context,
+                    builder: (BuildContext context) {
+                      return const Center(
+                        child: OnboardingPanel(appDownloadOnly: true),
+                      );
+                    },
+                  );
+                },
+              ),
 
             _LinkPaneItemAction(
               icon: const Icon(FluentIcons.open_in_new_window),
@@ -434,7 +457,7 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
             //More apps
             _LinkPaneItemAction(
               icon: const Icon(FluentIcons.app_icon_default),
-              title: const Text('Yeneen appli'),
+              title: Text(translation.moreApps),
               link: 'https://sng.al/app',
               body: const SizedBox.shrink(),
             ),
@@ -493,12 +516,8 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
                   ? const Icon(FluentIcons.sunny)
                   : const Icon(FluentIcons.clear_night),
               title: FluentTheme.of(context).brightness == Brightness.dark
-                  ? Text(Provider.of<UserPrefs>(context, listen: true)
-                      .currentTranslation
-                      .lightTheme)
-                  : Text(Provider.of<UserPrefs>(context, listen: true)
-                      .currentTranslation
-                      .darkTheme),
+                  ? Text(translation.lightTheme)
+                  : Text(translation.darkTheme),
               onTap: () {
                 Future<void> saveThemeMode(String themeMode) async {
                   Box userPrefsBox = await Hive.openBox('userPrefs');
@@ -511,7 +530,8 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
                 mode is dark or light, and switch to an expressly declared light or dark*/
                 switch (widget.appTheme.mode) {
                   case ThemeMode.system:
-                    bool dark = (MediaQuery.of(context).platformBrightness ==
+                    bool dark =
+                        (MediaQuery.of(context).platformBrightness ==
                         Brightness.dark);
                     if (dark) {
                       widget.appTheme.mode = ThemeMode.light;
@@ -532,17 +552,14 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
 
             //About
             PaneItem(
-                body: const About(),
-                icon: const Icon(FluentIcons.info),
-                title: Text(Provider.of<UserPrefs>(context, listen: true)
-                    .currentTranslation
-                    .about)),
+              body: const About(),
+              icon: const Icon(FluentIcons.info),
+              title: Text(translation.about),
+            ),
             PaneItem(
               body: Settings(controller: settingsController),
               icon: const Icon(FluentIcons.settings),
-              title: Text(Provider.of<UserPrefs>(context, listen: true)
-                  .currentTranslation
-                  .settings),
+              title: Text(translation.settings),
             ),
           ];
 
@@ -554,55 +571,58 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
           NavigationAppBar? appBar({double height = 28}) {
             if (!kIsWeb && Platform.isWindows) {
               return NavigationAppBar(
-                  height: 30,
-                  automaticallyImplyLeading: false,
-                  title: () {
-                    if (kIsWeb) return Text(appTitle);
-                    return DragToMoveArea(
-                      child: Row(
-                        children: [
-                          const SizedBox(width: 15),
-                          Align(
-                            alignment: AlignmentDirectional.centerStart,
-                            child: Text(appTitle),
-                          ),
-                        ],
-                      ),
-                    );
-                  }(),
-                  actions: const Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      //     IconButton(
-                      //         icon: const Icon(FluentIcons.add),
-                      //         onPressed: () {
-                      //           numberOfColumns <= 3 //keep it to four columns
-                      //               ? changeNumberColumns(add: true)
-                      //               : null;
+                height: 30,
+                automaticallyImplyLeading: false,
+                title: () {
+                  if (kIsWeb) return Text(appTitle);
+                  return DragToMoveArea(
+                    child: Row(
+                      children: [
+                        const SizedBox(width: 15),
+                        Align(
+                          alignment: AlignmentDirectional.centerStart,
+                          child: Text(appTitle),
+                        ),
+                      ],
+                    ),
+                  );
+                }(),
+                actions: const Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    //     IconButton(
+                    //         icon: const Icon(FluentIcons.add),
+                    //         onPressed: () {
+                    //           numberOfColumns <= 3 //keep it to four columns
+                    //               ? changeNumberColumns(add: true)
+                    //               : null;
 
-                      //           // setState(() {});
-                      //         }),
+                    //           // setState(() {});
+                    //         }),
 
-                      //     // Spacer(),
-
-                      WindowButtons()
-                    ],
-                  ));
+                    //     // Spacer(),
+                    WindowButtons(),
+                  ],
+                ),
+              );
             } else if (!kIsWeb && Platform.isMacOS) {
               return NavigationAppBar(
-                  automaticallyImplyLeading: false,
-                  height: height,
-                  title: height == 4
-                      ? null
-                      : DragToMoveArea(child: Center(child: Text(appTitle))),
-                  actions: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.end,
-                  ));
+                automaticallyImplyLeading: false,
+                height: height,
+                title: height == 4
+                    ? null
+                    : DragToMoveArea(child: Center(child: Text(appTitle))),
+                actions: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.end,
+                ),
+              );
             } else {
               return const NavigationAppBar(
-                  automaticallyImplyLeading: false, height: 4);
+                automaticallyImplyLeading: false,
+                height: 4,
+              );
             }
           }
 
@@ -615,57 +635,58 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
 
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return ValueListenableBuilder<double>(
-                      valueListenable: myProgress,
-                      builder: (context, val, child) {
-                        if (val == 0) {
-                          return const Center(child: ProgressRing());
-                        } else {
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              Stack(
-                                alignment: Alignment.center,
-                                children: [
-                                  ProgressRing(value: val),
-                                  if (val.ceil() != 100)
-                                    Text('${val.ceil().toString()}%',
-                                        style: const TextStyle(fontSize: 10))
-                                ],
-                              ),
-                              SizedBox(
-                                  height:
-                                      (MediaQuery.of(context).size.height / 2) -
-                                          70),
-                              if (kIsWeb)
-                                Button(
-                                    onPressed: () async {
-                                      const url = 'https://kaddugyalla.com/av/';
-                                      if (await canLaunchUrl(Uri.parse(url))) {
-                                        await launchUrl(Uri.parse(url),
-                                            webOnlyWindowName: "_self");
-                                      } else {
-                                        throw 'Could not launch $url';
-                                      }
-                                    },
-                                    child: const Text(
-                                        'Dafa yeex ba ëpp, demal ci version bu weesu')),
-                              const SizedBox(
-                                height: 30,
-                              )
-                            ],
-                          );
-                        }
-                      });
+                    valueListenable: myProgress,
+                    builder: (context, val, child) {
+                      if (val == 0) {
+                        return const Center(child: ProgressRing());
+                      } else {
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                ProgressRing(value: val),
+                                if (val.ceil() != 100)
+                                  Text(
+                                    '${val.ceil().toString()}%',
+                                    style: const TextStyle(fontSize: 10),
+                                  ),
+                              ],
+                            ),
+                            SizedBox(
+                              height:
+                                  (MediaQuery.of(context).size.height / 2) - 70,
+                            ),
+                            // if (kIsWeb)
+                            //   Button(
+                            //       onPressed: () async {
+                            //         const url = 'https://kaddugyalla.com/av/';
+                            //         if (await canLaunchUrl(Uri.parse(url))) {
+                            //           await launchUrl(Uri.parse(url),
+                            //               webOnlyWindowName: "_self");
+                            //         } else {
+                            //           throw 'Could not launch $url';
+                            //         }
+                            //       },
+                            //       child: const Text(
+                            //           'Dafa yeex ba ëpp, demal ci version bu weesu')),
+                            const SizedBox(height: 30),
+                          ],
+                        );
+                      }
+                    },
+                  );
                 }
                 //Main row that holds the text columns
                 else {
-                  collections = snapshot.data as List<Collection>;
                   //Sets a default in case there is no RTL below
                   late String comboBoxFont =
                       collections.first.fonts.first.fontFamily;
-                  bool anyRTL = collections
-                      .any((element) => element.textDirection != 'LTR');
+                  bool anyRTL = collections.any(
+                    (element) => element.textDirection != 'LTR',
+                  );
 
                   if (anyRTL) {
                     String font = collections
@@ -677,96 +698,128 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
                   }
 
                   return BibleView(
-                      collections: collections, comboBoxFont: comboBoxFont);
+                    collections: collections,
+                    comboBoxFont: comboBoxFont,
+                  );
                 }
               },
             );
           }
 
           return ValueListenableBuilder<Box?>(
-              valueListenable: userPrefsBox.listenable(keys: ['fullscreen']),
-              builder: (context, _, child) {
-                double height = 28;
-                bool? fullscreen = userPrefsBox.get('fullscreen');
-                if (fullscreen != null) {
-                  if (fullscreen) {
-                    height = 4;
-                  } else {
-                    height = 28;
-                  }
+            valueListenable: userPrefsBox.listenable(keys: ['fullscreen']),
+            builder: (context, _, child) {
+              double height = 28;
+              bool? fullscreen = userPrefsBox.get('fullscreen');
+              if (fullscreen != null) {
+                if (fullscreen) {
+                  height = 4;
+                } else {
+                  height = 28;
                 }
+              }
 
-                return NavigationView(
-                  key: viewKey,
-                  //appBar is across top of the screen in place of normal OS specific title bar.
+              return NavigationView(
+                key: viewKey,
 
-                  appBar: appBar(height: height),
-                  //Main big row that holds the text columns
-                  pane: NavigationPane(
-                      selected: index,
-                      onChanged: (i) => setState(() => index = i),
-                      size: const NavigationPaneSize(
-                        openMinWidth: 250.0,
-                        openMaxWidth: 320.0,
-                      ),
-                      header: Container(
-                        height: kOneLineTileHeight,
-                        padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                      ),
-                      displayMode: widget.appTheme.displayMode,
-                      indicator: () {
-                        switch (widget.appTheme.indicator) {
-                          case NavigationIndicators.end:
-                            return const EndNavigationIndicator();
-                          case NavigationIndicators.sticky:
+                //appBar is across top of the screen in place of normal OS specific title bar.
+                appBar: appBar(height: height),
+                //Main big row that holds the text columns
+                pane: NavigationPane(
+                  selected: index,
+                  onChanged: (i) => setState(() => index = i),
+                  size: const NavigationPaneSize(
+                    openMinWidth: 250.0,
+                    openMaxWidth: 320.0,
+                  ),
+                  header: Container(
+                    height: kOneLineTileHeight,
+                    padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                  ),
+                  displayMode: widget.appTheme.displayMode,
+                  indicator: () {
+                    switch (widget.appTheme.indicator) {
+                      case NavigationIndicators.end:
+                        return const EndNavigationIndicator();
+                      case NavigationIndicators.sticky:
+                    }
+                  }(),
+                  items: [
+                    PaneItem(
+                      body: child!,
+                      icon: const Icon(FluentIcons.reading_mode_solid),
+                      title: Text(appTitle),
+                    ),
+
+                    //Search
+                    RunFunctionPaneItemAction(
+                      body: About(),
+                      title: Text(translation.search),
+                      icon: const Icon(FluentIcons.search),
+                      functionToRun: () {
+                        if (index != 0) {
+                          setState(() {
+                            index = 0;
+                          });
                         }
-                      }(),
-                      items: [
-                        PaneItem(
-                          body: child!,
-                          icon: const Icon(FluentIcons.reading_mode),
-                          title: Text(appTitle),
-                        ),
-                        //Search
+                        Provider.of<ColumnManager>(
+                          context,
+                          listen: false,
+                        ).toggleSearch();
+                      },
+                    ),
+                    //Add Column
+                    RunFunctionPaneItemAction(
+                      body: const About(),
+                      title: Text(translation.addColumn),
+                      icon: const Icon(FluentIcons.calculator_addition),
+                      functionToRun: () {
+                        if (index != 0) {
+                          setState(() {
+                            index = 0;
+                          });
+                        }
+                        Provider.of<UserPrefs>(
+                          context,
+                          listen: false,
+                        ).addColumn(context, ColumnType.scripture);
+                      },
+                    ),
+                    //Open Resource Column
+                    RunFunctionPaneItemAction(
+                      body: const About(),
+                      title: Text(translation.openResourceColumn),
 
-                        RunFunctionPaneItemAction(
-                            body: About(),
-                            title: Text(
-                                Provider.of<UserPrefs>(context, listen: true)
-                                    .currentTranslation
-                                    .search),
-                            icon: const Icon(FluentIcons.search),
-                            functionToRun: () {
-                              if (index != 0) {
-                                setState(() {
-                                  index = 0;
-                                });
-                              }
-                              Provider.of<ColumnManager>(context, listen: false)
-                                  .toggleSearch();
-                            }),
-                        //Add Column
-                        RunFunctionPaneItemAction(
-                            body: const About(),
-                            title: Text(
-                                Provider.of<UserPrefs>(context, listen: true)
-                                    .currentTranslation
-                                    .addColumn),
-                            icon: const Icon(FluentIcons.calculator_addition),
-                            functionToRun: () {
-                              if (index != 0) {
-                                setState(() {
-                                  index = 0;
-                                });
-                              }
-                              Provider.of<ColumnManager>(context, listen: false)
-                                  .addColumn();
-                            }),
-                      ],
-                      footerItems: finalNavPaneItems),
-                );
-              },
-              child: appBody());
+                      icon: WhatsNew(
+                        icon: const Icon(FluentIcons.diet_plan_notebook),
+                        title: translation.newStudyNotes,
+                        subtitle: translation.newStudyNotesSub,
+                        flag: 'hasSeenResourceIntro',
+                        // wait til this is true before showing
+                        gate: hasSeenOnboarding,
+                        placementMode: .rightCenter,
+
+                        child: const Icon(FluentIcons.diet_plan_notebook),
+                      ),
+                      functionToRun: () {
+                        if (index != 0) {
+                          setState(() {
+                            index = 0;
+                          });
+                        }
+                        Provider.of<UserPrefs>(
+                          context,
+                          listen: false,
+                        ).addColumn(context, ColumnType.resource);
+                      },
+                    ),
+                  ],
+                  footerItems: finalNavPaneItems,
+                ),
+              );
+            },
+            child: appBody(),
+          );
         }
       },
     );
@@ -862,9 +915,7 @@ class LightDarkModePaneItemAction extends PaneItem {
     super.infoBadge,
     super.focusNode,
     super.autofocus = false,
-  }) : super(
-          body: const About(),
-        );
+  }) : super(body: const About());
   final AppTheme appTheme;
   @override
   Widget build(
