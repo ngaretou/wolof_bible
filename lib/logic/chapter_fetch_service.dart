@@ -30,23 +30,34 @@ class ChapterFetchService {
     required int chapter,
   }) async {
     // print('getting initial chunk or refresh $collectionId, $bookId, $chapter');
-    final toc = await _getCollectionToc(collectionId);
+    final toc = await getCollectionToc(collectionId);
     if (toc.isEmpty) return FetchResult(lines: []);
 
     final bookIds = toc.keys.toList();
     final List<ParsedLine> allLines = [];
 
     // Determine previous, current, and next chapters
-    final currentChapterInfo = _ChapterInfo(bookId, chapter);
-    final prevChapterInfo =
-        _getPreviousChapterInfo(toc, bookIds, currentChapterInfo);
-    final nextChapterInfo =
-        _getNextChapterInfo(toc, bookIds, currentChapterInfo);
+    final currentChapterInfo = ChapterInfo(bookId, chapter);
+    final prevChapterInfo = getPreviousChapterInfo(
+      toc,
+      bookIds,
+      currentChapterInfo,
+    );
+    final nextChapterInfo = getNextChapterInfo(
+      toc,
+      bookIds,
+      currentChapterInfo,
+    );
 
     // Fetch previous chapter if it exists
     if (prevChapterInfo != null) {
-      allLines.addAll(await _fetchAndParseChapter(
-          collectionId, prevChapterInfo.bookId, prevChapterInfo.chapter));
+      allLines.addAll(
+        await _fetchAndParseChapter(
+          collectionId,
+          prevChapterInfo.bookId,
+          prevChapterInfo.chapter,
+        ),
+      );
     }
 
     // Fetch current chapter
@@ -54,8 +65,13 @@ class ChapterFetchService {
 
     // Fetch next chapter if it exists
     if (nextChapterInfo != null) {
-      allLines.addAll(await _fetchAndParseChapter(
-          collectionId, nextChapterInfo.bookId, nextChapterInfo.chapter));
+      allLines.addAll(
+        await _fetchAndParseChapter(
+          collectionId,
+          nextChapterInfo.bookId,
+          nextChapterInfo.chapter,
+        ),
+      );
     }
 
     return FetchResult(
@@ -71,23 +87,29 @@ class ChapterFetchService {
     required String bookId,
     required int lastChapter,
   }) async {
-    final toc = await _getCollectionToc(collectionId);
+    final toc = await getCollectionToc(collectionId);
     if (toc.isEmpty) return FetchResult(lines: []);
 
     final bookIds = toc.keys.toList();
-    final currentChapterInfo = _ChapterInfo(bookId, lastChapter);
-    final nextChapterInfo =
-        _getNextChapterInfo(toc, bookIds, currentChapterInfo);
+    final currentChapterInfo = ChapterInfo(bookId, lastChapter);
+    final nextChapterInfo = getNextChapterInfo(
+      toc,
+      bookIds,
+      currentChapterInfo,
+    );
 
     if (nextChapterInfo == null) {
       return FetchResult(lines: [], isAtEnd: true);
     }
 
     final lines = await _fetchAndParseChapter(
-        collectionId, nextChapterInfo.bookId, nextChapterInfo.chapter);
+      collectionId,
+      nextChapterInfo.bookId,
+      nextChapterInfo.chapter,
+    );
 
     // Check if the new chunk is the very last chapter
-    final isAtEnd = _getNextChapterInfo(toc, bookIds, nextChapterInfo) == null;
+    final isAtEnd = getNextChapterInfo(toc, bookIds, nextChapterInfo) == null;
 
     return FetchResult(lines: lines, isAtEnd: isAtEnd);
   }
@@ -98,38 +120,47 @@ class ChapterFetchService {
     required String bookId,
     required int firstChapter,
   }) async {
-    final toc = await _getCollectionToc(collectionId);
+    final toc = await getCollectionToc(collectionId);
     if (toc.isEmpty) return FetchResult(lines: []);
 
     final bookIds = toc.keys.toList();
-    final currentChapterInfo = _ChapterInfo(bookId, firstChapter);
-    final prevChapterInfo =
-        _getPreviousChapterInfo(toc, bookIds, currentChapterInfo);
+    final currentChapterInfo = ChapterInfo(bookId, firstChapter);
+    final prevChapterInfo = getPreviousChapterInfo(
+      toc,
+      bookIds,
+      currentChapterInfo,
+    );
 
     if (prevChapterInfo == null) {
       return FetchResult(lines: [], isAtBeginning: true);
     }
 
     final lines = await _fetchAndParseChapter(
-        collectionId, prevChapterInfo.bookId, prevChapterInfo.chapter);
+      collectionId,
+      prevChapterInfo.bookId,
+      prevChapterInfo.chapter,
+    );
 
     // Check if the new chunk is the very first chapter
     final isAtBeginning =
-        _getPreviousChapterInfo(toc, bookIds, prevChapterInfo) == null;
+        getPreviousChapterInfo(toc, bookIds, prevChapterInfo) == null;
 
     return FetchResult(lines: lines, isAtBeginning: isAtBeginning);
   }
 
   // --- Private Helper Methods ---
 
-  _ChapterInfo? _getPreviousChapterInfo(
-      Map<String, dynamic> toc, List<String> bookIds, _ChapterInfo current) {
+  ChapterInfo? getPreviousChapterInfo(
+    Map<String, dynamic> toc,
+    List<String> bookIds,
+    ChapterInfo current,
+  ) {
     // If the current chapter is not the first one, just decrement the chapter.
     final currentBookIndex = bookIds.indexOf(current.bookId);
 
     // if it's not one of 0 or 1, just decrement
     if (current.chapter > 1) {
-      return _ChapterInfo(current.bookId, current.chapter - 1);
+      return ChapterInfo(current.bookId, current.chapter - 1);
     } else {
       // remember if we're here we're either in chapter 1 or chapter 0/intro.
       // current.chapter == '0' or == '1'
@@ -146,7 +177,7 @@ class ChapterFetchService {
             final prevBookChapters =
                 toc[prevBookId]['chapters'] as Map<String, dynamic>;
             final lastChapterOfPrevBook = int.parse(prevBookChapters.keys.last);
-            return _ChapterInfo(prevBookId, lastChapterOfPrevBook);
+            return ChapterInfo(prevBookId, lastChapterOfPrevBook);
           } catch (e) {
             debugPrint('error getting previous chapter');
             debugPrint(e.toString());
@@ -155,20 +186,23 @@ class ChapterFetchService {
         }
       } else {
         // not at first chapter
-        return _ChapterInfo(current.bookId, current.chapter - 1);
+        return ChapterInfo(current.bookId, current.chapter - 1);
       }
     }
   }
 
-  _ChapterInfo? _getNextChapterInfo(
-      Map<String, dynamic> toc, List<String> bookIds, _ChapterInfo current) {
+  ChapterInfo? getNextChapterInfo(
+    Map<String, dynamic> toc,
+    List<String> bookIds,
+    ChapterInfo current,
+  ) {
     try {
       final currentBookChapters =
           toc[current.bookId]['chapters'] as Map<String, dynamic>;
       final lastChapterOfCurrentBook = int.parse(currentBookChapters.keys.last);
 
       if (current.chapter < lastChapterOfCurrentBook) {
-        return _ChapterInfo(current.bookId, current.chapter + 1);
+        return ChapterInfo(current.bookId, current.chapter + 1);
       }
 
       final currentBookIndex = bookIds.indexOf(current.bookId);
@@ -179,7 +213,7 @@ class ChapterFetchService {
         final nextBookChapters =
             toc[nextBookId]['chapters'] as Map<String, dynamic>;
         final firstChapterOfNextBook = int.parse(nextBookChapters.keys.first);
-        return _ChapterInfo(nextBookId, firstChapterOfNextBook);
+        return ChapterInfo(nextBookId, firstChapterOfNextBook);
       }
     } catch (e) {
       debugPrint('error getting next chapter');
@@ -190,7 +224,7 @@ class ChapterFetchService {
   }
 
   /// Helper function to load and cache the Table of Contents for a collection.
-  Future<Map<String, dynamic>> _getCollectionToc(String collectionId) async {
+  Future<Map<String, dynamic>> getCollectionToc(String collectionId) async {
     if (_tocCache.containsKey(collectionId)) {
       return _tocCache[collectionId]!;
     }
@@ -208,7 +242,10 @@ class ChapterFetchService {
 
   /// Helper function to fetch a single chapter's JSON and parse it into ParsedLine objects.
   Future<List<ParsedLine>> _fetchAndParseChapter(
-      String collectionId, String bookId, int chapter) async {
+    String collectionId,
+    String bookId,
+    int chapter,
+  ) async {
     final List<ParsedLine> lines = [];
 
     // If we are fetching an introduction (chapter 0) then slightly different:
@@ -262,17 +299,18 @@ class ChapterFetchService {
         return lines;
       } catch (e) {
         debugPrint(
-            'Error fetching or parsing chapter $collectionId/$bookId/$chapter: $e');
+          'Error fetching or parsing chapter $collectionId/$bookId/$chapter: $e',
+        );
         return [];
       }
     }
   }
 }
 
-/// A private helper class to hold book and chapter information.
-class _ChapterInfo {
+/// A public helper class to hold book and chapter information.
+class ChapterInfo {
   final String bookId;
   final int chapter;
 
-  _ChapterInfo(this.bookId, this.chapter);
+  ChapterInfo(this.bookId, this.chapter);
 }
