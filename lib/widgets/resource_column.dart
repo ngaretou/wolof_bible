@@ -311,6 +311,7 @@ class _ResourceColumnState extends State<ResourceColumn> {
 
   void _handleConnectivityError(dynamic error) {
     if (!mounted) return;
+    if (kIsWeb) return; // don't toggle connectivity on web
 
     // Only handle if we think we are online
     if (_isOnline) {
@@ -382,6 +383,7 @@ class _ResourceColumnState extends State<ResourceColumn> {
       }
     } catch (e) {
       if (e is AquiferConnectivityException) {
+        // don't do anything here - if there is a gap in the notes source this can get triggered
         // _handleConnectivityError(e);
       }
       debugPrint('Error fetching next chapter resources: $e');
@@ -546,7 +548,7 @@ class _ResourceColumnState extends State<ResourceColumn> {
   }
 
   Future<void> _toggleConnectivity(bool newStatus) async {
-    print("Toggling connectivity to: $newStatus for column ${widget.key}");
+    debugPrint("Toggling connectivity to: $newStatus for column ${widget.key}");
     setState(() {
       _loadingLanguage = true;
     });
