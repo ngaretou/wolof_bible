@@ -4,7 +4,6 @@ import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_acrylic/flutter_acrylic.dart';
 import 'package:provider/provider.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import '../logic/aquifer_api.dart';
 import '../main.dart';
 import '../logic/data_initializer.dart';
 import '../providers/user_prefs.dart';
@@ -270,7 +269,6 @@ class Settings extends StatelessWidget {
                           }
                         }
                         box.put('useDefaultResourcesOnly', true);
-                        AquiferService().forceRefreshResourceData();
                       }
                     },
                     content: Text(translation.viewSuggestedCollections),
@@ -283,8 +281,6 @@ class Settings extends StatelessWidget {
                     onChanged: (value) {
                       if (value) {
                         box.put('useDefaultResourcesOnly', false);
-                        // not necessary to do here - will do on column reload anyway
-                        AquiferService().forceRefreshResourceData();
 
                         final keys = userPrefsBox.keys;
                         for (var key in keys) {

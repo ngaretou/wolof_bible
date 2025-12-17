@@ -84,12 +84,14 @@ to pre-process SAB data into assets
    * reporting how many results are found in search box 
    * for macOS, double clicking title bar goes 
    * consistent theming for license and bulk verse copy
-* 2.1.0
+* 2.1.0+22
    * Pre-processing: Removed identification markers in introductions
    * Included manual assets section in pubspec.yaml different from auto generated
    * Aquifer resources
-* 2.1.1
+* 2.1.0+23
    * Removed Swahili as it's experiencing problems on the Aquifer side
+* 2.1.0+24
+   * lots of logic refactoring to get the service and UI separated
    * 
 
 

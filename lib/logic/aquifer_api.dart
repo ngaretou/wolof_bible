@@ -11,14 +11,6 @@ import 'package:flutter/services.dart' show rootBundle;
 import 'dart:io'; // for SocketException
 import 'dart:async'; // for TimeoutException
 
-/// Custom exception for connectivity issues
-class AquiferConnectivityException implements Exception {
-  final String message;
-  AquiferConnectivityException(this.message);
-  @override
-  String toString() => message;
-}
-
 const String baseUrl = 'https://aquifer-proxy.corey-garrett.workers.dev';
 
 class AquiferService {
@@ -41,78 +33,93 @@ class AquiferService {
   List<ResourceLanguage> get allLanguages =>
       UnmodifiableListView(_allLanguages);
 
-  Future<List<ResourceLanguage>> refreshLanguagesFromAquifer() async {
-    final uri = Uri.parse('$baseUrl/languages');
-    try {
-      final response = await http.get(
-        uri,
-        headers: {
-          'Content-Type': 'application/json',
-          'X-App-ID': _appId, // CRITICAL: Must match the secret on Cloudflare
-        },
-      );
-
-      if (response.statusCode == 200) {
-        if (kDebugMode) {
-          debugPrint('got languages from aquifer');
-        }
-        // get the format we need
-        List<dynamic> responseJson = json.decode(response.body);
-        // move french to the top
-        int? frenchLanguageIndex;
-        for (int i = 0; i < responseJson.length; i++) {
-          if (responseJson[i]['code'] == 'fra') {
-            frenchLanguageIndex = i;
-            break;
-          }
-        }
-        if (frenchLanguageIndex != null) {
-          final frenchLanguage = responseJson.removeAt(frenchLanguageIndex);
-          responseJson.insert(0, frenchLanguage);
-        }
-        // for now don't show Swahili - langID 12 - it's freaking out
-        // TODO check to see if Swahili works in the future
-        responseJson.removeWhere((e) => e['id'] == 12);
-        // save to offline
-        userPrefsBox.put('resourceLanguages', responseJson);
-        userPrefsBox.put('resourceLanguagesLastUpdated', DateTime.now());
-
-        return responseJson.map((e) => ResourceLanguage.fromJson(e)).toList();
-      } else {
-        debugPrint('Error: ${response.statusCode} - ${response.body}');
-        return [];
-      }
-    } catch (e) {
-      debugPrint('Exception: $e');
-      return [];
-    }
-  }
-
   /// returns all languages in aquifer, regardless of whether there is content or not
-  Future<List<ResourceLanguage>> loadLanguages() async {
+  Future<List<ResourceLanguage>> loadLanguages({
+    required bool shouldRefresh,
+  }) async {
     // only initialize once per session
     if (_allLanguages.isNotEmpty) return _allLanguages;
+
+    Future<List<ResourceLanguage>> refreshLanguagesFromAquifer() async {
+      final uri = Uri.parse('$baseUrl/languages');
+      try {
+        final response = await http.get(
+          uri,
+          headers: {
+            'Content-Type': 'application/json',
+            'X-App-ID': _appId, // CRITICAL: Must match the secret on Cloudflare
+          },
+        );
+
+        if (response.statusCode == 200) {
+          if (kDebugMode) {
+            debugPrint('got languages from aquifer');
+          }
+          // get the format we need
+          List<dynamic> responseJson = json.decode(response.body);
+          // move french to the top
+          int? frenchLanguageIndex;
+          for (int i = 0; i < responseJson.length; i++) {
+            if (responseJson[i]['code'] == 'fra') {
+              frenchLanguageIndex = i;
+              break;
+            }
+          }
+          if (frenchLanguageIndex != null) {
+            final frenchLanguage = responseJson.removeAt(frenchLanguageIndex);
+            responseJson.insert(0, frenchLanguage);
+          }
+          // for now don't show Swahili - langID 12 - it's freaking out
+          // TODO check to see if Swahili works in the future
+          responseJson.removeWhere((e) => e['id'] == 12);
+          // save to offline
+          userPrefsBox.put('resourceLanguages', responseJson);
+
+          return responseJson.map((e) => ResourceLanguage.fromJson(e)).toList();
+        } else {
+          debugPrint('Error: ${response.statusCode} - ${response.body}');
+          return [];
+        }
+      } catch (e) {
+        debugPrint('Exception: $e');
+        return [];
+      }
+    }
+
+    List<ResourceLanguage> loadLanguagesFromHive(
+      List<ResourceLanguage> loadedLanguages,
+      dynamic resourceLangData,
+    ) {
+      List<ResourceLanguage> temp = [];
+      temp.addAll(loadedLanguages);
+
+      // Use cached data
+      List<Map<String, dynamic>> savedResourceLanguages =
+          (resourceLangData as List)
+              .map((e) => Map<String, dynamic>.from(e))
+              .toList();
+      for (var json in savedResourceLanguages) {
+        var lang = ResourceLanguage.fromJson(json);
+        if (!temp.any((l) => l.id == lang.id)) {
+          temp.add(lang);
+        }
+      }
+      return temp;
+    }
 
     List<ResourceLanguage> loadedLanguages = [];
 
     // Always add offline languages
-    loadedLanguages.addAll(offlineLanguages);
+    if (!kIsWeb) {
+      loadedLanguages.addAll(offlineLanguages);
+    }
 
     // Try to get online/cached languages
     try {
-      final resourceLangData = userPrefsBox.get('resourceLanguages');
+      final dynamic resourceLangData = userPrefsBox.get('resourceLanguages');
       if (resourceLangData != null) {
-        final DateTime lastUpdated = userPrefsBox.get(
-          'resourceLanguagesLastUpdated',
-        );
-
-        // Check if we should update from network
-        bool shouldRefresh = lastUpdated.isBefore(
-          DateTime.now().subtract(const Duration(days: 30)),
-        );
-
         if (shouldRefresh) {
-          // If we can fetch fresh data, do it
+          // If we should refresh, fetch fresh data
           try {
             List<ResourceLanguage> freshLangs =
                 await refreshLanguagesFromAquifer();
@@ -126,30 +133,22 @@ class AquiferService {
               }
             }
           } catch (e) {
+            debugPrint(
+              'Error fetching languages from aquifer, loading cached langs: $e',
+            );
             // If fetch fails, fall back to cached
-            List<Map<String, dynamic>> savedResourceLanguages =
-                (resourceLangData as List)
-                    .map((e) => Map<String, dynamic>.from(e))
-                    .toList();
-            for (var json in savedResourceLanguages) {
-              var lang = ResourceLanguage.fromJson(json);
-              if (!loadedLanguages.any((l) => l.id == lang.id)) {
-                loadedLanguages.add(lang);
-              }
-            }
+
+            final temp = loadLanguagesFromHive(
+              loadedLanguages,
+              resourceLangData,
+            );
+            loadedLanguages.clear();
+            loadedLanguages.addAll(temp);
           }
         } else {
-          // Use cached data
-          List<Map<String, dynamic>> savedResourceLanguages =
-              (resourceLangData as List)
-                  .map((e) => Map<String, dynamic>.from(e))
-                  .toList();
-          for (var json in savedResourceLanguages) {
-            var lang = ResourceLanguage.fromJson(json);
-            if (!loadedLanguages.any((l) => l.id == lang.id)) {
-              loadedLanguages.add(lang);
-            }
-          }
+          final temp = loadLanguagesFromHive(loadedLanguages, resourceLangData);
+          loadedLanguages.clear();
+          loadedLanguages.addAll(temp);
         }
       } else {
         // No cache, try to fetch
@@ -172,15 +171,14 @@ class AquiferService {
     return loadedLanguages;
   }
 
-  // multiple collection metadata retrieval
-  Future<List<ResourceCollectionInfo>> loadCollections() async {
+  // load all collection metadata that we have with no online/offline filtering
+  Future<List<ResourceCollectionInfo>> loadCollections({
+    required bool shouldRefresh,
+  }) async {
     // only initialize when needed
     if (_allCollections.isNotEmpty) return _allCollections;
 
     List<ResourceCollectionInfo> loadedCollections = [];
-
-    // 1. Always start with offline resources
-    loadedCollections.addAll(offlineResources);
 
     /// Get the metadata for a single collection from Aquifer and save it to Hive
     Future<ResourceCollectionInfo?> refreshCollectionInfoFromAquifer(
@@ -225,10 +223,7 @@ class AquiferService {
           collections.add(collectionInfo);
         }
       }
-      if (collections.isNotEmpty) {
-        //
-        userPrefsBox.put('collectionsLastUpdated', DateTime.now());
-      }
+
       return collections;
     }
 
@@ -247,19 +242,20 @@ class AquiferService {
           if (response.statusCode == 200) {
             List<String> collectionCodes = [];
             List<dynamic> collectionInfoList = json.decode(response.body);
+            // this first request just gets the codes -
+            // we need to now get detailed metadata
             for (var collectionInfo in collectionInfoList) {
               if (collectionInfo is Map<String, dynamic> &&
                   collectionInfo.containsKey('code')) {
                 collectionCodes.add(collectionInfo['code']);
               }
             }
+            // now get the real full metadata
             final collections = await refreshListCollectionInfoFromAquifer(
               collectionCodes,
             );
-            List<String> allCollectionCodes = collections
-                .map((collection) => collection.code)
-                .toList();
-            userPrefsBox.put('allCollectionCodes', allCollectionCodes);
+
+            userPrefsBox.put('allCollectionCodes', collectionCodes);
             return collections;
           } else {
             debugPrint('Error: ${response.statusCode} - ${response.body}');
@@ -304,48 +300,24 @@ class AquiferService {
         return [];
       }
     }
+    // Real beginning here:
 
+    // Always start with offline resources if not on web
+    if (!kIsWeb) {
+      loadedCollections.addAll(offlineResources);
+    }
     // Attempt to load online/cached data and merge
     try {
-      bool useDefaultResourcesOnly =
-          userPrefsBox.get('useDefaultResourcesOnly') ?? true;
-      final DateTime? lastUpdated = userPrefsBox.get('collectionsLastUpdated');
-      final String lastBuildNumber = userPrefsBox.get(
-        'lastBuildNumber',
-        defaultValue: '0',
-      );
-      final packageInfo = await PackageInfo.fromPlatform();
-      final String currentBuildNumber = packageInfo.buildNumber;
-      userPrefsBox.put('lastBuildNumber', currentBuildNumber);
-
       // Check logic
-      if (currentBuildNumber != lastBuildNumber ||
-          lastUpdated == null ||
-          lastUpdated.isBefore(
-            DateTime.now().subtract(const Duration(days: 30)),
-          )) {
+      if (shouldRefresh) {
         // Refresh from network
         try {
           // If we are truly offline, this might fail, which is caught below
           List<ResourceCollectionInfo> aquiferCollections =
               await refreshCollectionListFromAquifer();
 
-          // Filter if needed
-          List<ResourceCollectionInfo> relevant;
-          if (useDefaultResourcesOnly) {
-            relevant = aquiferCollections
-                .where(
-                  (collection) => defaultResources.any(
-                    (resource) => resource == collection.code,
-                  ),
-                )
-                .toList();
-          } else {
-            relevant = aquiferCollections;
-          }
-
           // Merge
-          for (var col in relevant) {
+          for (var col in aquiferCollections) {
             // Deduplicate against offline
             if (!loadedCollections.any((c) => c.code == col.code)) {
               loadedCollections.add(col);
@@ -353,19 +325,16 @@ class AquiferService {
           }
         } catch (e) {
           // Fallback to offline only (already loaded)
+          debugPrint('Exception from refreshCollectionListFromAquifer: $e');
         }
       } else {
         // Load from Hive
         try {
-          List<ResourceCollectionInfo> hiveCollections;
-          if (useDefaultResourcesOnly) {
-            hiveCollections = loadCollectionsFromHive(defaultResources);
-          } else {
-            List<String> allCollectionCodes = userPrefsBox.get(
-              'allCollectionCodes',
-            );
-            hiveCollections = loadCollectionsFromHive(allCollectionCodes);
-          }
+          dynamic allCollectionCodes = userPrefsBox
+              .get('allCollectionCodes')
+              .toList();
+          List<ResourceCollectionInfo> hiveCollections =
+              loadCollectionsFromHive(List<String>.from(allCollectionCodes));
 
           // Merge
           for (var col in hiveCollections) {
@@ -375,6 +344,7 @@ class AquiferService {
           }
         } catch (e) {
           // Fallback
+          debugPrint('Exception while attempting loadCollectionsFromHive: $e');
         }
       }
     } catch (e) {
@@ -384,34 +354,47 @@ class AquiferService {
     return loadedCollections;
   }
 
-  /// Ensures data is loaded if it hasn't been already
-  Future<void> ensureInitialized() async {
-    if (_allCollections.isEmpty || _allLanguages.isEmpty) {
-      await initializeResourceData();
-    }
-  }
-
-  /// this globally filters the
+  /// initializes or ensures initializes the base data
   Future<void> initializeResourceData() async {
     // idempotent check
     if (_allCollections.isNotEmpty && _allLanguages.isNotEmpty) {
       return;
     }
 
+    // Should we refresh from online or just get from stored data?
+
+    final DateTime lastUpdated = userPrefsBox.get(
+      'aquiferDataLastUpdated',
+      defaultValue: DateTime(2000),
+    );
+    final String lastBuildNumber = userPrefsBox.get(
+      'lastBuildNumber',
+      defaultValue: '0',
+    );
+    final packageInfo = await PackageInfo.fromPlatform();
+    final String currentBuildNumber = packageInfo.buildNumber;
+    userPrefsBox.put('lastBuildNumber', currentBuildNumber);
+
+    bool shouldRefreshFromAquifer =
+        lastUpdated.isBefore(
+          DateTime.now().subtract(const Duration(days: 30)),
+        ) ||
+        currentBuildNumber != lastBuildNumber;
+
     // get the two main lists of info
-    _allCollections = await loadCollections();
-    _allLanguages = await loadLanguages();
-  }
+    _allCollections = await loadCollections(
+      shouldRefresh: shouldRefreshFromAquifer,
+    );
+    _allLanguages = await loadLanguages(
+      shouldRefresh: shouldRefreshFromAquifer,
+    );
 
-  Future<void> forceRefreshResourceData() async {
-    _allCollections.clear();
-    _allLanguages.clear();
-    await initializeResourceData();
-  }
+    // to this point it is very general and could be used to get any and all Aquifer data.
+    // Here we filter what we need for the app: at this point we only need
+    // languages that have Biblica and Tyndale Study Notes.
+    // If you just hide the languages that don't have those - you're all set
 
-  /// Returns languages that have meaningful data (Tyndale/Biblica notes)
-  List<ResourceLanguage> getDisplayLanguages() {
-    // only show languages in the interface that actually have the two main study note collections
+    // get the main collections we want
     final mainCollections = _allCollections
         .where(
           (collection) =>
@@ -420,18 +403,31 @@ class AquiferService {
         )
         .toList();
 
-    // get the languages in those two main collections
-    final Set<int> mainCollectionLanguageCodes = {};
+    // get the languages in those collections
+    Set<int> mainCollectionLanguageCodes = {};
     for (final collection in mainCollections) {
       for (final language in collection.availableLanguages) {
         mainCollectionLanguageCodes.add(language.id);
       }
     }
-    // finally filter the languages to display to those that have meaningful data
-    return _allLanguages
-        .where((language) => mainCollectionLanguageCodes.contains(language.id))
-        .toList();
+
+    // remove languages that are not in those collections
+    _allLanguages.removeWhere(
+      (l) => !mainCollectionLanguageCodes.contains(l.id),
+    );
+
+    if (shouldRefreshFromAquifer &&
+        _allCollections.isNotEmpty &&
+        _allLanguages.isNotEmpty) {
+      userPrefsBox.put('aquiferDataLastUpdated', DateTime.now());
+    }
   }
+
+  // Future<void> forceRefreshResourceData() async {
+  //   _allCollections.clear();
+  //   _allLanguages.clear();
+  //   await initializeResourceData();
+  // }
 
   List<ResourceCollectionInfo> getResourcesForLanguage(int langId) {
     return _allCollections
@@ -460,11 +456,15 @@ class AquiferService {
 
     // offline only for 1: eng and 4: fra
     Set<String> offlineCapableCodes = {};
-    if (langId == 1 || langId == 4) {
-      offlineCapableCodes = {
-        'TyndaleStudyNotes',
-        'TyndaleStudyNotesBookIntros',
-      };
+
+    // this is where, if on web, we want to get from aquifer, not from assets
+    if (!kIsWeb) {
+      if (langId == 1 || langId == 4) {
+        offlineCapableCodes = {
+          'TyndaleStudyNotes',
+          'TyndaleStudyNotesBookIntros',
+        };
+      }
     }
 
     final offlineTargets = resourceCollectionCodes
@@ -577,12 +577,6 @@ class AquiferService {
       return a.name.compareTo(b.name);
     });
 
-    // if (reverse) {
-    //   final reversed = allItems.reversed.toList();
-    //   allItems.clear();
-    //   allItems.addAll(reversed);
-    // }
-
     // 3. Streaming - Parallelized & Ordered
     // Map to futures to start all requests immediately while preserving order
     final List<Future<ResourceItem?>> orderedFutures = allItems.map((item) {
@@ -654,17 +648,17 @@ class AquiferService {
   Future<bool> checkConnectivity() async {
     try {
       // ignore: unused_local_variable
-      // final url =
-      //     '$baseUrl/resources/search?resourceType=StudyNotes&bookCode=GEN&startChapter=1&endChapter=1&languageCode=fra&limit=1';
-      final url = baseUrl;
+      final url =
+          '$baseUrl/resources/search?resourceType=StudyNotes&bookCode=GEN&startChapter=1&endChapter=1&languageCode=fra&limit=1';
+      // final url = baseUrl;
       // ignore: unused_local_variable
       final response = await http
           .get(Uri.parse(url), headers: {'X-App-ID': _appId})
           .timeout(const Duration(seconds: 5));
 
-      // if (kDebugMode) {
-      //   debugPrint('checkConnectivity response: ${response.body}');
-      // }
+      if (kDebugMode) {
+        debugPrint('checkConnectivity response: ${response.body}');
+      }
 
       return true;
 
@@ -854,13 +848,13 @@ final List<AvailableLanguage> offlineNoteLanguages = [
   AvailableLanguage(
     id: 4,
     code: 'fra',
-    displayName: 'Notes d\'étude Tyndale - hors ligne',
+    displayName: 'Notes d\'étude Tyndale (hors ligne)',
     scriptDirection: 'LTR',
   ),
   AvailableLanguage(
     id: 1,
     code: 'eng',
-    displayName: 'Tyndale Study Notes - offline',
+    displayName: 'Tyndale Study Notes (offline)',
     scriptDirection: 'LTR',
   ),
 ];
@@ -869,13 +863,13 @@ final List<AvailableLanguage> offlineIntroLanguages = [
   AvailableLanguage(
     id: 4,
     code: 'fra',
-    displayName: 'Introductions Tyndale - hors ligne',
+    displayName: 'Introductions Tyndale (hors ligne)',
     scriptDirection: 'LTR',
   ),
   AvailableLanguage(
     id: 1,
     code: 'eng',
-    displayName: 'Tyndale Introductions - offline',
+    displayName: 'Tyndale Introductions (offline)',
     scriptDirection: 'LTR',
   ),
 ];
@@ -921,4 +915,12 @@ class _SortableItem {
     required this.isOffline,
     required this.data,
   });
+}
+
+/// Custom exception for connectivity issues
+class AquiferConnectivityException implements Exception {
+  final String message;
+  AquiferConnectivityException(this.message);
+  @override
+  String toString() => message;
 }

@@ -98,6 +98,8 @@ class _ResourceColumnState extends State<ResourceColumn> {
       _scrollGroup!.addListener(_onScrollGroupChanged);
       _isScrollGroupListenerInitialized = true;
     }
+    debugPrint('Resource Column ${widget.key} didChangeDependencies');
+    // TODO: how do we retrigger _loadCollections...here ?
   }
 
   void listUserPrefsBoxKeys() {
@@ -200,7 +202,7 @@ class _ResourceColumnState extends State<ResourceColumn> {
   Future<void> init() async {
     // Ensure AquiferService knows our connectivity state on startup
     await AquiferService()
-        .ensureInitialized(); // No longer needs connected state
+        .initializeResourceData(); // initialize or ensure initialized
     await _loadTOC();
 
     // if online, will always be online as option to set this pref is not available.
@@ -233,7 +235,7 @@ class _ResourceColumnState extends State<ResourceColumn> {
     _lastLoaded = ChapterInfo(currentBookID, chInt);
 
     userResourceLanguageCode = widget.incomingUserResourceLanguageCode;
-    languages = AquiferService().getDisplayLanguages();
+    languages = AquiferService().allLanguages.toList();
     isLinked = widget.bibleReference.partOfScrollGroup;
 
     itemPositionsListener.itemPositions.addListener(_handleScroll);
@@ -389,7 +391,6 @@ class _ResourceColumnState extends State<ResourceColumn> {
   }
 
   Future<void> _fetchPreviousChapter() async {
-    // return;
     if ((_isFetching || toc.isEmpty || _firstLoaded == null)) {
       return;
     }
@@ -402,6 +403,8 @@ class _ResourceColumnState extends State<ResourceColumn> {
 
     if (prevInfo == null) return;
     if (prevInfo.chapter == 0) {
+      // just the info on which chapter is previous -
+      // i.e. if we're at 1CO 1, go to last ch of Romans
       // If chapter is 0 (introduction), get the last chapter of the previous book
       prevInfo = ChapterFetchService().getPreviousChapterInfo(
         toc,
@@ -531,6 +534,7 @@ class _ResourceColumnState extends State<ResourceColumn> {
     setState(() {
       _loadingLanguage = false;
     });
+    // i.e. fill the column with resources
     updateContent();
   }
 
@@ -574,6 +578,7 @@ class _ResourceColumnState extends State<ResourceColumn> {
         _loadingLanguage = false;
       });
 
+      // i.e. fill the column with resources
       _fetchResources();
     }
   }
@@ -581,99 +586,129 @@ class _ResourceColumnState extends State<ResourceColumn> {
   /// Centralized logic for loading collections and determining selected resources
   /// forceReset _of available resources_
   Future<void> _loadCollectionsAndSettings() async {
-    // Reload languages based on connectivity
-    var allLangs = AquiferService().getDisplayLanguages();
-    languages.clear();
-    if (_isOnline) {
-      languages.addAll(allLangs);
-    } else {
-      // Hardcoded offline languages for now
-      languages.addAll(offlineLanguages);
-    }
-
-    // if offline make sure userResourceLanguageCode is valid offline
-    if (!_isOnline) {
-      bool isOfflineLanguage = offlineLanguages.any(
-        (l) => l.id == userResourceLanguageCode,
-      );
-
-      if (!isOfflineLanguage) {
-        userResourceLanguageCode = languages.first.id;
+    try {
+      // Reload available resource languages based on connectivity
+      List<ResourceLanguage> allLangs = AquiferService().allLanguages;
+      languages.clear();
+      if (_isOnline) {
+        languages.addAll(allLangs);
+      } else {
+        // Hardcoded offline languages for now
+        languages.addAll(offlineLanguages);
       }
+    } catch (e) {
+      debugPrint('Error loading languages: $e');
     }
 
-    // Reload resources based on connectivity
-    resources.clear();
-    var allResources = AquiferService()
-        .getResourcesForLanguage(userResourceLanguageCode)
-        .toList();
+    try {
+      // if offline make sure userResourceLanguageCode is valid offline
+      if (!_isOnline) {
+        bool isOfflineLanguage = offlineLanguages.any(
+          (l) => l.id == userResourceLanguageCode,
+        );
 
-    if (_isOnline) {
-      resources.addAll(allResources);
-    } else {
-      resources.addAll(offlineResources);
-    }
-
-    // 1. Determine User Resource Codes
-    userResourceCodes.clear();
-
-    String userCodesData =
-        'resource_prefs_${userResourceLanguageCode.toString()}';
-    if (_isOnline) {
-      // Logic: get from prefs
-
-      final savedRaw = userPrefsBox.get(userCodesData);
-
-      if (savedRaw != null) {
-        try {
-          userResourceCodes.addAll(List<String>.from(savedRaw));
-        } catch (e) {
-          debugPrint('Error getting userResourceCodes from prefs: $e');
+        if (!isOfflineLanguage) {
+          userResourceLanguageCode = languages.first.id;
         }
       }
+    } catch (e) {
+      debugPrint('Error setting userResourceLanguageCode: $e');
+    }
 
-      // Fallbacks if nothing in prefs or all were removed
-      if (userResourceCodes.isEmpty) {
-        // if you don't have so many resources, just load them all
-        if (resources.length < 4) {
-          userResourceCodes.addAll(resources.map((c) => c.code).toList());
-        } else {
-          userResourceCodes.addAll(
-            resources
-                .where((c) => defaultResources.contains(c.code))
-                .map((c) => c.code)
-                .toList(),
+    try {
+      // Reload resources based on connectivity
+      resources.clear();
+
+      if (_isOnline) {
+        var allResources = AquiferService()
+            .getResourcesForLanguage(userResourceLanguageCode)
+            .toList();
+
+        bool useDefaultResourcesOnly =
+            userPrefsBox.get('useDefaultResourcesOnly') ?? true;
+
+        if (useDefaultResourcesOnly) {
+          allResources.removeWhere(
+            (collection) => !defaultResources.contains(collection.code),
           );
         }
+
+        resources.addAll(allResources);
+      } else {
+        resources.addAll(offlineResources);
       }
-      // second fallback
-      if (userResourceCodes.isEmpty && resources.isNotEmpty) {
-        userResourceCodes.add(resources.first.code);
-      }
-      // and save what we've done
-      userPrefsBox.put(userCodesData, userResourceCodes);
-    } else {
-      // Logic: Reset to ALL available collections
-      // this is when we have been online and want to go offline
-      // final tempList = resources.map((c) => c.code).toList();
-      final tempList = offlineResources.map((c) => c.code).toList();
-      userResourceCodes = tempList;
-      // Save immediately so this preference persists
-      userPrefsBox.put(userCodesData, userResourceCodes);
+    } catch (e) {
+      debugPrint('Error loading resources: $e');
     }
 
-    // 2. Update Language Object & Direction
-    language = AquiferService().getDisplayLanguages().firstWhere(
-      (l) => l.id == userResourceLanguageCode,
-      orElse: () => AquiferService().getDisplayLanguages().first,
-    );
+    try {
+      // Determine User Resource Codes
+      userResourceCodes.clear();
 
-    if (language.scriptDirection == 'LTR') {
-      textDirection = TextDirection.ltr;
-      alignment = Alignment.centerLeft;
-    } else {
-      textDirection = TextDirection.rtl;
-      alignment = Alignment.centerRight;
+      String userCodesData =
+          'resource_prefs_${userResourceLanguageCode.toString()}';
+      if (_isOnline) {
+        // Logic: get from prefs
+
+        dynamic savedRaw = userPrefsBox.get(userCodesData);
+
+        if (savedRaw != null) {
+          try {
+            userResourceCodes.addAll(List<String>.from(savedRaw));
+          } catch (e) {
+            debugPrint('Error getting userResourceCodes from prefs: $e');
+          }
+        }
+
+        // Fallbacks if nothing in prefs or all were removed
+        if (userResourceCodes.isEmpty) {
+          // if you don't have so many resources, just load them all
+          if (resources.length < 4) {
+            userResourceCodes.addAll(resources.map((c) => c.code).toList());
+          } else {
+            userResourceCodes.addAll(
+              resources
+                  .where((c) => defaultResources.contains(c.code))
+                  .map((c) => c.code)
+                  .toList(),
+            );
+          }
+        }
+        // second fallback
+        if (userResourceCodes.isEmpty && resources.isNotEmpty) {
+          userResourceCodes.add(resources.first.code);
+        }
+        // and save what we've done
+        userPrefsBox.put(userCodesData, userResourceCodes);
+      } else {
+        // offline: load all available offline resources
+
+        // this is when we have been online and want to go offline
+        final tempList = offlineResources.map((c) => c.code).toList();
+        userResourceCodes = tempList;
+        // Save immediately so this preference persists
+        userPrefsBox.put(userCodesData, userResourceCodes);
+      }
+    } catch (e) {
+      debugPrint('Error setting userResourceCodes: $e');
+    }
+
+    try {
+      // Update Language Object & Direction
+      language = AquiferService().allLanguages.firstWhere(
+        (l) => l.id == userResourceLanguageCode,
+        orElse: () => AquiferService().allLanguages.first,
+      );
+
+      if (language.scriptDirection == 'LTR') {
+        textDirection = TextDirection.ltr;
+        alignment = Alignment.centerLeft;
+      } else {
+        textDirection = TextDirection.rtl;
+        alignment = Alignment.centerRight;
+      }
+    } catch (e) {
+      debugPrint('Error updating language: $e');
     }
   }
 
@@ -903,26 +938,31 @@ class _ResourceColumnState extends State<ResourceColumn> {
                               isExpanded: true,
                               value: userResourceLanguageCode,
                               onChanged: (v) async {
-                                // if the value is the same, do nothing
-                                if (v == userResourceLanguageCode) {
-                                  return;
-                                } else {
-                                  // change the language: show loading indicator
+                                // just a gate so that if you're loading prev chapter of
+                                // french for example and you change to english it doesn't
+                                // give you a weird mix of eng and fra
+                                if (!_isFetching) {
+                                  // if the value is the same, do nothing
+                                  if (v == userResourceLanguageCode) {
+                                    return;
+                                  } else {
+                                    // change the language: show loading indicator
 
-                                  if (v != null) {
-                                    // get the new collections available
-                                    userResourceLanguageCode = v;
-                                    // Save preferences
-                                    widget.bibleReference.collectionID = v
-                                        .toString();
-                                    Provider.of<UserPrefs>(
-                                      context,
-                                      listen: false,
-                                    ).saveScrollGroupState(
-                                      widget.bibleReference,
-                                    );
+                                    if (v != null) {
+                                      // get the new collections available
+                                      userResourceLanguageCode = v;
+                                      // Save preferences
+                                      widget.bibleReference.collectionID = v
+                                          .toString();
+                                      Provider.of<UserPrefs>(
+                                        context,
+                                        listen: false,
+                                      ).saveScrollGroupState(
+                                        widget.bibleReference,
+                                      );
 
-                                    setLanguage();
+                                      setLanguage();
+                                    }
                                   }
                                 }
                               },
