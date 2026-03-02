@@ -40,7 +40,7 @@ dependencies:
   url_strategy: ^0.3.0
   url_launcher: ^6.1.9
   share_plus: ^12.0.0
-  clipboard: ^2.0.2
+  clipboard: ^3.0.14
   fluent_ui: ^4.13.0
   hive: ^2.2.1
   hive_flutter: ^1.1.0
@@ -51,7 +51,7 @@ dependencies:
   firebase_core: ^4.2.1
   firebase_analytics: ^12.0.4
   scrollable_positioned_list: ^0.3.2
-  google_fonts: ^6.0.0
+  google_fonts: ^8.0.2
 
   flutter_html: ^3.0.0-alpha.6
   flutter_native_splash: ^2.3.7

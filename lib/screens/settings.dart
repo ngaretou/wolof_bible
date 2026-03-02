@@ -137,7 +137,7 @@ class Settings extends StatelessWidget {
         spacer,
         ...List.generate(ThemeMode.values.length, (index) {
           String label = '';
-          final mode = ThemeMode.values[index];
+          ThemeMode themeMode = ThemeMode.values[index];
           switch (index) {
             case 0:
               label = translation.systemTheme;
@@ -153,25 +153,16 @@ class Settings extends StatelessWidget {
 
           return Padding(
             padding: const EdgeInsets.only(bottom: 8.0),
-            child: RadioButton(
-              checked: appTheme.mode == mode,
+            child: RadioGroup<ThemeMode>(
+              groupValue: appTheme.mode,
               onChanged: (value) async {
-                if (value) {
-                  appTheme.mode = mode;
-
+                if (value != null) {
+                  appTheme.mode = value;
                   Box userPrefsBox = await Hive.openBox('userPrefs');
-                  userPrefsBox.put('themeMode', mode.toString());
-                  // userPrefsBox.close();
-
-                  // if (kIsWindowEffectsSupported) {
-                  //   // some window effects require on [dark] to look good.
-                  //   // appTheme.setEffect(WindowEffect.disabled, context);
-                  //   appTheme.setEffect(appTheme.windowEffect, context);
-                  // }
+                  userPrefsBox.put('themeMode', value.toString());
                 }
               },
-              // content: Text('$mode'.replaceAll('ThemeMode.', '')),
-              content: Text(label),
+              child: RadioButton(value: themeMode, content: Text(label)),
             ),
           );
         }),
@@ -243,57 +234,49 @@ class Settings extends StatelessWidget {
           style: FluentTheme.of(context).typography.subtitle,
         ),
         spacer,
+
+        ///
         ValueListenableBuilder(
           valueListenable: userPrefsBox.listenable(
             keys: ['useDefaultResourcesOnly'],
           ),
           builder: (context, box, widget) {
             bool useDefault = box.get('useDefaultResourcesOnly') ?? true;
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8.0),
-                  child: RadioButton(
-                    checked: useDefault,
-                    onChanged: (value) {
-                      if (value) {
-                        // reset the prefs for resource collections to show
-                        // otherwise you have resources you can't turn off shown
-                        // just delete the prefs and they will reinitialize
-                        final keys = userPrefsBox.keys;
-                        for (var key in keys) {
-                          if (key.startsWith('resource_prefs_')) {
-                            userPrefsBox.delete(key);
-                          }
-                        }
-                        box.put('useDefaultResourcesOnly', true);
-                      }
-                    },
-                    content: Text(translation.viewSuggestedCollections),
+            return RadioGroup<bool>(
+              groupValue: useDefault,
+              onChanged: (val) {
+                if (val == null) return;
+                box.put('useDefaultResourcesOnly', val);
+                // reset the prefs for resource collections to show
+                // otherwise you have resources you can't turn off shown
+                // just delete the prefs and they will reinitialize
+                final keys = userPrefsBox.keys;
+                for (var key in keys) {
+                  if (key.startsWith('resource_prefs_')) {
+                    userPrefsBox.delete(key);
+                  }
+                }
+              },
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8.0),
+                    child: RadioButton(
+                      value: true,
+                      content: Text(translation.viewSuggestedCollections),
+                    ),
                   ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8.0),
-                  child: RadioButton(
-                    checked: !useDefault,
-                    onChanged: (value) {
-                      if (value) {
-                        box.put('useDefaultResourcesOnly', false);
-
-                        final keys = userPrefsBox.keys;
-                        for (var key in keys) {
-                          if (key.startsWith('resource_prefs_')) {
-                            userPrefsBox.delete(key);
-                          }
-                        }
-                      }
-                    },
-                    content: Text(translation.viewAllCollections),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8.0),
+                    child: RadioButton(
+                      value: false,
+                      content: Text(translation.viewAllCollections),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             );
           },
         ),

@@ -11,7 +11,7 @@ import 'package:provider/provider.dart';
 import 'package:system_theme/system_theme.dart';
 
 import 'package:url_strategy/url_strategy.dart';
-import 'package:url_launcher/link.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:pwa_install/pwa_install.dart';
@@ -118,6 +118,7 @@ void main() async {
   }
 
   setPathUrlStrategy();
+
   // No firebase for Windows yet so don't initialize it in that case, but do in other cases
   if (kIsWeb || !Platform.isWindows) {
     await Firebase.initializeApp(
@@ -241,7 +242,7 @@ class MyApp extends StatelessWidget {
         }
 
         SystemChrome.setSystemUIOverlayStyle(style);
-        // print('about to hit Future Builder line 191');
+        // print('about to hit Future Builder');
         return FluentApp(
           title: appTitle,
           themeMode: appTheme.mode,
@@ -302,7 +303,10 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
   int index = 0;
 
   final settingsController = ScrollController();
-  final viewKey = GlobalKey();
+
+  final GlobalKey<NavigationViewState> viewKey =
+      GlobalKey<NavigationViewState>();
+
   // Size windowSize = const Size(500, 500);
   // late bool isFullScreen;
   ValueNotifier<double> myProgress = ValueNotifier(0);
@@ -446,64 +450,32 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
                   );
                 },
               ),
-
-            _LinkPaneItemAction(
+            // go to kaddugyalla.com
+            PaneItemAction(
               icon: const Icon(FluentIcons.open_in_new_window),
               title: const Text('kaddugyalla.com'),
-              link: 'http://kaddugyalla.com',
-              body: const SizedBox.shrink(),
+              onTap: () {
+                openUrl('https://kaddugyalla.com');
+              },
             ),
-
             //More apps
-            _LinkPaneItemAction(
+            PaneItemAction(
               icon: const Icon(FluentIcons.app_icon_default),
               title: Text(translation.moreApps),
-              link: 'https://sng.al/app',
-              body: const SizedBox.shrink(),
+              onTap: () {
+                openUrl('https://sng.al/app');
+              },
             ),
             //Contact
-
-            // _LinkPaneItemAction(
-            //   icon: const Icon(FluentIcons.mail),
-            //   title: const Text('Bind nu'),
-            //   link:
-            //       'http://currah.download/pages/wolof/bible/contact/index.html',
-            //   body: const SizedBox.shrink(),
-            // ),
-            //Listen
-            // _LinkPaneItemAction(
-            //   icon: const Icon(FluentIcons.play),
-            //   // FluentIcons.m_s_n_videos_solid
-            //   // FluentIcons.play_solid
-            //   // FluentIcons.read_out_loud
-            //   title: const Text('Dégglul Kàddu gi'),
-            //   link:
-            //       'http://currah.download/pages/wolof/bible/html/deglu_kaddu_gi.html',
-            //   body: const SizedBox.shrink(),
-            // ),
-            //Download
-            // _LinkPaneItemAction(
-            //   icon: const Icon(FluentIcons.cloud_download),
-            //   title: const Text('Yebal téerey Kàddu gi'),
-            //   link:
-            //       'http://currah.download/pages/wolof/bible/html/biblewolof.html',
-            //   body: const SizedBox.shrink(),
-            // ),
-            //More
-
-            // _LinkPaneItemAction(
-            //   icon: const Icon(FluentIcons.developer_tools),
-            //   title: const Text('Téere baati wolof'),
-            //   link: 'http://currah.download/pages/dictionnairewolof/',
-            //   body: const SizedBox.shrink(),
-            // ),
-
-            // _LinkPaneItemAction(
-            //   icon: const Icon(FluentIcons.toolbox),
-            //   title: const Text('Jumtukaay wolofal'),
-            //   link: 'http://currah.download/pages/ajamisenegal/index.html',
-            //   body: const SizedBox.shrink(),
-            // ),
+            PaneItemAction(
+              icon: const Icon(FluentIcons.mail),
+              title: const Text('Bind nu'),
+              onTap: () {
+                openUrl(
+                  'http://currah.download/pages/wolof/bible/contact/index.html',
+                );
+              },
+            ),
           ];
 
           //Normal pane items we always use
@@ -568,11 +540,11 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
           finalNavPaneItems.addAll(wolofWebOnlyNavPaneItems);
           finalNavPaneItems.addAll(normalNavPaneItems);
 
-          NavigationAppBar? appBar({double height = 28}) {
-            if (!kIsWeb && Platform.isWindows) {
-              return NavigationAppBar(
-                height: 30,
-                automaticallyImplyLeading: false,
+          Widget? titleBar({double height = 28}) {
+            if (kIsWeb) {
+              return SizedBox(height: 4);
+            } else if (Platform.isWindows) {
+              return TitleBar(
                 title: () {
                   if (kIsWeb) return Text(appTitle);
                   return DragToMoveArea(
@@ -587,7 +559,8 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
                     ),
                   );
                 }(),
-                actions: const Row(
+
+                endHeader: const Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
@@ -606,23 +579,15 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
                   ],
                 ),
               );
-            } else if (!kIsWeb && Platform.isMacOS) {
-              return NavigationAppBar(
-                automaticallyImplyLeading: false,
+            } else if (Platform.isMacOS) {
+              return SizedBox(
                 height: height,
-                title: height == 4
+                child: height == 4
                     ? null
                     : DragToMoveArea(child: Center(child: Text(appTitle))),
-                actions: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  mainAxisAlignment: MainAxisAlignment.end,
-                ),
               );
             } else {
-              return const NavigationAppBar(
-                automaticallyImplyLeading: false,
-                height: 4,
-              );
+              return SizedBox(height: 4);
             }
           }
 
@@ -659,19 +624,7 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
                               height:
                                   (MediaQuery.of(context).size.height / 2) - 70,
                             ),
-                            // if (kIsWeb)
-                            //   Button(
-                            //       onPressed: () async {
-                            //         const url = 'https://kaddugyalla.com/av/';
-                            //         if (await canLaunchUrl(Uri.parse(url))) {
-                            //           await launchUrl(Uri.parse(url),
-                            //               webOnlyWindowName: "_self");
-                            //         } else {
-                            //           throw 'Could not launch $url';
-                            //         }
-                            //       },
-                            //       child: const Text(
-                            //           'Dafa yeex ba ëpp, demal ci version bu weesu')),
+
                             const SizedBox(height: 30),
                           ],
                         );
@@ -719,32 +672,55 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
                 }
               }
 
+              ValueNotifier<bool> isPaneOpen = ValueNotifier(false);
+
+              if (viewKey.currentState?.compactOverlayOpen == true) {
+                isPaneOpen.value = true;
+              }
+
               return NavigationView(
                 key: viewKey,
 
                 //appBar is across top of the screen in place of normal OS specific title bar.
-                appBar: appBar(height: height),
+                titleBar: titleBar(height: height),
+                // titleBar: null,
                 //Main big row that holds the text columns
                 pane: NavigationPane(
                   selected: index,
+                  // toggleable: false,
+                  toggleButton: Icon(FluentIcons.collapse_menu),
                   onChanged: (i) => setState(() => index = i),
-                  size: const NavigationPaneSize(
-                    openMinWidth: 250.0,
-                    openMaxWidth: 320.0,
-                  ),
-                  header: Container(
-                    height: kOneLineTileHeight,
-                    padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                  ),
-                  displayMode: widget.appTheme.displayMode,
-                  indicator: () {
-                    switch (widget.appTheme.indicator) {
-                      case NavigationIndicators.end:
-                        return const EndNavigationIndicator();
-                      case NavigationIndicators.sticky:
-                    }
-                  }(),
+                  // size: const NavigationPaneSize(
+                  // openMinWidth: 250.0,
+                  // openMaxWidth: 320.0,
+                  // headerHeight: 0,
+                  // ),
+                  header: SizedBox.shrink(),
+                  // header: const Text('Pane Header'),
+                  displayMode: PaneDisplayMode.compact,
+
+                  indicator: const StickyNavigationIndicator(),
                   items: [
+                    PaneItemAction(
+                      icon: ValueListenableBuilder(
+                        valueListenable: isPaneOpen,
+                        builder: (context, val, _) {
+                          return SizedBox(
+                            // this 47 is for some reason important for fluent_ui - they have some bouncing placement when menu is toggled open
+                            // spent quite a while getting this right and it's stll not 100%
+                            height: val == true ? 14 : 47,
+                            child: Icon(FluentIcons.collapse_menu),
+                          );
+                        },
+                      ),
+
+                      onTap: () {
+                        viewKey.currentState?.toggleCompactOpenMode();
+                        setState(() {});
+                      },
+                    ),
+
+                    // Open Main Bible View
                     PaneItem(
                       body: child!,
                       icon: const Icon(FluentIcons.reading_mode_solid),
@@ -752,11 +728,10 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
                     ),
 
                     //Search
-                    RunFunctionPaneItemAction(
-                      body: About(),
+                    PaneItemAction(
                       title: Text(translation.search),
                       icon: const Icon(FluentIcons.search),
-                      functionToRun: () {
+                      onTap: () {
                         if (index != 0) {
                           setState(() {
                             index = 0;
@@ -769,11 +744,11 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
                       },
                     ),
                     //Add Column
-                    RunFunctionPaneItemAction(
-                      body: const About(),
-                      title: Text(translation.addColumn),
+                    PaneItemAction(
                       icon: const Icon(FluentIcons.calculator_addition),
-                      functionToRun: () {
+                      title: Text(translation.addColumn),
+
+                      onTap: () {
                         if (index != 0) {
                           setState(() {
                             index = 0;
@@ -786,10 +761,7 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
                       },
                     ),
                     //Open Resource Column
-                    RunFunctionPaneItemAction(
-                      body: const About(),
-                      title: Text(translation.openResourceColumn),
-
+                    PaneItemAction(
                       icon: WhatsNew(
                         icon: const Icon(FluentIcons.diet_plan_notebook),
                         title: translation.newStudyNotes,
@@ -801,7 +773,10 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
 
                         child: const Icon(FluentIcons.diet_plan_notebook),
                       ),
-                      functionToRun: () {
+
+                      title: Text(translation.openResourceColumn),
+
+                      onTap: () {
                         if (index != 0) {
                           setState(() {
                             index = 0;
@@ -877,123 +852,10 @@ class WindowButtons extends StatelessWidget {
   }
 }
 
-class RunFunctionPaneItemAction extends PaneItem {
-  RunFunctionPaneItemAction({
-    required super.icon,
-    required this.functionToRun, //pass in the function
-    required super.body,
-    super.title,
-    super.infoBadge,
-    super.focusNode,
-    super.autofocus = false,
-  });
-  Function functionToRun;
-  @override
-  Widget build(
-    BuildContext context,
-    bool selected,
-    VoidCallback? onPressed, {
-    PaneDisplayMode? displayMode,
-    bool showTextOnTop = true,
-    bool? autofocus,
-    int? itemIndex,
-  }) {
-    // Runs this function - referencing the function passed in above
-    internalCaller() {
-      functionToRun();
-    }
-
-    return super.build(context, selected, internalCaller);
-  }
-}
-
-class LightDarkModePaneItemAction extends PaneItem {
-  LightDarkModePaneItemAction({
-    required super.icon,
-    required this.appTheme,
-    super.title,
-    super.infoBadge,
-    super.focusNode,
-    super.autofocus = false,
-  }) : super(body: const About());
-  final AppTheme appTheme;
-  @override
-  Widget build(
-    BuildContext context,
-    bool selected,
-    VoidCallback? onPressed, {
-    PaneDisplayMode? displayMode,
-    bool showTextOnTop = true,
-    bool? autofocus,
-    int? itemIndex,
-  }) {
-    Future<void> saveThemeMode(String themeMode) async {
-      Box userPrefsBox = await Hive.openBox('userPrefs');
-      userPrefsBox.put('themeMode', themeMode);
-      // userPrefsBox.close();
-    }
-
-    //Runs this function
-    switchThemeMode() {
-      /*Couple of cases here - by default it's set to user theme mode, but we want 
-      to offer a way to change that easily. So account for whether the system theme
-      mode is dark or light, and switch to an expressly declared light or dark*/
-      switch (appTheme.mode) {
-        case ThemeMode.system:
-          bool dark =
-              (MediaQuery.of(context).platformBrightness == Brightness.dark);
-          if (dark) {
-            appTheme.mode = ThemeMode.light;
-          } else {
-            appTheme.mode = ThemeMode.dark;
-          }
-          break;
-        case ThemeMode.dark:
-          appTheme.mode = ThemeMode.light;
-          break;
-        case ThemeMode.light:
-          appTheme.mode = ThemeMode.dark;
-          break;
-      }
-      saveThemeMode(appTheme.mode.toString());
-    }
-
-    return super.build(context, selected, switchThemeMode);
-  }
-}
-
-class _LinkPaneItemAction extends PaneItem {
-  final String link;
-
-  _LinkPaneItemAction({
-    required this.link,
-    required super.icon,
-    required super.body,
-    super.title,
-  });
-
-  @override
-  Widget build(
-    BuildContext context,
-    bool selected,
-    VoidCallback? onPressed, {
-    PaneDisplayMode? displayMode,
-    bool showTextOnTop = true,
-    bool? autofocus,
-    int? itemIndex,
-  }) {
-    return Link(
-      target: LinkTarget.blank, //opens in new tab on web
-      uri: Uri.parse(link),
-      builder: (context, followLink) => super.build(
-        context,
-        selected,
-        followLink,
-        displayMode: displayMode,
-        showTextOnTop: showTextOnTop,
-        itemIndex: itemIndex,
-        autofocus: autofocus,
-      ),
-    );
+Future<void> openUrl(String url) async {
+  if (await canLaunchUrl(Uri.parse(url))) {
+    await launchUrl(Uri.parse(url), webOnlyWindowName: "_blank");
+  } else {
+    throw 'Could not launch $url';
   }
 }

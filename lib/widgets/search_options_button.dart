@@ -98,40 +98,49 @@ class _SearchOptionsButtonState extends State<SearchOptionsButton> {
                             padding: EdgeInsets.symmetric(vertical: 8.0),
                             child: Divider(),
                           ),
+
                           // Fuzzy / Strict Radio Buttons
-                          RadioButton(
-                            checked: widget.fuzzy,
-                            onChanged: (val) {
-                              if (val) {
-                                setState(() {
-                                  widget.onFuzzyChanged(true);
-                                });
-                              }
-                            },
-                            content: Text(
-                              Provider.of<UserPrefs>(
-                                context,
-                                listen: false,
-                              ).currentTranslation.fuzzySearch,
-                              style: style,
-                            ),
-                          ),
                           const SizedBox(height: 8),
-                          RadioButton(
-                            checked: !widget.fuzzy,
+                          RadioGroup<bool>(
+                            groupValue: widget.fuzzy,
                             onChanged: (val) {
-                              if (val) {
+                              print('val changed in principle to $val');
+                              if (val != null) {
                                 setState(() {
-                                  widget.onFuzzyChanged(false);
+                                  widget.onFuzzyChanged(val);
                                 });
                               }
                             },
-                            content: Text(
-                              Provider.of<UserPrefs>(
-                                context,
-                                listen: false,
-                              ).currentTranslation.strictSearch,
-                              style: style,
+                            child: Column(
+                              crossAxisAlignment: .start,
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 8.0),
+                                  child: RadioButton(
+                                    value: true,
+                                    content: Text(
+                                      Provider.of<UserPrefs>(
+                                        context,
+                                        listen: false,
+                                      ).currentTranslation.fuzzySearch,
+                                      style: style,
+                                    ),
+                                  ),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 8.0),
+                                  child: RadioButton(
+                                    value: false,
+                                    content: Text(
+                                      Provider.of<UserPrefs>(
+                                        context,
+                                        listen: false,
+                                      ).currentTranslation.strictSearch,
+                                      style: style,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],

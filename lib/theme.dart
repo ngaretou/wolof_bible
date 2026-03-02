@@ -74,13 +74,10 @@ class AppTheme extends ChangeNotifier {
   void setEffect(WindowEffect effect, BuildContext context) {
     Window.setEffect(
       effect: effect,
-      color: [
-        WindowEffect.solid,
-        WindowEffect.acrylic,
-      ].contains(effect)
+      color: [WindowEffect.solid, WindowEffect.acrylic].contains(effect)
           ? FluentTheme.of(context).micaBackgroundColor.withAlpha(13)
           : Colors.transparent,
-      dark: FluentTheme.of(context).brightness.isDark,
+      dark: FluentTheme.of(context).brightness == Brightness.dark,
     );
   }
 
@@ -113,7 +110,5 @@ AccentColor get systemAccentColor {
       'lightest': SystemTheme.accentColor.lightest,
     });
   }
-  return AccentColor('normal', {
-    'normal': Colors.teal,
-  });
+  return AccentColor('normal', {'normal': Colors.teal});
 }

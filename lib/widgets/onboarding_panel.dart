@@ -48,16 +48,18 @@ class _OnboardingPanelState extends State<OnboardingPanel> {
       }
 
       return MouseRegion(
-          cursor: SystemMouseCursors.click,
-          child: GestureDetector(
-              onTap: () async {
-                if (await canLaunchUrl(Uri.parse(url))) {
-                  await launchUrl(Uri.parse(url), webOnlyWindowName: "_blank");
-                } else {
-                  throw 'Could not launch $url';
-                }
-              },
-              child: Image(image: AssetImage(badge))));
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          onTap: () async {
+            if (await canLaunchUrl(Uri.parse(url))) {
+              await launchUrl(Uri.parse(url), webOnlyWindowName: "_blank");
+            } else {
+              throw 'Could not launch $url';
+            }
+          },
+          child: Image(image: AssetImage(badge)),
+        ),
+      );
     }
 
     Widget appDownloadPage() {
@@ -85,17 +87,18 @@ class _OnboardingPanelState extends State<OnboardingPanel> {
       return Container(
         // padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
         decoration: BoxDecoration(
-            // borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              if (showShadow)
-                BoxShadow(
-                  offset: const Offset(0, 1),
-                  blurRadius: 5,
-                  // spreadRadius: 00,
-                  blurStyle: BlurStyle.outer,
-                  color: Colors.black.withAlpha(77),
-                )
-            ]),
+          // borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            if (showShadow)
+              BoxShadow(
+                offset: const Offset(0, 1),
+                blurRadius: 5,
+                // spreadRadius: 00,
+                blurStyle: BlurStyle.outer,
+                color: Colors.black.withAlpha(77),
+              ),
+          ],
+        ),
         height: image.height,
         child: image,
       );
@@ -110,7 +113,7 @@ class _OnboardingPanelState extends State<OnboardingPanel> {
           const SizedBox(height: 20),
           bottom,
           const SizedBox(height: 20),
-          if (button != null) button,
+          ?button,
           if (button != null) const SizedBox(height: 20),
         ],
       );
@@ -121,17 +124,20 @@ class _OnboardingPanelState extends State<OnboardingPanel> {
     } else {
       pages = [
         pageTemplate(
-            imageWithShadow(
-                const Image(image: AssetImage('assets/images/menu.png')), true),
-            const Text(
-              'Bësal ci ñetti ponk yii ngir ubbi fi nga mana tànne ay jumtukaay.',
-              style: TextStyle(color: Colors.black),
-            )),
+          imageWithShadow(
+            const Image(image: AssetImage('assets/images/menu.png')),
+            true,
+          ),
+          const Text(
+            'Bësal ci ñetti ponk yii ngir ubbi fi nga mana tànne ay jumtukaay.',
+            style: TextStyle(color: Colors.black),
+          ),
+        ),
         pageTemplate(
           imageWithShadow(
-              const Image(
-                  image: AssetImage('assets/images/book_selection.png')),
-              true),
+            const Image(image: AssetImage('assets/images/book_selection.png')),
+            true,
+          ),
           const Text(
             'Pàcc bu nekk man nga caa tànne ban làkk nga bëgga gis.',
             style: TextStyle(color: Colors.black),
@@ -139,9 +145,11 @@ class _OnboardingPanelState extends State<OnboardingPanel> {
         ),
         pageTemplate(
           imageWithShadow(
-              const Image(
-                  image: AssetImage('assets/images/bible_book_selection.png')),
-              true),
+            const Image(
+              image: AssetImage('assets/images/bible_book_selection.png'),
+            ),
+            true,
+          ),
           const Text(
             'Fii ngay tànne ban téere nga bëgga jàng.',
             style: TextStyle(color: Colors.black),
@@ -149,9 +157,9 @@ class _OnboardingPanelState extends State<OnboardingPanel> {
         ),
         pageTemplate(
           imageWithShadow(
-              const Image(
-                  image: AssetImage('assets/images/ch_vs_selection.png')),
-              true),
+            const Image(image: AssetImage('assets/images/ch_vs_selection.png')),
+            true,
+          ),
           const Text(
             'Fii ngay gise ban saar ak ban aaya ñooy feeñ.',
             style: TextStyle(color: Colors.black),
@@ -159,8 +167,9 @@ class _OnboardingPanelState extends State<OnboardingPanel> {
         ),
         pageTemplate(
           imageWithShadow(
-              const Image(image: AssetImage('assets/images/font_size.png')),
-              true),
+            const Image(image: AssetImage('assets/images/font_size.png')),
+            true,
+          ),
           const Text(
             'Man nga fee soppi dayob mbind mi.',
             style: TextStyle(color: Colors.black),
@@ -168,8 +177,9 @@ class _OnboardingPanelState extends State<OnboardingPanel> {
         ),
         pageTemplate(
           imageWithShadow(
-              const Image(image: AssetImage('assets/images/link_button.png')),
-              true),
+            const Image(image: AssetImage('assets/images/link_button.png')),
+            true,
+          ),
           const Text(
             'Bu tomb bii takke, pàcc bii day ànd ak yeneeni pàcc yi mu mengool.',
             style: TextStyle(color: Colors.black),
@@ -186,25 +196,27 @@ class _OnboardingPanelState extends State<OnboardingPanel> {
         pages.add(
           pageTemplate(
             imageWithShadow(
-                const Image(image: AssetImage('assets/images/screenshot.png')),
-                true),
+              const Image(image: AssetImage('assets/images/screenshot.png')),
+              true,
+            ),
             const Text(
               'Man nga installer appli bi ci sa ordinateur. Bësal ci button bi ngir tambale installation bi.',
               style: TextStyle(color: Colors.black),
             ),
             button: GestureDetector(
-                child: Card(
-                  backgroundColor: Colors.teal,
-                  child: const Text('Installation'),
-                ),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  try {
-                    PWAInstall().promptInstall_();
-                  } catch (e) {
-                    // print(e);
-                  }
-                }),
+              child: Card(
+                backgroundColor: Colors.teal,
+                child: const Text('Installation'),
+              ),
+              onTap: () {
+                Navigator.of(context).pop();
+                try {
+                  PWAInstall().promptInstall_();
+                } catch (e) {
+                  // print(e);
+                }
+              },
+            ),
           ),
         );
       }
@@ -216,7 +228,9 @@ class _OnboardingPanelState extends State<OnboardingPanel> {
 
     void previousPage() {
       pageController.previousPage(
-          duration: pageTurnDuration, curve: Curves.linear);
+        duration: pageTurnDuration,
+        curve: Curves.linear,
+      );
     }
 
     void nextPage() {
@@ -227,9 +241,10 @@ class _OnboardingPanelState extends State<OnboardingPanel> {
       height: 500,
       width: 700,
       decoration: const BoxDecoration(
-          color: Colors.white,
-          shape: BoxShape.rectangle,
-          borderRadius: BorderRadius.all(Radius.circular(10))),
+        color: Colors.white,
+        shape: BoxShape.rectangle,
+        borderRadius: BorderRadius.all(Radius.circular(10)),
+      ),
       child: Column(
         children: [
           Row(
@@ -247,12 +262,13 @@ class _OnboardingPanelState extends State<OnboardingPanel> {
               children: [
                 if (widget.appDownloadOnly != true)
                   IconButton(
-                      icon: const Icon(
-                        FluentIcons.caret_solid_left,
-                        color: Colors.black,
-                        size: 30,
-                      ),
-                      onPressed: previousPage),
+                    icon: const Icon(
+                      FluentIcons.caret_solid_left,
+                      color: Colors.black,
+                      size: 30,
+                    ),
+                    onPressed: previousPage,
+                  ),
                 Expanded(
                   child: PageView(
                     controller: pageController,
@@ -266,31 +282,33 @@ class _OnboardingPanelState extends State<OnboardingPanel> {
                 ),
                 if (widget.appDownloadOnly != true)
                   IconButton(
-                      icon: const Icon(
-                        FluentIcons.caret_solid_right,
-                        color: Colors.black,
-                        size: 30,
-                      ),
-                      onPressed: () {
-                        if (currentPage + 1 == pages.length) {
-                          Navigator.of(context).pop();
-                        } else {
-                          nextPage();
-                        }
-                      }),
+                    icon: const Icon(
+                      FluentIcons.caret_solid_right,
+                      color: Colors.black,
+                      size: 30,
+                    ),
+                    onPressed: () {
+                      if (currentPage + 1 == pages.length) {
+                        Navigator.of(context).pop();
+                      } else {
+                        nextPage();
+                      }
+                    },
+                  ),
               ],
             ),
           ),
           if (widget.appDownloadOnly != true)
-            Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-              for (int i = 0; i < totalPages; i++)
-                i == currentPage
-                    ? buildPageIndicator(true)
-                    : buildPageIndicator(false)
-            ]),
-          const SizedBox(
-            height: 10,
-          )
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                for (int i = 0; i < totalPages; i++)
+                  i == currentPage
+                      ? buildPageIndicator(true)
+                      : buildPageIndicator(false),
+              ],
+            ),
+          const SizedBox(height: 10),
         ],
       ),
     );

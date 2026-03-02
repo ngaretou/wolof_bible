@@ -160,7 +160,7 @@ class About extends StatelessWidget {
       String appCopyright = '''
 <br>
 <hr style="margin-top: 0px; margin-bottom: 20px;">
-Kàddug Yàlla+ app code © 2025 Foundational LLC.
+Kàddug Yàlla+ app code © 2026 Foundational LLC.
 <br> 
 ''';
       return aboutPageHtml + appCopyright;
@@ -253,10 +253,12 @@ Kàddug Yàlla+ app code © 2025 Foundational LLC.
           showDialog(
             context: context,
             builder: (context) {
+              final size = MediaQuery.of(context).size;
+
               return ContentDialog(
                 constraints: BoxConstraints(
-                  maxWidth: double.infinity,
-                  maxHeight: double.infinity,
+                  maxWidth: size.width,
+                  maxHeight: size.height - 20,
                 ),
                 title: Text(translation.bulkVerseCopy),
                 content: const BulkVerseCopy(),

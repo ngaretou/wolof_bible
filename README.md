@@ -107,8 +107,10 @@ to pre-process SAB data into assets
 - test teh new offline functionality
 
 
-## Web release
->>increment build number in pubspec.yaml
+## cache busting web release
+(increment build number in pubspec.yaml)
+
+```
 rm -rf build/web
 flutter build web --base-href "/test/"
 cd build/web
@@ -116,3 +118,10 @@ HASH=$(sha256sum main.dart.js | cut -c1-8)
 mv main.dart.js main.dart.$HASH.js
 sed -i .bak "s/main.dart.js/main.dart.$HASH.js/g" flutter_bootstrap.js 
 rm flutter_bootstrap.js.bak 
+```
+
+<a title="Made with Windows Design" href="https://github.com/bdlukaa/fluent_ui">
+  <img
+    src="https://img.shields.io/badge/fluent-design-blue?style=flat-square&color=gray&labelColor=0078D7"
+  />
+</a>

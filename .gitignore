@@ -91,3 +91,4 @@ macos/Flutter/GeneratedPluginRegistrant.swift
 ios/Flutter/Generated.xcconfig
 ios/Flutter/flutter_export_environment.sh
 lib/secrets.dart
+macos/Podfile.lock
