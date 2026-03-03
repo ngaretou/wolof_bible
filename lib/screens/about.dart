@@ -18,6 +18,7 @@ class About extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const spacer = SizedBox(width: 20);
     final translation = Provider.of<UserPrefs>(
       context,
       listen: false,
@@ -160,7 +161,7 @@ class About extends StatelessWidget {
       String appCopyright = '''
 <br>
 <hr style="margin-top: 0px; margin-bottom: 20px;">
-Kàddug Yàlla+ app code © 2026 Foundational LLC.
+Kàddug Yàlla+ app © 2026 Foundational LLC.
 <br> 
 ''';
       return aboutPageHtml + appCopyright;
@@ -201,78 +202,100 @@ Kàddug Yàlla+ app code © 2026 Foundational LLC.
     }
 
     List<Widget> pageContent = [
-      Row(
-        mainAxisAlignment: MainAxisAlignment.end,
+      Column(
+        mainAxisAlignment: .center,
+        crossAxisAlignment: .center,
         children: [
-          FutureBuilder(
-            future: getPackageInfo(),
-            builder: (ctx, snapshot) =>
-                snapshot.connectionState == ConnectionState.waiting
-                ? const Center(child: ProgressBar())
-                : Text('${packageInfo.version} (${packageInfo.buildNumber})'),
-          ),
-          const SizedBox(width: 20),
-          IconButton(
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (BuildContext context) {
-                  return const Center(child: OnboardingPanel());
-                },
-              );
-            },
-            icon: const Icon(FluentIcons.info),
+          htmlToDisplay(),
+          Divider(),
+          SizedBox(height: 20),
+          Row(
+            children: [
+              SizedBox(
+                width: 200,
+                child: Button(
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (context) {
+                        final size = MediaQuery.of(context).size;
+
+                        return ContentDialog(
+                          constraints: BoxConstraints(
+                            maxWidth: size.width,
+                            maxHeight: size.height - 20,
+                          ),
+                          title: Text(translation.bulkVerseCopy),
+                          content: const BulkVerseCopy(),
+                          actions: [
+                            Button(
+                              child: Text(translation.close),
+                              onPressed: () => Navigator.pop(context),
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                  },
+                  child: Text(translation.bulkVerseCopy),
+                ),
+              ),
+              spacer,
+              SizedBox(
+                width: 200,
+                child: Button(
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return const Center(child: OnboardingPanel());
+                      },
+                    );
+                  },
+                  child: const Text('Intro'),
+                ),
+              ),
+              spacer,
+              SizedBox(
+                width: 200,
+                child: Button(
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (context) {
+                        return ContentDialog(
+                          constraints: BoxConstraints(
+                            maxWidth: 800,
+                            maxHeight: 600,
+                          ),
+                          title: const Text('Licenses'),
+                          content: const FluentLicensePage(),
+                          actions: [
+                            Button(
+                              child: Text(translation.close),
+                              onPressed: () => Navigator.pop(context),
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                  },
+                  child: const Text('Licenses'),
+                ),
+              ),
+              spacer,
+              FutureBuilder(
+                future: getPackageInfo(),
+                builder: (ctx, snapshot) =>
+                    snapshot.connectionState == ConnectionState.waiting
+                    ? const Center(child: ProgressBar())
+                    : Text(
+                        'Version: ${packageInfo.version} (${packageInfo.buildNumber})',
+                      ),
+              ),
+            ],
           ),
         ],
-      ),
-      htmlToDisplay(),
-      Button(
-        onPressed: () {
-          showDialog(
-            context: context,
-            builder: (context) {
-              return ContentDialog(
-                constraints: BoxConstraints(maxWidth: 800, maxHeight: 600),
-                title: const Text('Licenses'),
-                content: const FluentLicensePage(),
-                actions: [
-                  Button(
-                    child: Text(translation.close),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              );
-            },
-          );
-        },
-        child: const Text('Licenses'),
-      ),
-      const SizedBox(height: 20),
-      Button(
-        onPressed: () {
-          showDialog(
-            context: context,
-            builder: (context) {
-              final size = MediaQuery.of(context).size;
-
-              return ContentDialog(
-                constraints: BoxConstraints(
-                  maxWidth: size.width,
-                  maxHeight: size.height - 20,
-                ),
-                title: Text(translation.bulkVerseCopy),
-                content: const BulkVerseCopy(),
-                actions: [
-                  Button(
-                    child: Text(translation.close),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              );
-            },
-          );
-        },
-        child: Text(translation.bulkVerseCopy),
       ),
     ];
 
