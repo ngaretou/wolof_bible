@@ -26,13 +26,13 @@ ThemeMode getStoredThemeMode() {
 }
 
 AccentColor getStoredColorByIndex() {
-  AccentColor colorToReturn = systemAccentColor;
   int? savedColorIndex = userPrefsBox.get('colorIndex');
   if (savedColorIndex != null) {
-    colorToReturn = Colors.accentColors[savedColorIndex];
+    return Colors.accentColors[savedColorIndex];
+  } else {
+    userPrefsBox.put('colorIndex', 6);
+    return Colors.accentColors[6];
   }
-
-  return colorToReturn;
 }
 
 class AppTheme extends ChangeNotifier {
@@ -88,9 +88,9 @@ class AppTheme extends ChangeNotifier {
     notifyListeners();
   }
 
-  Locale? _locale;
-  Locale? get locale => _locale;
-  set locale(Locale? locale) {
+  Locale _locale = const Locale('fr');
+  Locale get locale => _locale;
+  set locale(Locale locale) {
     _locale = locale;
     notifyListeners();
   }

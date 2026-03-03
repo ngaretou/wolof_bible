@@ -184,6 +184,7 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
   }
 
   void _updateTopVerse(Iterable<ItemPosition> positions) {
+    if (_isScrolling) return;
     // final positions = itemPositionsListener.itemPositions.value;
     // if (positions.isEmpty || !mounted) return;
 
@@ -252,6 +253,7 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
 
           // account for dashed verses - just send the first of any set to the scrollgroup
           final verseno = getFirstOfDashedVerses(currentVerse.value);
+          // print('verseno: $verseno');
 
           BibleReference ref = BibleReference(
             key: widget.bibleReference.key,
@@ -462,13 +464,14 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
 
       if (partOfScrollGroup && thisColumnNavigation) {
         setActiveColumnKey();
+        final verseno = getFirstOfDashedVerses(targetVerse);
         final ref = BibleReference(
           key: widget.key!,
           partOfScrollGroup: partOfScrollGroup,
           collectionID: currentCollection.value,
           bookID: targetBook,
           chapter: targetChapter,
-          verse: targetVerse,
+          verse: verseno,
           columnIndex: widget.myColumnIndex,
         );
         if (!mounted) return;
@@ -525,8 +528,14 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
 
       // check verse
       // verse could be dashed - 13-15 etc - just get the last number
-      final verseno = getLastOfDashedVerses(vs);
-      if (int.parse(verseno) < int.parse(chapters[ch])) {
+      // so for example a user might try to jump to verse 17-19; the last verse in the map is 17-19.
+      // the user might try to jump to verse 15 and last verse in the map is 17-19.
+      // the user might try to jump to verse 12-13 and last verse in the map is 17-19.
+      // This will make those comparisons work.
+      final verseNum = getFirstOfDashedVerses(vs);
+      final lastVerseNumInChapter = getFirstOfDashedVerses(chapters[ch]);
+      // if the verse is in the map, return true
+      if (int.parse(verseNum) <= int.parse(lastVerseNumInChapter)) {
         return true;
       } else {
         return false;
@@ -1232,12 +1241,11 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
                             if (value != null) {
                               setActiveColumnKey();
 
-                              final verseno = getFirstOfDashedVerses(value);
                               scrollToReference(
                                 collection: currentCollection.value,
                                 bookID: currentBook.value,
                                 chapter: currentChapter.value,
-                                verse: verseno,
+                                verse: value,
                                 thisColumnNavigation: true,
                               );
                             }
@@ -1525,17 +1533,25 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
 }
 
 String getFirstOfDashedVerses(String vs) {
-  // account for dashed verses - just send the first of any set to the scrollgroup
-  RegExpMatch? match = RegExp(r'(\d+)(-*\d*)').firstMatch(vs);
-  // send the cleaned verse number or as fallback send the current Verse
-  final verseno = match?.group(1) ?? vs;
-  return verseno;
+  if (vs.contains('-')) {
+    // account for dashed verses - just send the first of any set to the scrollgroup
+    RegExpMatch? match = RegExp(r'(\d+)-(\d+)').firstMatch(vs);
+    // send the cleaned verse number or as fallback send the current Verse
+    final verseno = match?.group(1) ?? vs;
+    return verseno;
+  } else {
+    return vs;
+  }
 }
 
 String getLastOfDashedVerses(String vs) {
-  // account for dashed verses - just send the last of any set
-  RegExpMatch? match = RegExp(r'(\d*-*)(\d+)').firstMatch(vs);
-  // send the cleaned verse number or as fallback send the current Verse
-  final verseno = match?.group(2) ?? vs;
-  return verseno;
+  if (vs.contains('-')) {
+    // account for dashed verses - just send the last of any set
+    RegExpMatch? match = RegExp(r'(\d+)-(\d+)').firstMatch(vs);
+    // send the cleaned verse number or as fallback send the current Verse
+    final verseno = match?.group(2) ?? vs;
+    return verseno;
+  } else {
+    return vs;
+  }
 }

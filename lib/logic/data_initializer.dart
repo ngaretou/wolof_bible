@@ -149,6 +149,7 @@ class Translation {
   String noInternet;
   String timeout;
   String switchingToOfflineMode;
+  String resetUserSettings;
 
   Translation({
     required this.langCode,
@@ -192,6 +193,7 @@ class Translation {
     required this.noInternet,
     required this.timeout,
     required this.switchingToOfflineMode,
+    required this.resetUserSettings,
   });
 }
 
@@ -374,6 +376,7 @@ Future<void> asyncGetTranslations(BuildContext context) async {
               "noInternet": translation['noInternet'],
               "timeout": translation['timeout'],
               "switchingToOfflineMode": translation['switchingToOfflineMode'],
+              "resetUserSettings": translation['resetUserSettings'],
             });
           } catch (e) {
             debugPrint('Error adding translation supplement: ${e.toString()}');
@@ -428,6 +431,7 @@ Future<void> asyncGetTranslations(BuildContext context) async {
             timeout: translationSupplement['timeout']!,
             switchingToOfflineMode:
                 translationSupplement['switchingToOfflineMode']!,
+            resetUserSettings: translationSupplement['resetUserSettings']!,
           ),
         );
       } catch (e) {

@@ -2,7 +2,7 @@
 
 An extension of [Scripture App Builder](https://software.sil.org/scriptureappbuilder/) primarily for web apps that also can be used to produce offline Windows and macOS.
 
-Demo of current version at http://kaddugyalla.com/app
+Demo of current version at http://app.kaddugyalla.com
 
 <p align="center">
   <img src="https://github.com/ngaretou/wolof_bible/blob/main/screenshot.png">
@@ -10,36 +10,13 @@ Demo of current version at http://kaddugyalla.com/app
   <i>Screenshot of wolof_bible on a web browser</i>
 </p>
 
-
-### Features
-- Incorporates Changes from SAB project
-  - (Not individual collection changes)
-- Incorporates translations from SAB project
-- Pulls in About pages - main About and the Copyright entry on each book section. 
-  - To include book Copyright text in About page, use the %copyright-all:C01%, %copyright-all:C02% variables in the main project About section
-- RTL text ready 
-- Copy and Share context menu on right click
-- Search by collection or all collections
-- Dark/Light mode with quick switching
-- Remembers user columns on subsequent opens
-- For Wolof version has unique Wolof links on web
-- For non web apps (Win/macOS/Android/iOS)
-  - Remembers window position (Win/macOS)
-  - Caches verses in a local db
-- Example app with: 
-  - Wolof full Bible
-  - Wolof NT 2012
-  <!-- - Wolof Ajami (Arabic script) full Bible -->
-  - Louis Segond
-  - Lexham English Bible
-  - Society of Biblical Literature Greek NT
-
 ### Running
 use dart script @ `sfm_parser % dart run`
 to pre-process SAB data into assets
 
 ## To do:
 ### Minimal
+- Audio tracking
 - SBL/GNT word parsing under mouse-over
 
 ### Maximal
@@ -92,7 +69,8 @@ to pre-process SAB data into assets
    * Removed Swahili as it's experiencing problems on the Aquifer side
 * 2.1.0+24
    * lots of logic refactoring to get the service and UI separated
-   * 
+* 2.1.0+25
+   * many fluent_ui 4.14 breaking changes fixed
 
 
 
@@ -125,3 +103,5 @@ rm flutter_bootstrap.js.bak
     src="https://img.shields.io/badge/fluent-design-blue?style=flat-square&color=gray&labelColor=0078D7"
   />
 </a>
+
+sfm_parser/project/usfm_bible_data/books/C01,*.sfm

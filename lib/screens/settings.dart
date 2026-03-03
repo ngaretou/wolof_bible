@@ -101,33 +101,42 @@ class Settings extends StatelessWidget {
       header: PageHeader(title: Text(translation.settings)),
       scrollController: controller,
       children: [
-        Text(
-          translation.settingsInterfaceLanguage,
-          style: FluentTheme.of(context).typography.subtitle,
-        ),
-        spacer,
-        SizedBox(
-          width: 150,
-          child: ComboBox<String>(
-            isExpanded: true,
-            items: translations
-                .map(
-                  (e) => ComboBoxItem<String>(
-                    value: e.langCode,
-                    child: Text(e.langName, overflow: TextOverflow.ellipsis),
-                  ),
-                )
-                .toList(),
-            value: Provider.of<UserPrefs>(
-              context,
-              listen: false,
-            ).currentTranslation.langCode,
-            onChanged: (value) {
-              Provider.of<UserPrefs>(context, listen: false).setUserLang =
-                  value!;
-              userPrefsBox.put('savedUserLang', value);
-            },
-          ),
+        Column(
+          crossAxisAlignment: .start,
+          children: [
+            Text(
+              translation.settingsInterfaceLanguage,
+              style: FluentTheme.of(context).typography.subtitle,
+            ),
+            spacer,
+            SizedBox(
+              width: 150,
+              child: ComboBox<String>(
+                isExpanded: true,
+                // isExpanded: true,
+                items: translations
+                    .map(
+                      (e) => ComboBoxItem<String>(
+                        value: e.langCode,
+                        child: Text(
+                          e.langName,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    )
+                    .toList(),
+                value: Provider.of<UserPrefs>(
+                  context,
+                  listen: false,
+                ).currentTranslation.langCode,
+                onChanged: (value) {
+                  Provider.of<UserPrefs>(context, listen: false).setUserLang =
+                      value!;
+                  userPrefsBox.put('savedUserLang', value);
+                },
+              ),
+            ),
+          ],
         ),
         biggerSpacer,
         Text(
@@ -167,6 +176,22 @@ class Settings extends StatelessWidget {
           );
         }),
         spacer,
+        Wrap(
+          children: [
+            // Tooltip(
+            //   message: accentColorNames[0],
+            //   child: _buildColorBlock(appTheme, systemAccentColor, 0),
+            // ),
+            ...List.generate(Colors.accentColors.length, (index) {
+              final color = Colors.accentColors[index];
+              return Tooltip(
+                message: accentColorNames[index + 1],
+                child: _buildColorBlock(appTheme, color, index),
+              );
+            }),
+          ],
+        ),
+        biggerSpacer,
 
         // Text(
         //   'Navigation Pane Display Mode',
@@ -213,29 +238,13 @@ class Settings extends StatelessWidget {
         // Text('Accent Color',
         //     style: FluentTheme.of(context).typography.subtitle),
         // spacer,
-        Wrap(
-          children: [
-            // Tooltip(
-            //   message: accentColorNames[0],
-            //   child: _buildColorBlock(appTheme, systemAccentColor, 0),
-            // ),
-            ...List.generate(Colors.accentColors.length, (index) {
-              final color = Colors.accentColors[index];
-              return Tooltip(
-                message: accentColorNames[index + 1],
-                child: _buildColorBlock(appTheme, color, index),
-              );
-            }),
-          ],
-        ),
-        biggerSpacer,
         Text(
           translation.resourceCollections,
           style: FluentTheme.of(context).typography.subtitle,
         ),
         spacer,
 
-        ///
+        /// Collection group chooser
         ValueListenableBuilder(
           valueListenable: userPrefsBox.listenable(
             keys: ['useDefaultResourcesOnly'],
@@ -279,6 +288,45 @@ class Settings extends StatelessWidget {
               ),
             );
           },
+        ),
+
+        biggerSpacer,
+        Text(
+          translation.resetUserSettings,
+          style: FluentTheme.of(context).typography.subtitle,
+        ),
+        spacer,
+
+        /// Reset user settings
+        Column(
+          crossAxisAlignment: .start,
+          children: [
+            Button(
+              onPressed: () async {
+                await userPrefsBox.clear();
+                await userColumnsBox.clear();
+                // load some defaults
+                await userPrefsBox.put('useDefaultResourcesOnly', true);
+                appTheme.color = Colors.accentColors[6];
+                await userPrefsBox.put('colorIndex', 6);
+                if (!context.mounted) return;
+                Provider.of<UserPrefs>(context, listen: false).setUserLang =
+                    'wol';
+                Provider.of<UserPrefs>(
+                  context,
+                  listen: false,
+                ).userColumns.clear();
+                await Provider.of<UserPrefs>(
+                  context,
+                  listen: false,
+                ).loadUserPrefs(collections);
+                if (!context.mounted) return;
+                Provider.of<AppTheme>(context, listen: false).mode =
+                    ThemeMode.system;
+              },
+              child: Text(translation.resetUserSettings),
+            ),
+          ],
         ),
 
         // if (kIsWindowEffectsSupported) ...[

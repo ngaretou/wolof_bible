@@ -687,14 +687,8 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
                 //Main big row that holds the text columns
                 pane: NavigationPane(
                   selected: index,
-                  // toggleable: false,
                   toggleButton: Icon(FluentIcons.collapse_menu),
                   onChanged: (i) => setState(() => index = i),
-                  // size: const NavigationPaneSize(
-                  // openMinWidth: 250.0,
-                  // openMaxWidth: 320.0,
-                  // headerHeight: 0,
-                  // ),
                   header: SizedBox.shrink(),
                   // header: const Text('Pane Header'),
                   displayMode: PaneDisplayMode.compact,
@@ -709,14 +703,16 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
                             // this 47 is for some reason important for fluent_ui - they have some bouncing placement when menu is toggled open
                             // spent quite a while getting this right and it's stll not 100%
                             height: val == true ? 14 : 47,
-                            child: Icon(FluentIcons.collapse_menu),
+                            child: val == true
+                                ? Icon(FluentIcons.back)
+                                : Icon(FluentIcons.collapse_menu),
                           );
                         },
                       ),
 
                       onTap: () {
                         viewKey.currentState?.toggleCompactOpenMode();
-                        setState(() {});
+                        isPaneOpen.value = !isPaneOpen.value;
                       },
                     ),
 
