@@ -78,10 +78,13 @@ class _ParagraphBuilderState extends State<ParagraphBuilder> {
     //     mainTextStyle.copyWith(decoration: TextDecoration.underline);
     TextStyle italicStyle = mainTextStyle.copyWith(fontStyle: FontStyle.italic);
 
-    TextStyle introStyle = mainTextStyle.copyWith(
-      fontStyle: FontStyle.italic,
-      color: FluentTheme.of(context).accentColor,
-    );
+    TextStyle introStyle = TextStyle();
+
+    // TextStyle introStyle =
+    // mainTextStyle.copyWith(
+    //   fontStyle: FontStyle.italic,
+    //   fontSize: fontSize - 4,
+    // );
 
     List<InlineSpan> styledParagraphFragments = [];
     StringBuffer plainTextBuffer = StringBuffer();
@@ -415,6 +418,13 @@ class _ParagraphBuilderState extends State<ParagraphBuilder> {
           ),
         );
 
+        Widget introCard({required Widget child}) {
+          return Container(
+            color: FluentTheme.of(context).cardColor,
+            child: child,
+          );
+        }
+
         if (widget.addDivider) {
           return Padding(
             padding: const EdgeInsets.only(top: 48),
@@ -425,7 +435,7 @@ class _ParagraphBuilderState extends State<ParagraphBuilder> {
                   top: BorderSide(
                     color: FluentTheme.of(
                       context,
-                    ).accentColor, // Change to your desired color
+                    ).cardColor, // Change to your desired color
                     width: 2.0, // Thickness of the border
                   ),
                 ),
@@ -433,12 +443,15 @@ class _ParagraphBuilderState extends State<ParagraphBuilder> {
 
               // padding: EdgeInsets.all(20),
               // height: 1,
-              // color: FluentTheme.of(context).cardColor,
-              child: para,
+              child: introCard(child: para),
             ),
           );
         } else {
-          return para;
+          if (isIntro) {
+            return introCard(child: para);
+          } else {
+            return para;
+          }
         }
       },
     );

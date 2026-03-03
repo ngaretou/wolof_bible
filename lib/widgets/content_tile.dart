@@ -416,7 +416,7 @@ $copyrightStatement
                 horizontal: 4.0,
               ),
               padding: const EdgeInsets.all(12.0),
-              // borderColor: accentColor.withAlpha(128),
+
               backgroundColor: backgroundColor,
               child: noteBody(),
             ),
