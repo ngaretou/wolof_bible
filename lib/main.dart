@@ -586,6 +586,8 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
                     ? null
                     : DragToMoveArea(child: Center(child: Text(appTitle))),
               );
+            } else if (Platform.isIOS) {
+              return SizedBox(height: 22);
             } else {
               return SizedBox(height: 4);
             }
