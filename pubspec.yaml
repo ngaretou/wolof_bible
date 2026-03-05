@@ -17,7 +17,7 @@ publish_to: "none" # Remove this line if you wish to publish to pub.dev
 # In iOS, build-name is used as CFBundleShortVersionString while build-number used as CFBundleVersion.
 # Read more about iOS versioning at
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
-version: 2.1.0+25
+version: 2.1.0+26
 
 environment:
   sdk: ">=3.10.0 <4.0.0"
@@ -40,8 +40,8 @@ dependencies:
   url_strategy: ^0.3.0
   url_launcher: ^6.1.9
   share_plus: ^12.0.0
-  clipboard: ^3.0.14
-  fluent_ui: ^4.13.0
+  # clipboard: ^3.0.14
+  fluent_ui: ^4.14.0
   hive: ^2.2.1
   hive_flutter: ^1.1.0
   intl: ^0.20.2
@@ -402,12 +402,13 @@ flutter:
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/custom-fonts/#from-packages
 # https://pub.dev/packages/msix
-# flutter pub run msix:create
+# dart run msix:create
+
 msix_config:
   display_name: Kàddug Yàlla+
   publisher_display_name: Foundational
   identity_name: 24971LaMBS.KddugYllagi
-  msix_version: 2.0.17.0
+  msix_version: 2.1.26.0
   publisher: CN=172AFE7A-55C9-42B2-9D60-BAD846698B5E
   logo_path: C:\Users\corey\myflutter\wolof_bible\windows\runner\resources\app_icon.ico
   store: true

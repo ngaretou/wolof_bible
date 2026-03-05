@@ -556,39 +556,17 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
             if (kIsWeb) {
               return SizedBox(height: 4);
             } else if (Platform.isWindows) {
-              return TitleBar(
-                title: () {
-                  if (kIsWeb) return Text(appTitle);
-                  return DragToMoveArea(
-                    child: Row(
-                      children: [
-                        const SizedBox(width: 15),
-                        Align(
-                          alignment: AlignmentDirectional.centerStart,
-                          child: Text(appTitle),
-                        ),
-                      ],
-                    ),
-                  );
-                }(),
-
-                endHeader: const Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    //     IconButton(
-                    //         icon: const Icon(FluentIcons.add),
-                    //         onPressed: () {
-                    //           numberOfColumns <= 3 //keep it to four columns
-                    //               ? changeNumberColumns(add: true)
-                    //               : null;
-
-                    //           // setState(() {});
-                    //         }),
-
-                    //     // Spacer(),
-                    WindowButtons(),
-                  ],
+              return SizedBox(
+                height: 36,
+                child: DragToMoveArea(
+                  child: Row(
+                    children: [
+                      SizedBox(width: 15),
+                      Text(appTitle),
+                      Spacer(),
+                      WindowButtons(),
+                    ],
+                  ),
                 ),
               );
             } else if (Platform.isMacOS) {
