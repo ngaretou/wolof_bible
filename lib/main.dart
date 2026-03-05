@@ -22,7 +22,6 @@ import 'package:macos_window_utils/macos_window_utils.dart' as macos;
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:wolof_bible/logic/aquifer_api.dart';
-import 'package:wolof_bible/widgets/whats_new.dart';
 import 'firebase_options.dart';
 
 import 'screens/about.dart';
@@ -228,6 +227,8 @@ class MyApp extends StatelessWidget {
       hoveringPadding: EdgeInsets.all(0),
     );
 
+    final systemBrightness = MediaQuery.platformBrightnessOf(context);
+
     // print('initAppInfo');
     return ChangeNotifierProvider.value(
       value: _appTheme,
@@ -235,10 +236,17 @@ class MyApp extends StatelessWidget {
         final appTheme = context.watch<AppTheme>();
 
         late SystemUiOverlayStyle style;
+
         if (appTheme.mode == ThemeMode.dark) {
           style = SystemUiOverlayStyle.light;
-        } else {
+        } else if (appTheme.mode == ThemeMode.light) {
           style = SystemUiOverlayStyle.dark;
+        } else {
+          if (systemBrightness == Brightness.dark) {
+            style = SystemUiOverlayStyle.light;
+          } else {
+            style = SystemUiOverlayStyle.dark;
+          }
         }
 
         SystemChrome.setSystemUIOverlayStyle(style);
@@ -404,6 +412,9 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
     );
 
     if (hasSeenOnboarding == false) {
+      //save that the user has seen the onboarding
+      userPrefsBox.put('hasSeenOnboarding', true);
+
       WidgetsBinding.instance.addPostFrameCallback((_) {
         showDialog(
           barrierDismissible: true,
@@ -411,14 +422,17 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
           builder: (BuildContext context) {
             return const Center(child: OnboardingPanel());
           },
-        ).then((_) {
-          setState(() {});
-        });
-
-        //save that the user has seen the onboarding
-        userPrefsBox.put('hasSeenOnboarding', true);
+        );
+        // .then((_) {
+        //   setState(() {});
+        // });
       });
     }
+
+    // for the info badge and teaching tip on the study notes
+    final flyoutController = FlyoutController();
+    bool hasSeenStudyNotesTeachingTip =
+        userPrefsBox.get('hasSeenResourceIntro') ?? false;
 
     return FutureBuilder(
       future: initInterface,
@@ -471,9 +485,7 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
               icon: const Icon(FluentIcons.mail),
               title: const Text('Bind nu'),
               onTap: () {
-                openUrl(
-                  'http://currah.download/pages/wolof/bible/contact/index.html',
-                );
+                openUrl('https://kaddugyalla.com/#jokko');
               },
             ),
           ];
@@ -587,7 +599,7 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
                     : DragToMoveArea(child: Center(child: Text(appTitle))),
               );
             } else if (Platform.isIOS) {
-              return SizedBox(height: 22);
+              return SizedBox(height: 30);
             } else {
               return SizedBox(height: 4);
             }
@@ -664,6 +676,7 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
           return ValueListenableBuilder<Box?>(
             valueListenable: userPrefsBox.listenable(keys: ['fullscreen']),
             builder: (context, _, child) {
+              // title bar default height
               double height = 28;
               bool? fullscreen = userPrefsBox.get('fullscreen');
               if (fullscreen != null) {
@@ -758,23 +771,44 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
                         ).addColumn(context, ColumnType.scripture);
                       },
                     ),
+
                     //Open Resource Column
                     PaneItemAction(
-                      icon: WhatsNew(
-                        icon: const Icon(FluentIcons.diet_plan_notebook),
-                        title: translation.newStudyNotes,
-                        subtitle: translation.newStudyNotesSub,
-                        flag: 'hasSeenResourceIntro',
-                        // wait til this is true before showing
-                        gate: hasSeenOnboarding,
-                        placementMode: .rightCenter,
-
+                      icon: FlyoutTarget(
+                        controller: flyoutController,
                         child: const Icon(FluentIcons.diet_plan_notebook),
                       ),
-
+                      infoBadge: ValueListenableBuilder<Box>(
+                        valueListenable: userPrefsBox.listenable(
+                          keys: ['hasSeenResourceIntro'],
+                        ),
+                        builder: (context, val, _) {
+                          bool hasSeenStudyNotesTeachingTip =
+                              userPrefsBox.get('hasSeenResourceIntro') ?? false;
+                          return hasSeenStudyNotesTeachingTip
+                              ? SizedBox.shrink()
+                              : InfoBadge(source: SizedBox.shrink());
+                        },
+                      ),
                       title: Text(translation.openResourceColumn),
-
                       onTap: () {
+                        if (!hasSeenStudyNotesTeachingTip) {
+                          userPrefsBox.put('hasSeenResourceIntro', true);
+                          showTeachingTip(
+                            flyoutController: flyoutController,
+                            placementMode: .rightCenter,
+                            builder: (context) {
+                              return TeachingTip(
+                                leading: const Icon(
+                                  FluentIcons.diet_plan_notebook,
+                                ),
+                                title: Text(translation.newStudyNotes),
+                                subtitle: Text(translation.newStudyNotesSub),
+                              );
+                            },
+                          );
+                        }
+
                         if (index != 0) {
                           setState(() {
                             index = 0;

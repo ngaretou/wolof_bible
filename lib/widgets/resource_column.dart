@@ -41,10 +41,11 @@ class _ResourceColumnState extends State<ResourceColumn> {
   late Future initialization;
   // our local list of collections for this column
   List<ResourceCollectionInfo> resources = [];
-  // List<ResourceCollectionInfo> selectedCollections = [];
   List<String> userResourceCodes = [];
-  late ResourceLanguage language;
-  List<ResourceLanguage> languages = [];
+  late ResourceLanguage
+  chosenResourceLanguage; //user-selected lang to display content in
+  List<ResourceLanguage> languagesToDisplay =
+      []; //all languages to display in the language chooser
   StreamSubscription<ResourceItem>? _resourceSubscription;
   String currentBookID = 'GEN';
   String currentChapter = '1';
@@ -205,7 +206,7 @@ class _ResourceColumnState extends State<ResourceColumn> {
         .initializeResourceData(); // initialize or ensure initialized
     await _loadTOC();
 
-    // if online, will always be online as option to set this pref is not available.
+    // if on web, will always be online as option to set this pref is not available.
     if (userPrefsBox.get('userConnectivityChoice') == null) {
       _shouldCheckConnectivity = true;
       await _checkConnectivity(); // to set _is Online
@@ -235,7 +236,6 @@ class _ResourceColumnState extends State<ResourceColumn> {
     _lastLoaded = ChapterInfo(currentBookID, chInt);
 
     userResourceLanguageCode = widget.incomingUserResourceLanguageCode;
-    languages = AquiferService().allLanguages.toList();
     isLinked = widget.bibleReference.partOfScrollGroup;
 
     itemPositionsListener.itemPositions.addListener(_handleScroll);
@@ -536,7 +536,7 @@ class _ResourceColumnState extends State<ResourceColumn> {
     setState(() {
       _loadingLanguage = false;
     });
-    // i.e. fill the column with resources
+    // i.e. fill the column with study notes for this language in the previously chosen language
     updateContent();
   }
 
@@ -586,17 +586,17 @@ class _ResourceColumnState extends State<ResourceColumn> {
   }
 
   /// Centralized logic for loading collections and determining selected resources
-  /// forceReset _of available resources_
   Future<void> _loadCollectionsAndSettings() async {
     try {
       // Reload available resource languages based on connectivity
-      List<ResourceLanguage> allLangs = AquiferService().allLanguages;
-      languages.clear();
+      List<ResourceLanguage> allLangs = AquiferService().allLanguages.toList();
+      // reset the langs to display in the resource language chooser
+      languagesToDisplay.clear();
       if (_isOnline) {
-        languages.addAll(allLangs);
+        languagesToDisplay.addAll(allLangs);
       } else {
         // Hardcoded offline languages for now
-        languages.addAll(offlineLanguages);
+        languagesToDisplay.addAll(offlineLanguages);
       }
     } catch (e) {
       debugPrint('Error loading languages: $e');
@@ -610,7 +610,9 @@ class _ResourceColumnState extends State<ResourceColumn> {
         );
 
         if (!isOfflineLanguage) {
-          userResourceLanguageCode = languages.first.id;
+          // if the user has chosen example Arabic, it's not an offline available lang,
+          // so switch to the first available offline lang, currently French
+          userResourceLanguageCode = languagesToDisplay.first.id;
         }
       }
     } catch (e) {
@@ -644,13 +646,16 @@ class _ResourceColumnState extends State<ResourceColumn> {
     }
 
     try {
-      // Determine User Resource Codes
+      // Determine User Resource Codes:
+      // The codes for the resources the user has chosen to display.
+      // e.g. Tyndale Study Notes etc.
       userResourceCodes.clear();
 
       String userCodesData =
           'resource_prefs_${userResourceLanguageCode.toString()}';
       if (_isOnline) {
-        // Logic: get from prefs
+        // Logic: get from prefs the codes the user has previously chosen
+        // to display from the available choices.
 
         dynamic savedRaw = userPrefsBox.get(userCodesData);
 
@@ -683,7 +688,7 @@ class _ResourceColumnState extends State<ResourceColumn> {
         // and save what we've done
         userPrefsBox.put(userCodesData, userResourceCodes);
       } else {
-        // offline: load all available offline resources
+        // we're offline: load all available offline resources
 
         // this is when we have been online and want to go offline
         final tempList = offlineResources.map((c) => c.code).toList();
@@ -697,12 +702,12 @@ class _ResourceColumnState extends State<ResourceColumn> {
 
     try {
       // Update Language Object & Direction
-      language = AquiferService().allLanguages.firstWhere(
+      chosenResourceLanguage = AquiferService().allLanguages.firstWhere(
         (l) => l.id == userResourceLanguageCode,
         orElse: () => AquiferService().allLanguages.first,
       );
 
-      if (language.scriptDirection == 'LTR') {
+      if (chosenResourceLanguage.scriptDirection == 'LTR') {
         textDirection = TextDirection.ltr;
         alignment = Alignment.centerLeft;
       } else {
@@ -892,6 +897,7 @@ class _ResourceColumnState extends State<ResourceColumn> {
 
   @override
   Widget build(BuildContext context) {
+    // current user interface language
     final translation = Provider.of<UserPrefs>(
       context,
       listen: true,
@@ -969,7 +975,7 @@ class _ResourceColumnState extends State<ResourceColumn> {
                                 }
                               },
                               selectedItemBuilder: (context) {
-                                return languages.map((c) {
+                                return languagesToDisplay.map((c) {
                                   return Align(
                                     alignment: c.scriptDirection == 'LTR'
                                         ? Alignment.centerLeft
@@ -984,7 +990,7 @@ class _ResourceColumnState extends State<ResourceColumn> {
                                   );
                                 }).toList();
                               },
-                              items: languages
+                              items: languagesToDisplay
                                   .map(
                                     (c) => ComboBoxItem<int>(
                                       value: c.id,

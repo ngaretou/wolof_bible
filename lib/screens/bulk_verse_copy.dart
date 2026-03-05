@@ -184,7 +184,7 @@ Colossiens 1:26
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
                 const SizedBox(width: 20),
-                Flexible(child: Text(translation.chooseCollection)),
+                Flexible(child: Text(translation.chooseBible)),
                 const SizedBox(width: 20),
                 Expanded(
                   child: ComboBox<String>(

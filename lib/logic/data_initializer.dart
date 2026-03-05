@@ -137,7 +137,7 @@ class Translation {
   String bulkVerseCopyInstructions;
   String close;
   String seeAllAbbreviations;
-  String chooseCollection;
+  String chooseBible;
   String includeVerseNumbers;
   String abbreviations;
   String ok;
@@ -181,7 +181,7 @@ class Translation {
     required this.bulkVerseCopyInstructions,
     required this.close,
     required this.seeAllAbbreviations,
-    required this.chooseCollection,
+    required this.chooseBible,
     required this.includeVerseNumbers,
     required this.abbreviations,
     required this.ok,
@@ -364,7 +364,7 @@ Future<void> asyncGetTranslations(BuildContext context) async {
                   translation['bulkVerseCopyInstructions'],
               "close": translation['close'],
               "seeAllAbbreviations": translation['seeAllAbbreviations'],
-              "chooseCollection": translation['chooseCollection'],
+              "chooseBible": translation['chooseBible'],
               "includeVerseNumbers": translation['includeVerseNumbers'],
               "abbreviations": translation['abbreviations'],
               "ok": translation['ok'],
@@ -418,7 +418,7 @@ Future<void> asyncGetTranslations(BuildContext context) async {
                 translationSupplement['bulkVerseCopyInstructions']!,
             close: translationSupplement['close']!,
             seeAllAbbreviations: translationSupplement['seeAllAbbreviations']!,
-            chooseCollection: translationSupplement['chooseCollection']!,
+            chooseBible: translationSupplement['chooseBible']!,
             includeVerseNumbers: translationSupplement['includeVerseNumbers']!,
             abbreviations: translationSupplement['abbreviations']!,
             ok: translationSupplement['ok']!,

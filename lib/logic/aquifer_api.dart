@@ -303,26 +303,16 @@ class AquiferService {
     // Real beginning here:
 
     // Always start with offline resources if not on web
-    if (!kIsWeb) {
-      loadedCollections.addAll(offlineResources);
-    }
-    // Attempt to load online/cached data and merge
+
+    // Start here
     try {
-      // Check logic
       if (shouldRefresh) {
         // Refresh from network
         try {
           // If we are truly offline, this might fail, which is caught below
           List<ResourceCollectionInfo> aquiferCollections =
               await refreshCollectionListFromAquifer();
-
-          // Merge
-          for (var col in aquiferCollections) {
-            // Deduplicate against offline
-            if (!loadedCollections.any((c) => c.code == col.code)) {
-              loadedCollections.add(col);
-            }
-          }
+          loadedCollections.addAll(aquiferCollections.toList());
         } catch (e) {
           // Fallback to offline only (already loaded)
           debugPrint('Exception from refreshCollectionListFromAquifer: $e');
@@ -429,14 +419,46 @@ class AquiferService {
   //   await initializeResourceData();
   // }
 
+  /// Get the resources for a specific language
   List<ResourceCollectionInfo> getResourcesForLanguage(int langId) {
-    return _allCollections
-        .where(
-          (collection) => collection.availableLanguages.any(
-            (language) => language.id == langId,
-          ),
-        )
-        .toList();
+    List<ResourceCollectionInfo> loadedCollections = [];
+    // three cases:
+    // (there is a fourth but it is handled before you get here:
+    //  we're offline on win/mac/ios and can only show offline content)
+    // 1) kIsWeb; no offline options.
+    // Win/macos/ios:
+    //    2) offline options integratedin the case of en, fr
+    //    3) no online options in the case of other langs
+    bool needOfflineOptions = !kIsWeb && (langId == 1 || langId == 4);
+
+    if (needOfflineOptions) {
+      loadedCollections.addAll(offlineResources.toList());
+
+      var allCollectionsForThisLang = _allCollections
+          .where(
+            (collection) => collection.availableLanguages.any(
+              (language) => language.id == langId,
+            ),
+          )
+          .toList();
+
+      // Merge
+      for (var col in allCollectionsForThisLang) {
+        // Deduplicate against offline
+        if (!loadedCollections.any((c) => c.code == col.code)) {
+          loadedCollections.add(col);
+        }
+      }
+      return loadedCollections;
+    } else {
+      return _allCollections
+          .where(
+            (collection) => collection.availableLanguages.any(
+              (language) => language.id == langId,
+            ),
+          )
+          .toList();
+    }
   }
 
   /// Get the articles for a specific chapter as a stream

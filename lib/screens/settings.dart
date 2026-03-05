@@ -324,7 +324,15 @@ class Settings extends StatelessWidget {
                 Provider.of<AppTheme>(context, listen: false).mode =
                     ThemeMode.system;
               },
-              child: Text(translation.resetUserSettings),
+              child: Row(
+                mainAxisSize: .min,
+                spacing: 8,
+                children: [
+                  Icon(FluentIcons.reset),
+                  Text(translation.resetUserSettings),
+                ],
+              ),
+              // child: Text(translation.resetUserSettings),
             ),
           ],
         ),

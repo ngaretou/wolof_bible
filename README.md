@@ -73,6 +73,9 @@ to pre-process SAB data into assets
    * many fluent_ui 4.14 breaking changes fixed
    * navigation problems especially dashed verses fixed
    * new book intro inline styles 
+* 2.1.0+26
+   * fixed an error where the online/offline resources were not integrating correctly on mac/ios/win apps
+   * redid the teaching tip for the resource column button to appear on tap rather than automatic and to be a notification dot drawing the user
 
 
 
