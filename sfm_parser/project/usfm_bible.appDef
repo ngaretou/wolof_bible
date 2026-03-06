@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<app-definition type="SAB" program-version="13.1">
+<app-definition type="SAB" program-version="13.4">
   <project-name>usfm_bible</project-name>
   <project-description></project-description>
+  <project-group>Wolof apps</project-group>
 
   <app-name lang="default">Kàddug Yàlla</app-name>
   <apk-filename append-version="true">Test_App.apk</apk-filename>
@@ -512,6 +513,133 @@
       <font-choice type="book-collection" />
       <filename>20PROwolKYG.SFM</filename>
       <source>/Users/corey/OneDrive - SIM International, Inc/Documents/SIM/Wolofal/My Paratext 9 Projects/wolKYG/20PROwolKYG.SFM</source>
+
+      <audio chapter="0">
+        <timing-filename>C01-22-PRO-00-timing.txt</timing-filename>
+      </audio>
+      <audio chapter="1">
+        <timing-filename>C01-22-PRO-01-timing.txt</timing-filename>
+      </audio>
+      <audio chapter="2">
+        <filename src="a1" len="144215" size="1206189">/Volumes/Crucial X8/Wolof/audio/converted for app/webm/20PRO Kaddu yu xelu   saar 02.webm</filename>
+        <timing-filename>C01-22-PRO-02-timing.txt</timing-filename>
+      </audio>
+      <audio chapter="3">
+        <filename src="a1" len="223442" size="1868356">/Volumes/Crucial X8/Wolof/audio/converted for app/webm/20PRO Kaddu yu xelu   saar 03.webm</filename>
+        <timing-filename>C01-22-PRO-03-timing.txt</timing-filename>
+      </audio>
+      <audio chapter="4">
+        <filename src="a1" len="184381" size="1541781">/Volumes/Crucial X8/Wolof/audio/converted for app/webm/20PRO Kaddu yu xelu   saar 04.webm</filename>
+        <timing-filename>C01-22-PRO-04-timing.txt</timing-filename>
+      </audio>
+      <audio chapter="5">
+        <filename src="a1" len="153837" size="1286580">/Volumes/Crucial X8/Wolof/audio/converted for app/webm/20PRO Kaddu yu xelu   saar 05.webm</filename>
+        <timing-filename>C01-22-PRO-05-timing.txt</timing-filename>
+      </audio>
+      <audio chapter="6">
+        <filename src="a1" len="246923" size="2064574">/Volumes/Crucial X8/Wolof/audio/converted for app/webm/20PRO Kaddu yu xelu   saar 06.webm</filename>
+        <timing-filename>C01-22-PRO-06-timing.txt</timing-filename>
+      </audio>
+      <audio chapter="7">
+        <filename src="a1" len="206427" size="1726142">/Volumes/Crucial X8/Wolof/audio/converted for app/webm/20PRO Kaddu yu xelu   saar 07.webm</filename>
+        <timing-filename>C01-22-PRO-07-timing.txt</timing-filename>
+      </audio>
+      <audio chapter="8">
+        <filename src="a1" len="279001" size="2332467">/Volumes/Crucial X8/Wolof/audio/converted for app/webm/20PRO Kaddu yu xelu   saar 08.webm</filename>
+        <timing-filename>C01-22-PRO-08-timing.txt</timing-filename>
+      </audio>
+      <audio chapter="9">
+        <filename src="a1" len="145005" size="1212901">/Volumes/Crucial X8/Wolof/audio/converted for app/webm/20PRO Kaddu yu xelu   saar 09.webm</filename>
+        <timing-filename>C01-22-PRO-09-timing.txt</timing-filename>
+      </audio>
+      <audio chapter="10">
+        <filename src="a1" len="244288" size="2042499">/Volumes/Crucial X8/Wolof/audio/converted for app/webm/20PRO Kaddu yu xelu   saar 10.webm</filename>
+        <timing-filename>C01-22-PRO-10-timing.txt</timing-filename>
+      </audio>
+      <audio chapter="11">
+        <filename src="a1" len="229220" size="1916484">/Volumes/Crucial X8/Wolof/audio/converted for app/webm/20PRO Kaddu yu xelu   saar 11.webm</filename>
+        <timing-filename>C01-22-PRO-11-timing.txt</timing-filename>
+      </audio>
+      <audio chapter="12">
+        <filename src="a1" len="209661" size="1753030">/Volumes/Crucial X8/Wolof/audio/converted for app/webm/20PRO Kaddu yu xelu   saar 12.webm</filename>
+        <timing-filename>C01-22-PRO-12-timing.txt</timing-filename>
+      </audio>
+      <audio chapter="13">
+        <filename src="a1" len="170360" size="1424650">/Volumes/Crucial X8/Wolof/audio/converted for app/webm/20PRO Kaddu yu xelu   saar 13.webm</filename>
+        <timing-filename>C01-22-PRO-13-timing.txt</timing-filename>
+      </audio>
+      <audio chapter="14">
+        <filename src="a1" len="248097" size="2074260">/Volumes/Crucial X8/Wolof/audio/converted for app/webm/20PRO Kaddu yu xelu   saar 14.webm</filename>
+        <timing-filename>C01-22-PRO-14-timing.txt</timing-filename>
+      </audio>
+      <audio chapter="15">
+        <filename src="a1" len="226801" size="1896276">/Volumes/Crucial X8/Wolof/audio/converted for app/webm/20PRO Kaddu yu xelu   saar 15.webm</filename>
+        <timing-filename>C01-22-PRO-15-timing.txt</timing-filename>
+      </audio>
+      <audio chapter="16">
+        <filename src="a1" len="222137" size="1857334">/Volumes/Crucial X8/Wolof/audio/converted for app/webm/20PRO Kaddu yu xelu   saar 16.webm</filename>
+        <timing-filename>C01-22-PRO-16-timing.txt</timing-filename>
+      </audio>
+      <audio chapter="17">
+        <filename src="a1" len="195212" size="1632392">/Volumes/Crucial X8/Wolof/audio/converted for app/webm/20PRO Kaddu yu xelu   saar 17.webm</filename>
+        <timing-filename>C01-22-PRO-17-timing.txt</timing-filename>
+      </audio>
+      <audio chapter="18">
+        <filename src="a1" len="166701" size="1394058">/Volumes/Crucial X8/Wolof/audio/converted for app/webm/20PRO Kaddu yu xelu   saar 18.webm</filename>
+        <timing-filename>C01-22-PRO-18-timing.txt</timing-filename>
+      </audio>
+      <audio chapter="19">
+        <filename src="a1" len="202106" size="1690040">/Volumes/Crucial X8/Wolof/audio/converted for app/webm/20PRO Kaddu yu xelu   saar 19.webm</filename>
+        <timing-filename>C01-22-PRO-19-timing.txt</timing-filename>
+      </audio>
+      <audio chapter="20">
+        <filename src="a1" len="216209" size="1807870">/Volumes/Crucial X8/Wolof/audio/converted for app/webm/20PRO Kaddu yu xelu   saar 20.webm</filename>
+        <timing-filename>C01-22-PRO-20-timing.txt</timing-filename>
+      </audio>
+      <audio chapter="21">
+        <filename src="a1" len="222112" size="1857168">/Volumes/Crucial X8/Wolof/audio/converted for app/webm/20PRO Kaddu yu xelu   saar 21.webm</filename>
+        <timing-filename>C01-22-PRO-21-timing.txt</timing-filename>
+      </audio>
+      <audio chapter="22">
+        <filename src="a1" len="186316" size="1558012">/Volumes/Crucial X8/Wolof/audio/converted for app/webm/20PRO Kaddu yu xelu   saar 22.webm</filename>
+        <timing-filename>C01-22-PRO-22-timing.txt</timing-filename>
+      </audio>
+      <audio chapter="23">
+        <filename src="a1" len="215336" size="1800521">/Volumes/Crucial X8/Wolof/audio/converted for app/webm/20PRO Kaddu yu xelu   saar 23.webm</filename>
+        <timing-filename>C01-22-PRO-23-timing.txt</timing-filename>
+      </audio>
+      <audio chapter="24">
+        <filename src="a1" len="232525" size="1944239">/Volumes/Crucial X8/Wolof/audio/converted for app/webm/20PRO Kaddu yu xelu   saar 24.webm</filename>
+        <timing-filename>C01-22-PRO-24-timing.txt</timing-filename>
+      </audio>
+      <audio chapter="25">
+        <filename src="a1" len="207518" size="1735161">/Volumes/Crucial X8/Wolof/audio/converted for app/webm/20PRO Kaddu yu xelu   saar 25.webm</filename>
+        <timing-filename>C01-22-PRO-25-timing.txt</timing-filename>
+      </audio>
+      <audio chapter="26">
+        <filename src="a1" len="209324" size="1750359">/Volumes/Crucial X8/Wolof/audio/converted for app/webm/20PRO Kaddu yu xelu   saar 26.webm</filename>
+        <timing-filename>C01-22-PRO-26-timing.txt</timing-filename>
+      </audio>
+      <audio chapter="27">
+        <filename src="a1" len="193012" size="1613991">/Volumes/Crucial X8/Wolof/audio/converted for app/webm/20PRO Kaddu yu xelu   saar 27.webm</filename>
+        <timing-filename>C01-22-PRO-27-timing.txt</timing-filename>
+      </audio>
+      <audio chapter="28">
+        <filename src="a1" len="203909" size="1705070">/Volumes/Crucial X8/Wolof/audio/converted for app/webm/20PRO Kaddu yu xelu   saar 28.webm</filename>
+        <timing-filename>C01-22-PRO-28-timing.txt</timing-filename>
+      </audio>
+      <audio chapter="29">
+        <filename src="a1" len="187882" size="1571207">/Volumes/Crucial X8/Wolof/audio/converted for app/webm/20PRO Kaddu yu xelu   saar 29.webm</filename>
+        <timing-filename>C01-22-PRO-29-timing.txt</timing-filename>
+      </audio>
+      <audio chapter="30">
+        <filename src="a1" len="293412" size="2452971">/Volumes/Crucial X8/Wolof/audio/converted for app/webm/20PRO Kaddu yu xelu   saar 30.webm</filename>
+        <timing-filename>C01-22-PRO-30-timing.txt</timing-filename>
+      </audio>
+      <audio chapter="31">
+        <filename src="a1" len="216878" size="1813380">/Volumes/Crucial X8/Wolof/audio/converted for app/webm/20PRO Kaddu yu xelu   saar 31.webm</filename>
+        <timing-filename>C01-22-PRO-31-timing.txt</timing-filename>
+      </audio>
     </book>
 
     <book id="ECC">
@@ -522,6 +650,59 @@
       <font-choice type="book-collection" />
       <filename>21ECCwolKYG.SFM</filename>
       <source>/Users/corey/OneDrive - SIM International, Inc/Documents/SIM/Wolofal/My Paratext 9 Projects/wolKYG/21ECCwolKYG.SFM</source>
+
+      <audio chapter="0">
+        <filename src="a1" len="91119" size="762481">/Volumes/Crucial X8/Wolof/audio/converted for app/webm/21ECC Kadduy waare 0 INTRO.webm</filename>
+        <timing-filename>C01-23-ECC-00-timing.txt</timing-filename>
+      </audio>
+      <audio chapter="1">
+        <filename src="a1" len="191227" size="1599124">/Volumes/Crucial X8/Wolof/audio/converted for app/webm/21ECC Kadduy waare   saar 01.webm</filename>
+        <timing-filename>C01-23-ECC-01-timing.txt</timing-filename>
+      </audio>
+      <audio chapter="2">
+        <filename src="a1" len="332460" size="2779207">/Volumes/Crucial X8/Wolof/audio/converted for app/webm/21ECC Kadduy waare   saar 02.webm</filename>
+        <timing-filename>C01-23-ECC-02-timing.txt</timing-filename>
+      </audio>
+      <audio chapter="3">
+        <filename src="a1" len="226290" size="1892099">/Volumes/Crucial X8/Wolof/audio/converted for app/webm/21ECC Kadduy waare   saar 03.webm</filename>
+        <timing-filename>C01-23-ECC-03-timing.txt</timing-filename>
+      </audio>
+      <audio chapter="4">
+        <filename src="a1" len="185102" size="1547990">/Volumes/Crucial X8/Wolof/audio/converted for app/webm/21ECC Kadduy waare   saar 04.webm</filename>
+        <timing-filename>C01-23-ECC-04-timing.txt</timing-filename>
+      </audio>
+      <audio chapter="5">
+        <filename src="a1" len="206943" size="1730483">/Volumes/Crucial X8/Wolof/audio/converted for app/webm/21ECC Kadduy waare   saar 05.webm</filename>
+        <timing-filename>C01-23-ECC-05-timing.txt</timing-filename>
+      </audio>
+      <audio chapter="6">
+        <filename src="a1" len="128720" size="1076666">/Volumes/Crucial X8/Wolof/audio/converted for app/webm/21ECC Kadduy waare   saar 06.webm</filename>
+        <timing-filename>C01-23-ECC-06-timing.txt</timing-filename>
+      </audio>
+      <audio chapter="7">
+        <filename src="a1" len="265099" size="2216334">/Volumes/Crucial X8/Wolof/audio/converted for app/webm/21ECC Kadduy waare   saar 07.webm</filename>
+        <timing-filename>C01-23-ECC-07-timing.txt</timing-filename>
+      </audio>
+      <audio chapter="8">
+        <filename src="a1" len="200865" size="1679682">/Volumes/Crucial X8/Wolof/audio/converted for app/webm/21ECC Kadduy waare   saar 08.webm</filename>
+        <timing-filename>C01-23-ECC-08-timing.txt</timing-filename>
+      </audio>
+      <audio chapter="9">
+        <filename src="a1" len="257822" size="2155651">/Volumes/Crucial X8/Wolof/audio/converted for app/webm/21ECC Kadduy waare   saar 09.webm</filename>
+        <timing-filename>C01-23-ECC-09-timing.txt</timing-filename>
+      </audio>
+      <audio chapter="10">
+        <filename src="a1" len="162404" size="1358287">/Volumes/Crucial X8/Wolof/audio/converted for app/webm/21ECC Kadduy waare   saar 10.webm</filename>
+        <timing-filename>C01-23-ECC-10-timing.txt</timing-filename>
+      </audio>
+      <audio chapter="11">
+        <filename src="a1" len="116188" size="972061">/Volumes/Crucial X8/Wolof/audio/converted for app/webm/21ECC Kadduy waare   saar 11.webm</filename>
+        <timing-filename>C01-23-ECC-11-timing.txt</timing-filename>
+      </audio>
+      <audio chapter="12">
+        <filename src="a1" len="168818" size="1411758">/Volumes/Crucial X8/Wolof/audio/converted for app/webm/21ECC Kadduy waare   saar 12.webm</filename>
+        <timing-filename>C01-23-ECC-12-timing.txt</timing-filename>
+      </audio>
     </book>
 
     <book id="SNG">
@@ -987,7 +1168,7 @@
     </features>
 
     <metadata>
-      <meta name="copyright-text" content="&lt;i&gt;Téereb Injiil&lt;/i&gt; © 2025 M.B.S.: N.I.N.E.A. 20215410C9. \n&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;[kaddugyalla.com/copyright](http://kaddugyalla.com/copyright)"/>
+      <meta name="copyright-text" content="&lt;i&gt;Téereb Injiil&lt;/i&gt; © 2010, 2020 M.B.S.: N.I.N.E.A. 20215410C9. \n&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;[kaddugyalla.com/copyright](http://kaddugyalla.com/copyright#ti)"/>
     </metadata>
 
     <styles-info>
@@ -997,9 +1178,6 @@
       <text-direction value="LTR"/>
       <numeral-system value="Default"/>
       <verse-number-style value="default"/>
-
-      <styles>
-      </styles>
     </styles-info>
 
     <font-choice type="all" />
@@ -1307,9 +1485,6 @@
       <text-direction value="LTR"/>
       <numeral-system value="Default"/>
       <verse-number-style value="default"/>
-
-      <styles>
-      </styles>
     </styles-info>
 
     <font-choice type="all" />
@@ -2309,9 +2484,6 @@
       <text-direction value="LTR"/>
       <numeral-system value="Default"/>
       <verse-number-style value="default"/>
-
-      <styles>
-      </styles>
     </styles-info>
 
     <font-choice type="all" />
@@ -3033,9 +3205,6 @@
       <text-direction value="LTR"/>
       <numeral-system value="Default"/>
       <verse-number-style value="default"/>
-
-      <styles>
-      </styles>
     </styles-info>
 
     <font-choice type="all" />
@@ -3388,10 +3557,21 @@
 
   <assistant enabled="false">
     <heading>
-      <translation lang="default">How can I help?</translation>
+      <translation>How can I help?</translation>
     </heading>
+    <translation-mappings default-lang="wol">
+      <translation-mapping id="chat-standalone-app-bar-title">
+        <translation>Assistant</translation>
+      </translation-mapping>
+      <translation-mapping id="chat-standalone-heading">
+        <translation>What would you like to ask about the Bible?</translation>
+      </translation-mapping>
+      <translation-mapping id="chat-task-title">
+        <translation>Ask a question</translation>
+      </translation-mapping>
+    </translation-mappings>
     <footer>
-      <translation lang="default">This answer was generated by an AI assistant. Please use its responses with discernment. We would value your feedback on how it could be improved.</translation>
+      <translation>This answer was generated by an AI assistant. Please use its responses with discernment. We would value your feedback on how it could be improved.</translation>
     </footer>
     <features type="assistant">
       <feature name="text-model" value="gpt-3.5-turbo"/>
@@ -3404,7 +3584,7 @@
         <translation lang="en">Find us on Facebook</translation>
       </title>
       <link>
-        <translation lang="default">https://www.facebook.com/107408064239821</translation>
+        <translation>https://www.facebook.com/107408064239821</translation>
       </link>
 
       <images type="menu-item">
@@ -3418,7 +3598,7 @@
         <translation lang="en">Find us on Facebook 2</translation>
       </title>
       <link>
-        <translation lang="default">fb://page/107408064239821</translation>
+        <translation>fb://page/107408064239821</translation>
       </link>
 
       <images type="menu-item">
@@ -3448,10 +3628,10 @@
 
     <translation-mappings default-lang="en">
       <translation-mapping id="Access_Input_Title">
-        <translation lang="default">Enter Access Code</translation>
+        <translation>Enter Access Code</translation>
       </translation-mapping>
       <translation-mapping id="Access_Input_Info">
-        <translation lang="default">To continue using this app, please enter your access code.
+        <translation>To continue using this app, please enter your access code.
 To obtain your code, please contact us on &lt;a href=&quot;tel:012345678&quot;&gt;012-345-678&lt;/a&gt;, citing your device ID.
 
 Your device ID is:
@@ -3460,42 +3640,39 @@ Your device ID is:
 Please enter your access code:</translation>
       </translation-mapping>
       <translation-mapping id="Access_Add_User_Title">
-        <translation lang="default">Add User</translation>
+        <translation>Add User</translation>
       </translation-mapping>
       <translation-mapping id="Access_Add_User_Message_Top">
-        <translation lang="default">Please enter the user&apos;s device ID and press Submit to generate their access code.</translation>
+        <translation>Please enter the user&apos;s device ID and press Submit to generate their access code.</translation>
       </translation-mapping>
       <translation-mapping id="Access_Add_User_Message_Bottom">
-        <translation lang="default">adsfad</translation>
+        <translation>adsfad</translation>
       </translation-mapping>
       <translation-mapping id="Access_Show_Code_Title">
-        <translation lang="default">Access Code</translation>
+        <translation>Access Code</translation>
       </translation-mapping>
       <translation-mapping id="Access_Show_Code_Message">
-        <translation lang="default">The access code for this user is:
+        <translation>The access code for this user is:
 %access-code%</translation>
       </translation-mapping>
       <translation-mapping id="Access_Explain_Permission">
-        <translation lang="default">Please allow the app to use your phone. We will not make any phone calls but we need access to your phone ID to check if you are authorized to use the app.</translation>
+        <translation>Please allow the app to use your phone. We will not make any phone calls but we need access to your phone ID to check if you are authorized to use the app.</translation>
       </translation-mapping>
       <translation-mapping id="Access_Code_Incorrect">
-        <translation lang="default">Code incorrect. Please ask for an access code for this device.</translation>
+        <translation>Code incorrect. Please ask for an access code for this device.</translation>
       </translation-mapping>
     </translation-mappings>
 
     <user-details>
       <user-detail code="name" type="text">
         <title>
-          <translation lang="default">Name</translation>
+          <translation>Name</translation>
         </title>
         <description>
-          <translation lang="default">First name</translation>
+          <translation>First name</translation>
         </description>
       </user-detail>
     </user-details>
-
-    <styles>
-    </styles>
   </security>
 
   <interface-languages>
@@ -3650,7 +3827,7 @@ Please enter your access code:</translation>
     <translation-mapping id="Menu_Item_Copy">
       <translation lang="en">Copy</translation>
       <translation lang="fr">Copier</translation>
-      <translation lang="wol">Copier</translation>
+      <translation lang="wol">Jàpp</translation>
     </translation-mapping>
     <translation-mapping id="Menu_Item_Share">
       <translation lang="en">Share</translation>
@@ -3815,6 +3992,9 @@ Please enter your access code:</translation>
     <translation-mapping id="Button_Skip">
       <translation lang="en">Skip</translation>
       <translation lang="fr">Sauter</translation>
+    </translation-mapping>
+    <translation-mapping id="Button_Visit_Website">
+      <translation lang="en">Visit Website</translation>
     </translation-mapping>
     <translation-mapping id="Button_Read">
       <translation lang="en">Read</translation>
@@ -4541,6 +4721,30 @@ Please enter your access code:</translation>
       <translation lang="fr">L&apos;heure du rappel quotidien</translation>
       <translation lang="wol">Waxtuw fàttli</translation>
     </translation-mapping>
+    <translation-mapping id="Settings_Resize_Keyboard">
+      <translation lang="en">Resize keyboard</translation>
+      <translation lang="fr">Redimmensioner le clavier</translation>
+    </translation-mapping>
+    <translation-mapping id="Settings_Resize_Drag_The_Keyboard">
+      <translation lang="en">Drag the keyboard to resize the height</translation>
+      <translation lang="fr">Faites glisser le clavier pour redimensionner la hauteur</translation>
+    </translation-mapping>
+    <translation-mapping id="Settings_Resize_Rotate_the_Device">
+      <translation lang="en">Rotate the device to adjust portrait and landscape</translation>
+      <translation lang="fr">Faire pivoter l\&apos;appareil pour ajuster le portrait et le paysage</translation>
+    </translation-mapping>
+    <translation-mapping id="Settings_Resize_Reset_To_Defaults">
+      <translation lang="en">Reset to Defaults</translation>
+      <translation lang="fr">Réinitialiser aux valeurs par défaut</translation>
+    </translation-mapping>
+    <translation-mapping id="Settings_Landscape">
+      <translation lang="en">Landscape</translation>
+      <translation lang="fr">Paysage</translation>
+    </translation-mapping>
+    <translation-mapping id="Settings_Portrait">
+      <translation lang="en">Portrait</translation>
+      <translation lang="fr">Portrait</translation>
+    </translation-mapping>
     <translation-mapping id="Account_Page_Title">
       <translation lang="en">My Account</translation>
       <translation lang="fr">Mon compte</translation>
@@ -4794,6 +4998,15 @@ Please enter your access code:</translation>
       <translation lang="en">messages from the app developers</translation>
       <translation lang="fr">messages des développeurs de l&apos;application</translation>
       <translation lang="wol">ay xibaar yu jóge ci ñi defar appli bi</translation>
+    </translation-mapping>
+    <translation-mapping id="Onboarding_Button_Next">
+      <translation lang="en">NEXT</translation>
+    </translation-mapping>
+    <translation-mapping id="Onboarding_Button_Skip">
+      <translation lang="en">SKIP</translation>
+    </translation-mapping>
+    <translation-mapping id="Onboarding_Button_Start">
+      <translation lang="en">START</translation>
     </translation-mapping>
     <translation-mapping id="Song_List_By_Number">
       <translation lang="en">BY NUMBER</translation>
@@ -5092,6 +5305,9 @@ Please enter your access code:</translation>
       <translation lang="en">The Assistant is unavailable for book introductions. To use it, please move to one of the chapters.</translation>
       <translation lang="fr">L&apos;Assistant n&apos;est pas disponible pour les introductions de livres. Pour l&apos;utiliser, veuillez passer à l&apos;un des chapitres.</translation>
     </translation-mapping>
+    <translation-mapping id="Assistant_Chat_Placeholder">
+      <translation lang="en">Type your question</translation>
+    </translation-mapping>
     <translation-mapping id="Text_Copied">
       <translation lang="en">Text copied</translation>
       <translation lang="fr">Texte copié</translation>
@@ -5268,6 +5484,10 @@ Please enter your access code:</translation>
       <translation lang="fr">Montrer mots du glossaire</translation>
       <translation lang="wol"></translation>
     </translation-mapping>
+    <translation-mapping id="Settings_Resize_Keyboard_Not_Selected">
+      <translation lang="en">Please select this app&apos;s keyboard before resizing</translation>
+      <translation lang="fr">Veuillez sélectionner le clavier de cette application avant de redimensionner</translation>
+    </translation-mapping>
     <translation-mapping id="Security_Permission_Denied">
       <translation lang="en">This device does not have permission to use this app.</translation>
       <translation lang="fr">Cet appareil n&apos;a pas la permission d&apos;utiliser cette application.</translation>
@@ -5351,6 +5571,23 @@ Please enter your access code:</translation>
     <translation-mapping id="Language_wol">
       <translation lang="wol">Wolof</translation>
       <translation lang="en">Wolof</translation>
+    </translation-mapping>
+    <translation-mapping id="Language_wfl">
+      <translation lang="en">وࣷلࣷفَلْ</translation>
+    </translation-mapping>
+    <translation-mapping id="Language_wol-Latn">
+      <translation lang="en">Wolof</translation>
+      <translation lang="fr">Wolof</translation>
+    </translation-mapping>
+    <translation-mapping id="Language_wol-Arab">
+      <translation lang="en">وࣷلࣷفَلْ</translation>
+      <translation lang="fr">وࣷلࣷفَلْ</translation>
+    </translation-mapping>
+    <translation-mapping id="Language_wo_Latn">
+      <translation lang="en">Wolof</translation>
+    </translation-mapping>
+    <translation-mapping id="Language_wo_Arab">
+      <translation lang="en">وࣷلࣷفَلْ</translation>
     </translation-mapping>
   </translation-mappings>
 

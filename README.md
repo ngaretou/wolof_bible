@@ -76,6 +76,9 @@ to pre-process SAB data into assets
 * 2.1.0+26
    * fixed an error where the online/offline resources were not integrating correctly on mac/ios/win apps
    * redid the teaching tip for the resource column button to appear on tap rather than automatic and to be a notification dot drawing the user
+ * 2.1.0+27
+   * Refreshed content and interface translations
+   * Todo: fix windows simulscrolling
 
 
 

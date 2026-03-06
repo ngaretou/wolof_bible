@@ -4,7 +4,6 @@
   <features>
     <feature name="show-titles" value="true"/>
     <feature name="show-subtitles" value="true"/>
-    <feature name="show-references" value="true"/>
     <feature name="show-text-size-button" value="true"/>
     <feature name="launch-action" value="contents"/>
     <feature name="navigation-type" value="up"/>
