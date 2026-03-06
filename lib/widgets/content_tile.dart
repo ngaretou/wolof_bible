@@ -298,7 +298,9 @@ ${licenseInfo.licenseName}
               Future<void> simpleCopy() async {
                 final selected = lastSelectedText;
                 await Clipboard.setData(ClipboardData(text: selected));
+                if (!context.mounted) return;
                 resetSelection();
+                successInfoBar(context, 'Jàpp nañu mbind mi');
               }
 
               // Future<void> selectAll() async {
