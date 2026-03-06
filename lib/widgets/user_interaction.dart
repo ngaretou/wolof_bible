@@ -1,5 +1,6 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'dart:io' show Platform;
 
 class UserInterAction extends StatelessWidget {
   const UserInterAction({
@@ -15,7 +16,7 @@ class UserInterAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (kIsWeb) {
+    if (kIsWeb || Platform.isWindows) {
       return Listener(
         onPointerDown: (details) {
           // on touch screen and scrollbar

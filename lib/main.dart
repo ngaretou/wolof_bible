@@ -534,16 +534,17 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
               },
             ),
 
+            // Settings
+            PaneItem(
+              body: Settings(controller: settingsController),
+              icon: const Icon(FluentIcons.settings),
+              title: Text(translation.settings),
+            ),
             //About
             PaneItem(
               body: const About(),
               icon: const Icon(FluentIcons.info),
               title: Text(translation.about),
-            ),
-            PaneItem(
-              body: Settings(controller: settingsController),
-              icon: const Icon(FluentIcons.settings),
-              title: Text(translation.settings),
             ),
           ];
 

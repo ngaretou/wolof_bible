@@ -179,28 +179,29 @@ ${licenseInfo.licenseName}
           child: GestureDetector(
             onTap: () {
               Clipboard.setData(ClipboardData(text: copyrightStatement));
-              showDialog(
-                barrierDismissible: true,
-                context: context,
-                builder: (dialogContext) {
-                  Future.delayed(const Duration(milliseconds: 500), () {
-                    if (!dialogContext.mounted) return;
-                    Navigator.of(dialogContext).pop();
-                  });
+              successInfoBar(context, 'Jàpp nañu mbind mi');
+              // showDialog(
+              //   barrierDismissible: true,
+              //   context: context,
+              //   builder: (dialogContext) {
+              //     Future.delayed(const Duration(milliseconds: 500), () {
+              //       if (!dialogContext.mounted) return;
+              //       Navigator.of(dialogContext).pop();
+              //     });
 
-                  return ContentDialog(
-                    content: Container(
-                      height: 50,
-                      width: 50,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.green,
-                      ),
-                      child: Icon(FluentIcons.check_mark, color: Colors.white),
-                    ),
-                  );
-                },
-              );
+              //     return ContentDialog(
+              //       content: Container(
+              //         height: 50,
+              //         width: 50,
+              //         decoration: BoxDecoration(
+              //           shape: BoxShape.circle,
+              //           color: Colors.green,
+              //         ),
+              //         child: Icon(FluentIcons.check_mark, color: Colors.white),
+              //       ),
+              //     );
+              //   },
+              // );
             },
             child: Align(
               alignment: AlignmentDirectional.centerEnd,
@@ -316,32 +317,8 @@ $copyrightStatement
                 await Clipboard.setData(ClipboardData(text: fullNote));
 
                 if (!context.mounted) return;
-
-                showDialog(
-                  barrierDismissible: true,
-                  context: context,
-                  builder: (dialogContext) {
-                    Future.delayed(const Duration(milliseconds: 500), () {
-                      if (!dialogContext.mounted) return;
-                      Navigator.of(dialogContext).pop();
-                    });
-
-                    return ContentDialog(
-                      content: Container(
-                        height: 50,
-                        width: 50,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.green,
-                        ),
-                        child: Icon(
-                          FluentIcons.check_mark,
-                          color: Colors.white,
-                        ),
-                      ),
-                    );
-                  },
-                );
+                resetSelection();
+                successInfoBar(context, 'Jàpp nañu mbind mi');
               }
 
               // the defaults
@@ -422,6 +399,25 @@ $copyrightStatement
             ),
     );
   }
+}
+
+void successInfoBar(BuildContext context, String message) {
+  displayInfoBar(
+    context,
+    builder: (context, close) {
+      return InfoBar(
+        title: Text(message),
+        // content: const Text(
+        //   'A proper warning message of why the user can not do that :/',
+        // ),
+        action: IconButton(
+          icon: const WindowsIcon(WindowsIcons.clear),
+          onPressed: close,
+        ),
+        severity: InfoBarSeverity.success,
+      );
+    },
+  );
 }
 
 /// Converts HTML into plain text, preserving newlines and lists.

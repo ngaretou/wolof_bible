@@ -23,6 +23,7 @@ import '../providers/user_prefs.dart';
 import '../widgets/paragraph_builder.dart';
 import '../widgets/user_interaction.dart';
 import '../widgets/column_header.dart';
+import '../widgets/content_tile.dart';
 
 class ScriptureColumn extends StatefulWidget {
   final int myColumnIndex;
@@ -1351,6 +1352,11 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
                                       ClipboardData(text: selected),
                                     );
                                     resetSelection();
+                                    if (!context.mounted) return;
+                                    successInfoBar(
+                                      context,
+                                      'Jàpp nañu mbind mi',
+                                    );
                                   }
 
                                   // compose the verses nicely
@@ -1393,6 +1399,10 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
                                     }
 
                                     resetSelection();
+                                    successInfoBar(
+                                      context,
+                                      'Jàpp nañu mbind mi',
+                                    );
                                   }
                                   // the defaults
                                   // final buttonItems =

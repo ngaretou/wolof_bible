@@ -1090,47 +1090,47 @@ class _ResourceColumnState extends State<ResourceColumn> {
                         ),
                       ),
 
-                    if (kDebugMode)
-                      Tooltip(
-                        message: 'Clear User Preferences',
-                        child: IconButton(
-                          icon: Icon(FluentIcons.delete, color: Colors.orange),
-                          onPressed: () {
-                            userPrefsBox.clear();
-                          },
-                        ),
-                      ),
-                    if (kDebugMode)
-                      Tooltip(
-                        message: 'List UserPrefsBox keys',
-                        child: IconButton(
-                          icon: Icon(FluentIcons.list, color: Colors.orange),
-                          onPressed: listUserPrefsBoxKeys,
-                        ),
-                      ),
-                    if (kDebugMode)
-                      Tooltip(
-                        message: 'Check out current codes for lang',
-                        child: IconButton(
-                          icon: Icon(
-                            FluentIcons.query_list,
-                            color: Colors.orange,
-                          ),
-                          onPressed: () {
-                            try {
-                              String userCodesData =
-                                  'resource_prefs_${userResourceLanguageCode.toString()}';
-                              print(userCodesData);
-                              final savedRaw = userPrefsBox.get(userCodesData);
-                              print(savedRaw);
-                            } catch (e) {
-                              debugPrint(
-                                'Error getting userResourceCodes from prefs: $e',
-                              );
-                            }
-                          },
-                        ),
-                      ),
+                    // if (kDebugMode)
+                    //   Tooltip(
+                    //     message: 'Clear User Preferences',
+                    //     child: IconButton(
+                    //       icon: Icon(FluentIcons.delete, color: Colors.orange),
+                    //       onPressed: () {
+                    //         userPrefsBox.clear();
+                    //       },
+                    //     ),
+                    //   ),
+                    // if (kDebugMode)
+                    //   Tooltip(
+                    //     message: 'List UserPrefsBox keys',
+                    //     child: IconButton(
+                    //       icon: Icon(FluentIcons.list, color: Colors.orange),
+                    //       onPressed: listUserPrefsBoxKeys,
+                    //     ),
+                    //   ),
+                    // if (kDebugMode)
+                    //   Tooltip(
+                    //     message: 'Check out current codes for lang',
+                    //     child: IconButton(
+                    //       icon: Icon(
+                    //         FluentIcons.query_list,
+                    //         color: Colors.orange,
+                    //       ),
+                    //       onPressed: () {
+                    //         try {
+                    //           String userCodesData =
+                    //               'resource_prefs_${userResourceLanguageCode.toString()}';
+                    //           print(userCodesData);
+                    //           final savedRaw = userPrefsBox.get(userCodesData);
+                    //           print(savedRaw);
+                    //         } catch (e) {
+                    //           debugPrint(
+                    //             'Error getting userResourceCodes from prefs: $e',
+                    //           );
+                    //         }
+                    //       },
+                    //     ),
+                    //   ),
                   ],
                 ),
                 if (_isFetchingPrevious)
