@@ -16,41 +16,28 @@ class UserInterAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    void setMeAsLeader() {
+      if (partOfScrollGroup) {
+        setActiveColumnKey();
+      }
+    }
+
     if (kIsWeb || Platform.isWindows) {
       return Listener(
         onPointerDown: (details) {
-          // on touch screen and scrollbar
-
-          if (partOfScrollGroup) {
-            // print(
-            //     'setting myself as active key in column ${widget.myColumnIndex}| ${details.toString()}');
-            setActiveColumnKey();
-          }
+          setMeAsLeader();
         },
         onPointerSignal: (event) {
-          // two finger scroll macos
-          if (partOfScrollGroup) {
-            // print(
-            //     'setting myself as active key in column ${widget.myColumnIndex}');
-            setActiveColumnKey();
-          }
+          setMeAsLeader();
         },
         child: child,
       );
     } else {
       return NotificationListener<ScrollNotification>(
         onNotification: (notification) {
-          // print(notification);
-          // When a user starts a drag/scroll gesture on this column,
-          // designate it as the leader of the scroll group.
-
           if (notification is ScrollStartNotification &&
               notification.dragDetails != null) {
-            if (partOfScrollGroup) {
-              // print(
-              //     'setting myself as active key in column ${widget.myColumnIndex}| $notification');
-              setActiveColumnKey();
-            }
+            setMeAsLeader();
           }
           return true; // Allow notification to continue bubbling up
         },
