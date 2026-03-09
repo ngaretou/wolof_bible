@@ -85,18 +85,18 @@
     "strictSearch": "seet bu jub",
     "fuzzySearch": "seet bu amul kem",
     "openResourceColumn": "Yokk pàccub leeral yi",
-    "goOffline": "Fey sa internet",
-    "goOnline": "Taal sa internet",
+    "goOffline": "Bul jëfandikoo internet",
+    "goOnline": "Jëfandikoo internet",
     "copyNote": "Jàpp mbind mi",
     "resourceCollections": "Booley leeral yi",
     "viewSuggestedCollections": "Indi booley leeral yi nu digle",
     "viewAllCollections": "Indi booley leeral yépp",
     "bulkVerseCopy": "Jàppandoo aaya yu bare",
     "instructions": "Tegtal yi",
-    "bulkVerseCopyInstructions": "Bindal aaya yi nga bëgga jàpp ci néeg bi ci suuf. Bësal butoŋ bi; su fekkee am na njuumte, dinañu la ko won, te man ngaa xool li génn ci néeg bi ci sa ndeyjoor-- bësal néeg bi ngir jàpp aaya yi.\n\nMan ngaa jëfandikoo turi téere yi ci angale, tubaab walla turu téere yi ni ñu ko binde ci Paratext (GEN EXO ak yeneen) ak itam gàttal yi nu tàmma jëfandikoo -- xoolal butoŋ bi ci sa ndeyjoor ngir gis tur yi ak gàttal téere yi ci mana baax. Man ngaa def walla baña def tomb yi (accents) ci sa tur yi ak sa gàttal yi, dañu leen di dindi ci seetu bi.\n\nMan ngaa jëfandikoo : walla . ngir xàjale saar ak aaya, man ngaa boole ay aaya yu toppante (MAT 8.9-14) walla ab saar lëmm (MAT 8), waaye manuloo jël aaya yu toppantewul (MAT 8.5, 6, 14) walla jëlandoo saar yu bokkul (Matt 8-9).",
+    "bulkVerseCopyInstructions": "Bindal aaya yi nga bëgga jàpp ci néeg bi ci suuf. Bësal butoŋ bi; su fekkee am na njuumte, dinañu la ko won, te man ngaa xool li génn ci néeg bi ci sa ndeyjoor-- bësal néeg bi ngir jàpp aaya yi.\n\nMan ngaa jëfandikoo turi téere yi ci angale, tubaab walla turu téere yi ni ñu ko binde ci Paratext (GEN EXO ak yeneen) ak itam gàttal yi nu tàmma jëfandikoo -- xoolal butoŋ bi ci sa ndeyjoor ngir gis tur yi ak gàttal téere yi ci mana baax. Man ngaa def walla baña def maas yi ci turu téere yi ak seeni gàttal, dañu leen di dindi ci seetu bi.\n\nMan ngaa jëfandikoo : walla . ngir xàjale saar ak aaya, man ngaa boole ay aaya yu toppante (MAT 8.9-14) walla ab saar lëmm (MAT 8), waaye manuloo jël aaya yu toppantewul (MAT 8.5, 6, 14) walla jëlandoo saar yu bokkul (Matt 8-9).",
     "close": "Tëjjal",
     "seeAllAbbreviations": "Gis gàttali téere yi yépp",
-    "chooseBible": "Tannal ab biibal:",
+    "chooseBible": "Tànnal benn ci tekkitey téereb Kàddug Yàlla:",
     "includeVerseNumbers": "Ñu boole ci limu aaya yi?",
     "abbreviations": "Gàttali téere yi",
     "ok": "WK",
@@ -108,6 +108,6 @@
     "noInternet": "Daa mel ni internet bi doxul",
     "timeout": "Xar nañu ba xàddi",
     "switchingToOfflineMode": "Jàll ci doxalin bu soxlawul internet",
-    "resetUserSettings": "Yeesalat ponki jekk-jekkal"
+    "resetUserSettings": "Yeesalaat ponki jekk-jekkal"
   }
 ]

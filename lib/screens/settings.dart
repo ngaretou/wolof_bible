@@ -306,6 +306,8 @@ class Settings extends StatelessWidget {
                 await userPrefsBox.clear();
                 await userColumnsBox.clear();
                 // load some defaults
+                // they don't need to see the onboarding again when resetting settings
+                await userPrefsBox.put('hasSeenOnboarding', true);
                 await userPrefsBox.put('useDefaultResourcesOnly', true);
                 appTheme.color = Colors.accentColors[6];
                 await userPrefsBox.put('colorIndex', 6);

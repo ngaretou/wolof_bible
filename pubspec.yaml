@@ -67,6 +67,8 @@ dependencies:
   macos_window_utils: ^1.9.1
   macos_ui: ^2.2.2
   http: ^1.6.0
+  # just_audio: ^0.10.5
+  # audio_session: ^0.2.2
 
 dev_dependencies:
   flutter_test:

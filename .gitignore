@@ -15,6 +15,7 @@ assets/project/data.old
 sfm_parser/assets/json/
 build/
 sfm_parser/project.old/
+.gemini/
 
 **/firebase_app_id_file.json
 **/firebase_options.dart

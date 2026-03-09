@@ -100,7 +100,6 @@ class _ResourceColumnState extends State<ResourceColumn> {
       _isScrollGroupListenerInitialized = true;
     }
     debugPrint('Resource Column ${widget.key} didChangeDependencies');
-    // TODO: how do we retrigger _loadCollections...here ?
   }
 
   void listUserPrefsBoxKeys() {
