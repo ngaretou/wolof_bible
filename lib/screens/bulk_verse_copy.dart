@@ -440,7 +440,7 @@ Widget copyHelperIcon(BuildContext context, {required IconData icon}) {
     width: 50,
     height: 50,
     decoration: BoxDecoration(
-      color: FluentTheme.of(context).accentColor.darker.withAlpha(255),
+      color: FluentTheme.of(context).accentColor.darker,
       // color: Colors.red,
       shape: BoxShape.circle, // makes it a perfect circle
     ),

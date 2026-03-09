@@ -1,6 +1,4 @@
 PODS:
-  - clipboard (3.0.9):
-    - Flutter
   - Firebase/CoreOnly (12.8.0):
     - FirebaseCore (~> 12.8.0)
   - firebase_analytics (12.1.2):
@@ -112,7 +110,6 @@ PODS:
     - Flutter
 
 DEPENDENCIES:
-  - clipboard (from `.symlinks/plugins/clipboard/ios`)
   - firebase_analytics (from `.symlinks/plugins/firebase_analytics/ios`)
   - firebase_core (from `.symlinks/plugins/firebase_core/ios`)
   - Flutter (from `Flutter`)
@@ -136,8 +133,6 @@ SPEC REPOS:
     - PromisesObjC
 
 EXTERNAL SOURCES:
-  clipboard:
-    :path: ".symlinks/plugins/clipboard/ios"
   firebase_analytics:
     :path: ".symlinks/plugins/firebase_analytics/ios"
   firebase_core:
@@ -156,7 +151,6 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/url_launcher_ios/ios"
 
 SPEC CHECKSUMS:
-  clipboard: 85f02e190f24debf05943aff98c26644b2a90245
   Firebase: 9a58fdbc9d8655ed7b79a19cf9690bb007d3d46d
   firebase_analytics: a3285a9ab410456957496cdb659f00c1cf19a95f
   firebase_core: ee30637e6744af8e0c12a6a1e8a9718506ec2398
