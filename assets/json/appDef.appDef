@@ -2463,10 +2463,11 @@
   </books>
 
   <books id="C03">
-    <book-collection-name>Louis Segond</book-collection-name>
-    <book-collection-abbrev>LSG</book-collection-abbrev>
+    <book-collection-name>S21</book-collection-name>
+    <book-collection-abbrev>S21</book-collection-abbrev>
 
     <features type="bc">
+      <feature name="ref-chapter-verse-separator" value="."/>
       <feature name="ref-chapter-range-separator" value="-"/>
       <feature name="footnote-caller-type" value="abc"/>
       <feature name="crossref-caller-type" value="abc"/>
@@ -2474,7 +2475,7 @@
     </features>
 
     <metadata>
-      <meta name="copyright-text" content="Louis Segond 1910 est dans le domaine public. Il n&apos;est pas protégé par copyright."/>
+      <meta name="copyright-text" content="&lt;b&gt;Segond 21&lt;/b&gt; Texte biblique de la Bible Version Segond 21 copyright © 2007 &lt;a href=&quot;https://societebiblique.com/&quot;&gt;Société Biblique de Genève&lt;/a&gt;. Reproduit avec aimable autorisation. Tous droits réservés."/>
     </metadata>
 
     <styles-info>
@@ -2500,686 +2501,728 @@
 
     <book id="GEN">
       <name>Genèse</name>
+      <abbrev>Genèse</abbrev>
       <group>OT</group>
       <sub-group>Pentateuch</sub-group>
 
       <font-choice type="book-collection" />
-      <filename>02-GENfraLSG.usfm</filename>
-      <source>/Users/corey/OneDrive - SIM International, Inc/Documents/App Builder/flutter/usfm_bible/fraLSG_usfm/02-GENfraLSG.usfm</source>
+      <filename>01GENS21.SFM</filename>
+      <source>/Users/corey/Library/CloudStorage/OneDrive-SIMInternational,Inc/Documents/SIM/Wolofal/My Paratext 9 Projects/S21/01GENS21.SFM</source>
     </book>
 
     <book id="EXO">
       <name>Exode</name>
+      <abbrev>Exode</abbrev>
       <group>OT</group>
       <sub-group>Pentateuch</sub-group>
 
       <font-choice type="book-collection" />
-      <filename>03-EXOfraLSG.usfm</filename>
-      <source>/Users/corey/OneDrive - SIM International, Inc/Documents/App Builder/flutter/usfm_bible/fraLSG_usfm/03-EXOfraLSG.usfm</source>
+      <filename>02EXOS21.SFM</filename>
+      <source>/Users/corey/Library/CloudStorage/OneDrive-SIMInternational,Inc/Documents/SIM/Wolofal/My Paratext 9 Projects/S21/02EXOS21.SFM</source>
     </book>
 
     <book id="LEV">
       <name>Lévitique</name>
+      <abbrev>Lévitique</abbrev>
       <group>OT</group>
       <sub-group>Pentateuch</sub-group>
 
       <font-choice type="book-collection" />
-      <filename>04-LEVfraLSG.usfm</filename>
-      <source>/Users/corey/OneDrive - SIM International, Inc/Documents/App Builder/flutter/usfm_bible/fraLSG_usfm/04-LEVfraLSG.usfm</source>
+      <filename>03LEVS21.SFM</filename>
+      <source>/Users/corey/Library/CloudStorage/OneDrive-SIMInternational,Inc/Documents/SIM/Wolofal/My Paratext 9 Projects/S21/03LEVS21.SFM</source>
     </book>
 
     <book id="NUM">
       <name>Nombres</name>
+      <abbrev>Nombres</abbrev>
       <group>OT</group>
       <sub-group>Pentateuch</sub-group>
 
       <font-choice type="book-collection" />
-      <filename>05-NUMfraLSG.usfm</filename>
-      <source>/Users/corey/OneDrive - SIM International, Inc/Documents/App Builder/flutter/usfm_bible/fraLSG_usfm/05-NUMfraLSG.usfm</source>
+      <filename>04NUMS21.SFM</filename>
+      <source>/Users/corey/Library/CloudStorage/OneDrive-SIMInternational,Inc/Documents/SIM/Wolofal/My Paratext 9 Projects/S21/04NUMS21.SFM</source>
     </book>
 
     <book id="DEU">
       <name>Deutéronome</name>
+      <abbrev>Deutéronome</abbrev>
       <group>OT</group>
       <sub-group>Pentateuch</sub-group>
 
       <font-choice type="book-collection" />
-      <filename>06-DEUfraLSG.usfm</filename>
-      <source>/Users/corey/OneDrive - SIM International, Inc/Documents/App Builder/flutter/usfm_bible/fraLSG_usfm/06-DEUfraLSG.usfm</source>
+      <filename>05DEUS21.SFM</filename>
+      <source>/Users/corey/Library/CloudStorage/OneDrive-SIMInternational,Inc/Documents/SIM/Wolofal/My Paratext 9 Projects/S21/05DEUS21.SFM</source>
     </book>
 
     <book id="JOS">
       <name>Josué</name>
+      <abbrev>Josué</abbrev>
       <group>OT</group>
       <sub-group>Historical</sub-group>
 
       <font-choice type="book-collection" />
-      <filename>07-JOSfraLSG.usfm</filename>
-      <source>/Users/corey/OneDrive - SIM International, Inc/Documents/App Builder/flutter/usfm_bible/fraLSG_usfm/07-JOSfraLSG.usfm</source>
+      <filename>06JOSS21.SFM</filename>
+      <source>/Users/corey/Library/CloudStorage/OneDrive-SIMInternational,Inc/Documents/SIM/Wolofal/My Paratext 9 Projects/S21/06JOSS21.SFM</source>
     </book>
 
     <book id="JDG">
       <name>Juges</name>
+      <abbrev>Juges</abbrev>
       <group>OT</group>
       <sub-group>Historical</sub-group>
 
       <font-choice type="book-collection" />
-      <filename>08-JDGfraLSG.usfm</filename>
-      <source>/Users/corey/OneDrive - SIM International, Inc/Documents/App Builder/flutter/usfm_bible/fraLSG_usfm/08-JDGfraLSG.usfm</source>
+      <filename>07JDGS21.SFM</filename>
+      <source>/Users/corey/Library/CloudStorage/OneDrive-SIMInternational,Inc/Documents/SIM/Wolofal/My Paratext 9 Projects/S21/07JDGS21.SFM</source>
     </book>
 
     <book id="RUT">
       <name>Ruth</name>
+      <abbrev>Ruth</abbrev>
       <group>OT</group>
       <sub-group>Historical</sub-group>
 
       <font-choice type="book-collection" />
-      <filename>09-RUTfraLSG.usfm</filename>
-      <source>/Users/corey/OneDrive - SIM International, Inc/Documents/App Builder/flutter/usfm_bible/fraLSG_usfm/09-RUTfraLSG.usfm</source>
+      <filename>08RUTS21.SFM</filename>
+      <source>/Users/corey/Library/CloudStorage/OneDrive-SIMInternational,Inc/Documents/SIM/Wolofal/My Paratext 9 Projects/S21/08RUTS21.SFM</source>
     </book>
 
     <book id="1SA">
       <name>1 Samuel</name>
+      <abbrev>1 Samuel</abbrev>
       <group>OT</group>
       <sub-group>Historical</sub-group>
 
       <font-choice type="book-collection" />
-      <filename>10-1SAfraLSG.usfm</filename>
-      <source>/Users/corey/OneDrive - SIM International, Inc/Documents/App Builder/flutter/usfm_bible/fraLSG_usfm/10-1SAfraLSG.usfm</source>
+      <filename>091SAS21.SFM</filename>
+      <source>/Users/corey/Library/CloudStorage/OneDrive-SIMInternational,Inc/Documents/SIM/Wolofal/My Paratext 9 Projects/S21/091SAS21.SFM</source>
     </book>
 
     <book id="2SA">
       <name>2 Samuel</name>
+      <abbrev>2 Samuel</abbrev>
       <group>OT</group>
       <sub-group>Historical</sub-group>
 
       <font-choice type="book-collection" />
-      <filename>11-2SAfraLSG.usfm</filename>
-      <source>/Users/corey/OneDrive - SIM International, Inc/Documents/App Builder/flutter/usfm_bible/fraLSG_usfm/11-2SAfraLSG.usfm</source>
+      <filename>102SAS21.SFM</filename>
+      <source>/Users/corey/Library/CloudStorage/OneDrive-SIMInternational,Inc/Documents/SIM/Wolofal/My Paratext 9 Projects/S21/102SAS21.SFM</source>
     </book>
 
     <book id="1KI">
       <name>1 Rois</name>
+      <abbrev>1 Rois</abbrev>
       <group>OT</group>
       <sub-group>Historical</sub-group>
 
       <font-choice type="book-collection" />
-      <filename>12-1KIfraLSG.usfm</filename>
-      <source>/Users/corey/OneDrive - SIM International, Inc/Documents/App Builder/flutter/usfm_bible/fraLSG_usfm/12-1KIfraLSG.usfm</source>
+      <filename>111KIS21.SFM</filename>
+      <source>/Users/corey/Library/CloudStorage/OneDrive-SIMInternational,Inc/Documents/SIM/Wolofal/My Paratext 9 Projects/S21/111KIS21.SFM</source>
     </book>
 
     <book id="2KI">
       <name>2 Rois</name>
+      <abbrev>2 Rois</abbrev>
       <group>OT</group>
       <sub-group>Historical</sub-group>
 
       <font-choice type="book-collection" />
-      <filename>13-2KIfraLSG.usfm</filename>
-      <source>/Users/corey/OneDrive - SIM International, Inc/Documents/App Builder/flutter/usfm_bible/fraLSG_usfm/13-2KIfraLSG.usfm</source>
+      <filename>122KIS21.SFM</filename>
+      <source>/Users/corey/Library/CloudStorage/OneDrive-SIMInternational,Inc/Documents/SIM/Wolofal/My Paratext 9 Projects/S21/122KIS21.SFM</source>
     </book>
 
     <book id="1CH">
       <name>1 Chroniques</name>
+      <abbrev>1 Chroniques</abbrev>
       <group>OT</group>
       <sub-group>Historical</sub-group>
 
       <font-choice type="book-collection" />
-      <filename>14-1CHfraLSG.usfm</filename>
-      <source>/Users/corey/OneDrive - SIM International, Inc/Documents/App Builder/flutter/usfm_bible/fraLSG_usfm/14-1CHfraLSG.usfm</source>
+      <filename>131CHS21.SFM</filename>
+      <source>/Users/corey/Library/CloudStorage/OneDrive-SIMInternational,Inc/Documents/SIM/Wolofal/My Paratext 9 Projects/S21/131CHS21.SFM</source>
     </book>
 
     <book id="2CH">
       <name>2 Chroniques</name>
+      <abbrev>2 Chroniques</abbrev>
       <group>OT</group>
       <sub-group>Historical</sub-group>
 
       <font-choice type="book-collection" />
-      <filename>15-2CHfraLSG.usfm</filename>
-      <source>/Users/corey/OneDrive - SIM International, Inc/Documents/App Builder/flutter/usfm_bible/fraLSG_usfm/15-2CHfraLSG.usfm</source>
+      <filename>142CHS21.SFM</filename>
+      <source>/Users/corey/Library/CloudStorage/OneDrive-SIMInternational,Inc/Documents/SIM/Wolofal/My Paratext 9 Projects/S21/142CHS21.SFM</source>
     </book>
 
     <book id="EZR">
       <name>Esdras</name>
+      <abbrev>Esdras</abbrev>
       <group>OT</group>
       <sub-group>Historical</sub-group>
 
       <font-choice type="book-collection" />
-      <filename>16-EZRfraLSG.usfm</filename>
-      <source>/Users/corey/OneDrive - SIM International, Inc/Documents/App Builder/flutter/usfm_bible/fraLSG_usfm/16-EZRfraLSG.usfm</source>
+      <filename>15EZRS21.SFM</filename>
+      <source>/Users/corey/Library/CloudStorage/OneDrive-SIMInternational,Inc/Documents/SIM/Wolofal/My Paratext 9 Projects/S21/15EZRS21.SFM</source>
     </book>
 
     <book id="NEH">
       <name>Néhémie</name>
+      <abbrev>Néhémie</abbrev>
       <group>OT</group>
       <sub-group>Historical</sub-group>
 
       <font-choice type="book-collection" />
-      <filename>17-NEHfraLSG.usfm</filename>
-      <source>/Users/corey/OneDrive - SIM International, Inc/Documents/App Builder/flutter/usfm_bible/fraLSG_usfm/17-NEHfraLSG.usfm</source>
+      <filename>16NEHS21.SFM</filename>
+      <source>/Users/corey/Library/CloudStorage/OneDrive-SIMInternational,Inc/Documents/SIM/Wolofal/My Paratext 9 Projects/S21/16NEHS21.SFM</source>
     </book>
 
     <book id="EST">
       <name>Esther</name>
+      <abbrev>Esther</abbrev>
       <group>OT</group>
       <sub-group>Historical</sub-group>
 
       <font-choice type="book-collection" />
-      <filename>18-ESTfraLSG.usfm</filename>
-      <source>/Users/corey/OneDrive - SIM International, Inc/Documents/App Builder/flutter/usfm_bible/fraLSG_usfm/18-ESTfraLSG.usfm</source>
+      <filename>17ESTS21.SFM</filename>
+      <source>/Users/corey/Library/CloudStorage/OneDrive-SIMInternational,Inc/Documents/SIM/Wolofal/My Paratext 9 Projects/S21/17ESTS21.SFM</source>
     </book>
 
     <book id="JOB">
       <name>Job</name>
+      <abbrev>Job</abbrev>
       <group>OT</group>
       <sub-group>PoetryWisdom</sub-group>
 
       <font-choice type="book-collection" />
-      <filename>19-JOBfraLSG.usfm</filename>
-      <source>/Users/corey/OneDrive - SIM International, Inc/Documents/App Builder/flutter/usfm_bible/fraLSG_usfm/19-JOBfraLSG.usfm</source>
+      <filename>18JOBS21.SFM</filename>
+      <source>/Users/corey/Library/CloudStorage/OneDrive-SIMInternational,Inc/Documents/SIM/Wolofal/My Paratext 9 Projects/S21/18JOBS21.SFM</source>
     </book>
 
     <book id="PSA">
-      <name>Psaumes</name>
+      <name>Psaume</name>
+      <abbrev>Psaume</abbrev>
       <group>OT</group>
       <sub-group>PoetryWisdom</sub-group>
 
       <font-choice type="book-collection" />
-      <filename>20-PSAfraLSG.usfm</filename>
-      <source>/Users/corey/OneDrive - SIM International, Inc/Documents/App Builder/flutter/usfm_bible/fraLSG_usfm/20-PSAfraLSG.usfm</source>
+      <filename>19PSAS21.SFM</filename>
+      <source>/Users/corey/Library/CloudStorage/OneDrive-SIMInternational,Inc/Documents/SIM/Wolofal/My Paratext 9 Projects/S21/19PSAS21.SFM</source>
     </book>
 
     <book id="PRO">
       <name>Proverbes</name>
+      <abbrev>Proverbes</abbrev>
       <group>OT</group>
       <sub-group>PoetryWisdom</sub-group>
 
       <font-choice type="book-collection" />
-      <filename>21-PROfraLSG.usfm</filename>
-      <source>/Users/corey/OneDrive - SIM International, Inc/Documents/App Builder/flutter/usfm_bible/fraLSG_usfm/21-PROfraLSG.usfm</source>
+      <filename>20PROS21.SFM</filename>
+      <source>/Users/corey/Library/CloudStorage/OneDrive-SIMInternational,Inc/Documents/SIM/Wolofal/My Paratext 9 Projects/S21/20PROS21.SFM</source>
     </book>
 
     <book id="ECC">
       <name>Ecclésiaste</name>
+      <abbrev>Ecclésiaste</abbrev>
       <group>OT</group>
       <sub-group>PoetryWisdom</sub-group>
 
       <font-choice type="book-collection" />
-      <filename>22-ECCfraLSG.usfm</filename>
-      <source>/Users/corey/OneDrive - SIM International, Inc/Documents/App Builder/flutter/usfm_bible/fraLSG_usfm/22-ECCfraLSG.usfm</source>
+      <filename>21ECCS21.SFM</filename>
+      <source>/Users/corey/Library/CloudStorage/OneDrive-SIMInternational,Inc/Documents/SIM/Wolofal/My Paratext 9 Projects/S21/21ECCS21.SFM</source>
     </book>
 
     <book id="SNG">
-      <name>Cantique</name>
+      <name>Cantique des cantiques</name>
+      <abbrev>Cantique des cantiques</abbrev>
       <group>OT</group>
       <sub-group>PoetryWisdom</sub-group>
 
       <font-choice type="book-collection" />
-      <filename>23-SNGfraLSG.usfm</filename>
-      <source>/Users/corey/OneDrive - SIM International, Inc/Documents/App Builder/flutter/usfm_bible/fraLSG_usfm/23-SNGfraLSG.usfm</source>
+      <filename>22SNGS21.SFM</filename>
+      <source>/Users/corey/Library/CloudStorage/OneDrive-SIMInternational,Inc/Documents/SIM/Wolofal/My Paratext 9 Projects/S21/22SNGS21.SFM</source>
     </book>
 
     <book id="ISA">
-      <name>Ésaïe</name>
+      <name>Esaïe</name>
+      <abbrev>Esaïe</abbrev>
       <group>OT</group>
       <sub-group>MajorProphet</sub-group>
 
       <font-choice type="book-collection" />
-      <filename>24-ISAfraLSG.usfm</filename>
-      <source>/Users/corey/OneDrive - SIM International, Inc/Documents/App Builder/flutter/usfm_bible/fraLSG_usfm/24-ISAfraLSG.usfm</source>
+      <filename>23ISAS21.SFM</filename>
+      <source>/Users/corey/Library/CloudStorage/OneDrive-SIMInternational,Inc/Documents/SIM/Wolofal/My Paratext 9 Projects/S21/23ISAS21.SFM</source>
     </book>
 
     <book id="JER">
       <name>Jérémie</name>
+      <abbrev>Jérémie</abbrev>
       <group>OT</group>
       <sub-group>MajorProphet</sub-group>
 
       <font-choice type="book-collection" />
-      <filename>25-JERfraLSG.usfm</filename>
-      <source>/Users/corey/OneDrive - SIM International, Inc/Documents/App Builder/flutter/usfm_bible/fraLSG_usfm/25-JERfraLSG.usfm</source>
+      <filename>24JERS21.SFM</filename>
+      <source>/Users/corey/Library/CloudStorage/OneDrive-SIMInternational,Inc/Documents/SIM/Wolofal/My Paratext 9 Projects/S21/24JERS21.SFM</source>
     </book>
 
     <book id="LAM">
       <name>Lamentations</name>
+      <abbrev>Lamentations</abbrev>
       <group>OT</group>
       <sub-group>MajorProphet</sub-group>
 
       <font-choice type="book-collection" />
-      <filename>26-LAMfraLSG.usfm</filename>
-      <source>/Users/corey/OneDrive - SIM International, Inc/Documents/App Builder/flutter/usfm_bible/fraLSG_usfm/26-LAMfraLSG.usfm</source>
+      <filename>25LAMS21.SFM</filename>
+      <source>/Users/corey/Library/CloudStorage/OneDrive-SIMInternational,Inc/Documents/SIM/Wolofal/My Paratext 9 Projects/S21/25LAMS21.SFM</source>
     </book>
 
     <book id="EZK">
-      <name>Ézékiel</name>
+      <name>Ezéchiel</name>
+      <abbrev>Ezéchiel</abbrev>
       <group>OT</group>
       <sub-group>MajorProphet</sub-group>
 
       <font-choice type="book-collection" />
-      <filename>27-EZKfraLSG.usfm</filename>
-      <source>/Users/corey/OneDrive - SIM International, Inc/Documents/App Builder/flutter/usfm_bible/fraLSG_usfm/27-EZKfraLSG.usfm</source>
+      <filename>26EZKS21.SFM</filename>
+      <source>/Users/corey/Library/CloudStorage/OneDrive-SIMInternational,Inc/Documents/SIM/Wolofal/My Paratext 9 Projects/S21/26EZKS21.SFM</source>
     </book>
 
     <book id="DAN">
       <name>Daniel</name>
+      <abbrev>Daniel</abbrev>
       <group>OT</group>
       <sub-group>MajorProphet</sub-group>
 
       <font-choice type="book-collection" />
-      <filename>28-DANfraLSG.usfm</filename>
-      <source>/Users/corey/OneDrive - SIM International, Inc/Documents/App Builder/flutter/usfm_bible/fraLSG_usfm/28-DANfraLSG.usfm</source>
+      <filename>27DANS21.SFM</filename>
+      <source>/Users/corey/Library/CloudStorage/OneDrive-SIMInternational,Inc/Documents/SIM/Wolofal/My Paratext 9 Projects/S21/27DANS21.SFM</source>
     </book>
 
     <book id="HOS">
       <name>Osée</name>
+      <abbrev>Osée</abbrev>
       <group>OT</group>
       <sub-group>MinorProphet</sub-group>
 
       <font-choice type="book-collection" />
-      <filename>29-HOSfraLSG.usfm</filename>
-      <source>/Users/corey/OneDrive - SIM International, Inc/Documents/App Builder/flutter/usfm_bible/fraLSG_usfm/29-HOSfraLSG.usfm</source>
+      <filename>28HOSS21.SFM</filename>
+      <source>/Users/corey/Library/CloudStorage/OneDrive-SIMInternational,Inc/Documents/SIM/Wolofal/My Paratext 9 Projects/S21/28HOSS21.SFM</source>
     </book>
 
     <book id="JOL">
       <name>Joël</name>
+      <abbrev>Joël</abbrev>
       <group>OT</group>
       <sub-group>MinorProphet</sub-group>
 
       <font-choice type="book-collection" />
-      <filename>30-JOLfraLSG.usfm</filename>
-      <source>/Users/corey/OneDrive - SIM International, Inc/Documents/App Builder/flutter/usfm_bible/fraLSG_usfm/30-JOLfraLSG.usfm</source>
+      <filename>29JOLS21.SFM</filename>
+      <source>/Users/corey/Library/CloudStorage/OneDrive-SIMInternational,Inc/Documents/SIM/Wolofal/My Paratext 9 Projects/S21/29JOLS21.SFM</source>
     </book>
 
     <book id="AMO">
       <name>Amos</name>
+      <abbrev>Amos</abbrev>
       <group>OT</group>
       <sub-group>MinorProphet</sub-group>
 
       <font-choice type="book-collection" />
-      <filename>31-AMOfraLSG.usfm</filename>
-      <source>/Users/corey/OneDrive - SIM International, Inc/Documents/App Builder/flutter/usfm_bible/fraLSG_usfm/31-AMOfraLSG.usfm</source>
+      <filename>30AMOS21.SFM</filename>
+      <source>/Users/corey/Library/CloudStorage/OneDrive-SIMInternational,Inc/Documents/SIM/Wolofal/My Paratext 9 Projects/S21/30AMOS21.SFM</source>
     </book>
 
     <book id="OBA">
       <name>Abdias</name>
+      <abbrev>Abdias</abbrev>
       <group>OT</group>
       <sub-group>MinorProphet</sub-group>
 
       <font-choice type="book-collection" />
-      <filename>32-OBAfraLSG.usfm</filename>
-      <source>/Users/corey/OneDrive - SIM International, Inc/Documents/App Builder/flutter/usfm_bible/fraLSG_usfm/32-OBAfraLSG.usfm</source>
+      <filename>31OBAS21.SFM</filename>
+      <source>/Users/corey/Library/CloudStorage/OneDrive-SIMInternational,Inc/Documents/SIM/Wolofal/My Paratext 9 Projects/S21/31OBAS21.SFM</source>
     </book>
 
     <book id="JON">
       <name>Jonas</name>
+      <abbrev>Jonas</abbrev>
       <group>OT</group>
       <sub-group>MinorProphet</sub-group>
 
       <font-choice type="book-collection" />
-      <filename>33-JONfraLSG.usfm</filename>
-      <source>/Users/corey/OneDrive - SIM International, Inc/Documents/App Builder/flutter/usfm_bible/fraLSG_usfm/33-JONfraLSG.usfm</source>
+      <filename>32JONS21.SFM</filename>
+      <source>/Users/corey/Library/CloudStorage/OneDrive-SIMInternational,Inc/Documents/SIM/Wolofal/My Paratext 9 Projects/S21/32JONS21.SFM</source>
     </book>
 
     <book id="MIC">
       <name>Michée</name>
+      <abbrev>Michée</abbrev>
       <group>OT</group>
       <sub-group>MinorProphet</sub-group>
 
       <font-choice type="book-collection" />
-      <filename>34-MICfraLSG.usfm</filename>
-      <source>/Users/corey/OneDrive - SIM International, Inc/Documents/App Builder/flutter/usfm_bible/fraLSG_usfm/34-MICfraLSG.usfm</source>
+      <filename>33MICS21.SFM</filename>
+      <source>/Users/corey/Library/CloudStorage/OneDrive-SIMInternational,Inc/Documents/SIM/Wolofal/My Paratext 9 Projects/S21/33MICS21.SFM</source>
     </book>
 
     <book id="NAM">
       <name>Nahum</name>
+      <abbrev>Nahum</abbrev>
       <group>OT</group>
       <sub-group>MinorProphet</sub-group>
 
       <font-choice type="book-collection" />
-      <filename>35-NAMfraLSG.usfm</filename>
-      <source>/Users/corey/OneDrive - SIM International, Inc/Documents/App Builder/flutter/usfm_bible/fraLSG_usfm/35-NAMfraLSG.usfm</source>
+      <filename>34NAMS21.SFM</filename>
+      <source>/Users/corey/Library/CloudStorage/OneDrive-SIMInternational,Inc/Documents/SIM/Wolofal/My Paratext 9 Projects/S21/34NAMS21.SFM</source>
     </book>
 
     <book id="HAB">
-      <name>Habacuc</name>
+      <name>Habakuk</name>
+      <abbrev>Habakuk</abbrev>
       <group>OT</group>
       <sub-group>MinorProphet</sub-group>
 
       <font-choice type="book-collection" />
-      <filename>36-HABfraLSG.usfm</filename>
-      <source>/Users/corey/OneDrive - SIM International, Inc/Documents/App Builder/flutter/usfm_bible/fraLSG_usfm/36-HABfraLSG.usfm</source>
+      <filename>35HABS21.SFM</filename>
+      <source>/Users/corey/Library/CloudStorage/OneDrive-SIMInternational,Inc/Documents/SIM/Wolofal/My Paratext 9 Projects/S21/35HABS21.SFM</source>
     </book>
 
     <book id="ZEP">
       <name>Sophonie</name>
+      <abbrev>Sophonie</abbrev>
       <group>OT</group>
       <sub-group>MinorProphet</sub-group>
 
       <font-choice type="book-collection" />
-      <filename>37-ZEPfraLSG.usfm</filename>
-      <source>/Users/corey/OneDrive - SIM International, Inc/Documents/App Builder/flutter/usfm_bible/fraLSG_usfm/37-ZEPfraLSG.usfm</source>
+      <filename>36ZEPS21.SFM</filename>
+      <source>/Users/corey/Library/CloudStorage/OneDrive-SIMInternational,Inc/Documents/SIM/Wolofal/My Paratext 9 Projects/S21/36ZEPS21.SFM</source>
     </book>
 
     <book id="HAG">
       <name>Aggée</name>
+      <abbrev>Aggée</abbrev>
       <group>OT</group>
       <sub-group>MinorProphet</sub-group>
 
       <font-choice type="book-collection" />
-      <filename>38-HAGfraLSG.usfm</filename>
-      <source>/Users/corey/OneDrive - SIM International, Inc/Documents/App Builder/flutter/usfm_bible/fraLSG_usfm/38-HAGfraLSG.usfm</source>
+      <filename>37HAGS21.SFM</filename>
+      <source>/Users/corey/Library/CloudStorage/OneDrive-SIMInternational,Inc/Documents/SIM/Wolofal/My Paratext 9 Projects/S21/37HAGS21.SFM</source>
     </book>
 
     <book id="ZEC">
       <name>Zacharie</name>
+      <abbrev>Zacharie</abbrev>
       <group>OT</group>
       <sub-group>MinorProphet</sub-group>
 
       <font-choice type="book-collection" />
-      <filename>39-ZECfraLSG.usfm</filename>
-      <source>/Users/corey/OneDrive - SIM International, Inc/Documents/App Builder/flutter/usfm_bible/fraLSG_usfm/39-ZECfraLSG.usfm</source>
+      <filename>38ZECS21.SFM</filename>
+      <source>/Users/corey/Library/CloudStorage/OneDrive-SIMInternational,Inc/Documents/SIM/Wolofal/My Paratext 9 Projects/S21/38ZECS21.SFM</source>
     </book>
 
     <book id="MAL">
       <name>Malachie</name>
+      <abbrev>Malachie</abbrev>
       <group>OT</group>
       <sub-group>MinorProphet</sub-group>
 
       <font-choice type="book-collection" />
-      <filename>40-MALfraLSG.usfm</filename>
-      <source>/Users/corey/OneDrive - SIM International, Inc/Documents/App Builder/flutter/usfm_bible/fraLSG_usfm/40-MALfraLSG.usfm</source>
+      <filename>39MALS21.SFM</filename>
+      <source>/Users/corey/Library/CloudStorage/OneDrive-SIMInternational,Inc/Documents/SIM/Wolofal/My Paratext 9 Projects/S21/39MALS21.SFM</source>
     </book>
 
     <book id="MAT">
       <name>Matthieu</name>
+      <abbrev>Matthieu</abbrev>
       <group>NT</group>
       <sub-group>Gospel</sub-group>
 
       <font-choice type="book-collection" />
-      <filename>46-MATfraLSG.usfm</filename>
-      <source>/Users/corey/OneDrive - SIM International, Inc/Documents/App Builder/flutter/usfm_bible/fraLSG_usfm/46-MATfraLSG.usfm</source>
-      <features type="book">
-        <feature name="wj-marked" value="true"/>
-      </features>
+      <filename>41MATS21.SFM</filename>
+      <source>/Users/corey/Library/CloudStorage/OneDrive-SIMInternational,Inc/Documents/SIM/Wolofal/My Paratext 9 Projects/S21/41MATS21.SFM</source>
     </book>
 
     <book id="MRK">
       <name>Marc</name>
+      <abbrev>Marc</abbrev>
       <group>NT</group>
       <sub-group>Gospel</sub-group>
 
       <font-choice type="book-collection" />
-      <filename>47-MRKfraLSG.usfm</filename>
-      <source>/Users/corey/OneDrive - SIM International, Inc/Documents/App Builder/flutter/usfm_bible/fraLSG_usfm/47-MRKfraLSG.usfm</source>
-      <features type="book">
-        <feature name="wj-marked" value="true"/>
-      </features>
+      <filename>42MRKS21.SFM</filename>
+      <source>/Users/corey/Library/CloudStorage/OneDrive-SIMInternational,Inc/Documents/SIM/Wolofal/My Paratext 9 Projects/S21/42MRKS21.SFM</source>
     </book>
 
     <book id="LUK">
       <name>Luc</name>
+      <abbrev>Luc</abbrev>
       <group>NT</group>
       <sub-group>Gospel</sub-group>
 
       <font-choice type="book-collection" />
-      <filename>48-LUKfraLSG.usfm</filename>
-      <source>/Users/corey/OneDrive - SIM International, Inc/Documents/App Builder/flutter/usfm_bible/fraLSG_usfm/48-LUKfraLSG.usfm</source>
-      <features type="book">
-        <feature name="wj-marked" value="true"/>
-      </features>
+      <filename>43LUKS21.SFM</filename>
+      <source>/Users/corey/Library/CloudStorage/OneDrive-SIMInternational,Inc/Documents/SIM/Wolofal/My Paratext 9 Projects/S21/43LUKS21.SFM</source>
     </book>
 
     <book id="JHN">
       <name>Jean</name>
+      <abbrev>Jean</abbrev>
       <group>NT</group>
       <sub-group>Gospel</sub-group>
 
       <font-choice type="book-collection" />
-      <filename>73-JHNfraLSG.usfm</filename>
-      <source>/Users/corey/OneDrive - SIM International, Inc/Documents/App Builder/flutter/usfm_bible/fraLSG_usfm/73-JHNfraLSG.usfm</source>
-      <features type="book">
-        <feature name="wj-marked" value="true"/>
-      </features>
+      <filename>44JHNS21.SFM</filename>
+      <source>/Users/corey/Library/CloudStorage/OneDrive-SIMInternational,Inc/Documents/SIM/Wolofal/My Paratext 9 Projects/S21/44JHNS21.SFM</source>
     </book>
 
     <book id="ACT">
       <name>Actes</name>
+      <abbrev>Actes</abbrev>
       <group>NT</group>
       <sub-group>Acts</sub-group>
 
       <font-choice type="book-collection" />
-      <filename>50-ACTfraLSG.usfm</filename>
-      <source>/Users/corey/OneDrive - SIM International, Inc/Documents/App Builder/flutter/usfm_bible/fraLSG_usfm/50-ACTfraLSG.usfm</source>
-      <features type="book">
-        <feature name="wj-marked" value="true"/>
-      </features>
+      <filename>45ACTS21.SFM</filename>
+      <source>/Users/corey/Library/CloudStorage/OneDrive-SIMInternational,Inc/Documents/SIM/Wolofal/My Paratext 9 Projects/S21/45ACTS21.SFM</source>
     </book>
 
     <book id="ROM">
       <name>Romains</name>
+      <abbrev>Romains</abbrev>
       <group>NT</group>
       <sub-group>PaulineEpistle</sub-group>
 
       <font-choice type="book-collection" />
-      <filename>51-ROMfraLSG.usfm</filename>
-      <source>/Users/corey/OneDrive - SIM International, Inc/Documents/App Builder/flutter/usfm_bible/fraLSG_usfm/51-ROMfraLSG.usfm</source>
+      <filename>46ROMS21.SFM</filename>
+      <source>/Users/corey/Library/CloudStorage/OneDrive-SIMInternational,Inc/Documents/SIM/Wolofal/My Paratext 9 Projects/S21/46ROMS21.SFM</source>
     </book>
 
     <book id="1CO">
       <name>1 Corinthiens</name>
+      <abbrev>1 Corinthiens</abbrev>
       <group>NT</group>
       <sub-group>PaulineEpistle</sub-group>
 
       <font-choice type="book-collection" />
-      <filename>52-1COfraLSG.usfm</filename>
-      <source>/Users/corey/OneDrive - SIM International, Inc/Documents/App Builder/flutter/usfm_bible/fraLSG_usfm/52-1COfraLSG.usfm</source>
-      <features type="book">
-        <feature name="wj-marked" value="true"/>
-      </features>
+      <filename>471COS21.SFM</filename>
+      <source>/Users/corey/Library/CloudStorage/OneDrive-SIMInternational,Inc/Documents/SIM/Wolofal/My Paratext 9 Projects/S21/471COS21.SFM</source>
     </book>
 
     <book id="2CO">
       <name>2 Corinthiens</name>
+      <abbrev>2 Corinthiens</abbrev>
       <group>NT</group>
       <sub-group>PaulineEpistle</sub-group>
 
       <font-choice type="book-collection" />
-      <filename>53-2COfraLSG.usfm</filename>
-      <source>/Users/corey/OneDrive - SIM International, Inc/Documents/App Builder/flutter/usfm_bible/fraLSG_usfm/53-2COfraLSG.usfm</source>
-      <features type="book">
-        <feature name="wj-marked" value="true"/>
-      </features>
+      <filename>482COS21.SFM</filename>
+      <source>/Users/corey/Library/CloudStorage/OneDrive-SIMInternational,Inc/Documents/SIM/Wolofal/My Paratext 9 Projects/S21/482COS21.SFM</source>
     </book>
 
     <book id="GAL">
       <name>Galates</name>
+      <abbrev>Galates</abbrev>
       <group>NT</group>
       <sub-group>PaulineEpistle</sub-group>
 
       <font-choice type="book-collection" />
-      <filename>54-GALfraLSG.usfm</filename>
-      <source>/Users/corey/OneDrive - SIM International, Inc/Documents/App Builder/flutter/usfm_bible/fraLSG_usfm/54-GALfraLSG.usfm</source>
+      <filename>49GALS21.SFM</filename>
+      <source>/Users/corey/Library/CloudStorage/OneDrive-SIMInternational,Inc/Documents/SIM/Wolofal/My Paratext 9 Projects/S21/49GALS21.SFM</source>
     </book>
 
     <book id="EPH">
-      <name>Éphésiens</name>
+      <name>Ephésiens</name>
+      <abbrev>Ep</abbrev>
       <group>NT</group>
       <sub-group>PaulineEpistle</sub-group>
 
       <font-choice type="book-collection" />
-      <filename>55-EPHfraLSG.usfm</filename>
-      <source>/Users/corey/OneDrive - SIM International, Inc/Documents/App Builder/flutter/usfm_bible/fraLSG_usfm/55-EPHfraLSG.usfm</source>
+      <filename>50EPHS21.SFM</filename>
+      <source>/Users/corey/Library/CloudStorage/OneDrive-SIMInternational,Inc/Documents/SIM/Wolofal/My Paratext 9 Projects/S21/50EPHS21.SFM</source>
     </book>
 
     <book id="PHP">
       <name>Philippiens</name>
+      <abbrev>Philippiens</abbrev>
       <group>NT</group>
       <sub-group>PaulineEpistle</sub-group>
 
       <font-choice type="book-collection" />
-      <filename>56-PHPfraLSG.usfm</filename>
-      <source>/Users/corey/OneDrive - SIM International, Inc/Documents/App Builder/flutter/usfm_bible/fraLSG_usfm/56-PHPfraLSG.usfm</source>
+      <filename>51PHPS21.SFM</filename>
+      <source>/Users/corey/Library/CloudStorage/OneDrive-SIMInternational,Inc/Documents/SIM/Wolofal/My Paratext 9 Projects/S21/51PHPS21.SFM</source>
     </book>
 
     <book id="COL">
       <name>Colossiens</name>
+      <abbrev>Colossiens</abbrev>
       <group>NT</group>
       <sub-group>PaulineEpistle</sub-group>
 
       <font-choice type="book-collection" />
-      <filename>57-COLfraLSG.usfm</filename>
-      <source>/Users/corey/OneDrive - SIM International, Inc/Documents/App Builder/flutter/usfm_bible/fraLSG_usfm/57-COLfraLSG.usfm</source>
+      <filename>52COLS21.SFM</filename>
+      <source>/Users/corey/Library/CloudStorage/OneDrive-SIMInternational,Inc/Documents/SIM/Wolofal/My Paratext 9 Projects/S21/52COLS21.SFM</source>
     </book>
 
     <book id="1TH">
       <name>1 Thessaloniciens</name>
+      <abbrev>1 Thessaloniciens</abbrev>
       <group>NT</group>
       <sub-group>PaulineEpistle</sub-group>
 
       <font-choice type="book-collection" />
-      <filename>58-1THfraLSG.usfm</filename>
-      <source>/Users/corey/OneDrive - SIM International, Inc/Documents/App Builder/flutter/usfm_bible/fraLSG_usfm/58-1THfraLSG.usfm</source>
+      <filename>531THS21.SFM</filename>
+      <source>/Users/corey/Library/CloudStorage/OneDrive-SIMInternational,Inc/Documents/SIM/Wolofal/My Paratext 9 Projects/S21/531THS21.SFM</source>
     </book>
 
     <book id="2TH">
       <name>2 Thessaloniciens</name>
+      <abbrev>2 Thessaloniciens</abbrev>
       <group>NT</group>
       <sub-group>PaulineEpistle</sub-group>
 
       <font-choice type="book-collection" />
-      <filename>59-2THfraLSG.usfm</filename>
-      <source>/Users/corey/OneDrive - SIM International, Inc/Documents/App Builder/flutter/usfm_bible/fraLSG_usfm/59-2THfraLSG.usfm</source>
+      <filename>542THS21.SFM</filename>
+      <source>/Users/corey/Library/CloudStorage/OneDrive-SIMInternational,Inc/Documents/SIM/Wolofal/My Paratext 9 Projects/S21/542THS21.SFM</source>
     </book>
 
     <book id="1TI">
       <name>1 Timothée</name>
+      <abbrev>1 Timothée</abbrev>
       <group>NT</group>
       <sub-group>PaulineEpistle</sub-group>
 
       <font-choice type="book-collection" />
-      <filename>60-1TIfraLSG.usfm</filename>
-      <source>/Users/corey/OneDrive - SIM International, Inc/Documents/App Builder/flutter/usfm_bible/fraLSG_usfm/60-1TIfraLSG.usfm</source>
+      <filename>551TIS21.SFM</filename>
+      <source>/Users/corey/Library/CloudStorage/OneDrive-SIMInternational,Inc/Documents/SIM/Wolofal/My Paratext 9 Projects/S21/551TIS21.SFM</source>
     </book>
 
     <book id="2TI">
       <name>2 Timothée</name>
+      <abbrev>2 Timothée</abbrev>
       <group>NT</group>
       <sub-group>PaulineEpistle</sub-group>
 
       <font-choice type="book-collection" />
-      <filename>61-2TIfraLSG.usfm</filename>
-      <source>/Users/corey/OneDrive - SIM International, Inc/Documents/App Builder/flutter/usfm_bible/fraLSG_usfm/61-2TIfraLSG.usfm</source>
+      <filename>562TIS21.SFM</filename>
+      <source>/Users/corey/Library/CloudStorage/OneDrive-SIMInternational,Inc/Documents/SIM/Wolofal/My Paratext 9 Projects/S21/562TIS21.SFM</source>
     </book>
 
     <book id="TIT">
       <name>Tite</name>
+      <abbrev>Tt</abbrev>
       <group>NT</group>
       <sub-group>PaulineEpistle</sub-group>
 
       <font-choice type="book-collection" />
-      <filename>62-TITfraLSG.usfm</filename>
-      <source>/Users/corey/OneDrive - SIM International, Inc/Documents/App Builder/flutter/usfm_bible/fraLSG_usfm/62-TITfraLSG.usfm</source>
+      <filename>57TITS21.SFM</filename>
+      <source>/Users/corey/Library/CloudStorage/OneDrive-SIMInternational,Inc/Documents/SIM/Wolofal/My Paratext 9 Projects/S21/57TITS21.SFM</source>
     </book>
 
     <book id="PHM">
       <name>Philémon</name>
+      <abbrev>Philémon</abbrev>
       <group>NT</group>
       <sub-group>PaulineEpistle</sub-group>
 
       <font-choice type="book-collection" />
-      <filename>63-PHMfraLSG.usfm</filename>
-      <source>/Users/corey/OneDrive - SIM International, Inc/Documents/App Builder/flutter/usfm_bible/fraLSG_usfm/63-PHMfraLSG.usfm</source>
+      <filename>58PHMS21.SFM</filename>
+      <source>/Users/corey/Library/CloudStorage/OneDrive-SIMInternational,Inc/Documents/SIM/Wolofal/My Paratext 9 Projects/S21/58PHMS21.SFM</source>
     </book>
 
     <book id="HEB">
       <name>Hébreux</name>
+      <abbrev>Hébreux</abbrev>
       <group>NT</group>
       <sub-group>GeneralEpistle</sub-group>
 
       <font-choice type="book-collection" />
-      <filename>64-HEBfraLSG.usfm</filename>
-      <source>/Users/corey/OneDrive - SIM International, Inc/Documents/App Builder/flutter/usfm_bible/fraLSG_usfm/64-HEBfraLSG.usfm</source>
+      <filename>59HEBS21.SFM</filename>
+      <source>/Users/corey/Library/CloudStorage/OneDrive-SIMInternational,Inc/Documents/SIM/Wolofal/My Paratext 9 Projects/S21/59HEBS21.SFM</source>
     </book>
 
     <book id="JAS">
       <name>Jacques</name>
+      <abbrev>Jacques</abbrev>
       <group>NT</group>
       <sub-group>GeneralEpistle</sub-group>
 
       <font-choice type="book-collection" />
-      <filename>65-JASfraLSG.usfm</filename>
-      <source>/Users/corey/OneDrive - SIM International, Inc/Documents/App Builder/flutter/usfm_bible/fraLSG_usfm/65-JASfraLSG.usfm</source>
+      <filename>60JASS21.SFM</filename>
+      <source>/Users/corey/Library/CloudStorage/OneDrive-SIMInternational,Inc/Documents/SIM/Wolofal/My Paratext 9 Projects/S21/60JASS21.SFM</source>
     </book>
 
     <book id="1PE">
       <name>1 Pierre</name>
+      <abbrev>1P</abbrev>
       <group>NT</group>
       <sub-group>GeneralEpistle</sub-group>
 
       <font-choice type="book-collection" />
-      <filename>66-1PEfraLSG.usfm</filename>
-      <source>/Users/corey/OneDrive - SIM International, Inc/Documents/App Builder/flutter/usfm_bible/fraLSG_usfm/66-1PEfraLSG.usfm</source>
+      <filename>611PES21.SFM</filename>
+      <source>/Users/corey/Library/CloudStorage/OneDrive-SIMInternational,Inc/Documents/SIM/Wolofal/My Paratext 9 Projects/S21/611PES21.SFM</source>
     </book>
 
     <book id="2PE">
       <name>2 Pierre</name>
+      <abbrev>2P</abbrev>
       <group>NT</group>
       <sub-group>GeneralEpistle</sub-group>
 
       <font-choice type="book-collection" />
-      <filename>91-2PEfraLSG.usfm</filename>
-      <source>/Users/corey/OneDrive - SIM International, Inc/Documents/App Builder/flutter/usfm_bible/fraLSG_usfm/91-2PEfraLSG.usfm</source>
+      <filename>622PES21.SFM</filename>
+      <source>/Users/corey/Library/CloudStorage/OneDrive-SIMInternational,Inc/Documents/SIM/Wolofal/My Paratext 9 Projects/S21/622PES21.SFM</source>
     </book>
 
     <book id="1JN">
       <name>1 Jean</name>
+      <abbrev>1 Jean</abbrev>
       <group>NT</group>
       <sub-group>GeneralEpistle</sub-group>
 
       <font-choice type="book-collection" />
-      <filename>68-1JNfraLSG.usfm</filename>
-      <source>/Users/corey/OneDrive - SIM International, Inc/Documents/App Builder/flutter/usfm_bible/fraLSG_usfm/68-1JNfraLSG.usfm</source>
+      <filename>631JNS21.SFM</filename>
+      <source>/Users/corey/Library/CloudStorage/OneDrive-SIMInternational,Inc/Documents/SIM/Wolofal/My Paratext 9 Projects/S21/631JNS21.SFM</source>
     </book>
 
     <book id="2JN">
       <name>2 Jean</name>
+      <abbrev>2 Jean</abbrev>
       <group>NT</group>
       <sub-group>GeneralEpistle</sub-group>
 
       <font-choice type="book-collection" />
-      <filename>69-2JNfraLSG.usfm</filename>
-      <source>/Users/corey/OneDrive - SIM International, Inc/Documents/App Builder/flutter/usfm_bible/fraLSG_usfm/69-2JNfraLSG.usfm</source>
+      <filename>642JNS21.SFM</filename>
+      <source>/Users/corey/Library/CloudStorage/OneDrive-SIMInternational,Inc/Documents/SIM/Wolofal/My Paratext 9 Projects/S21/642JNS21.SFM</source>
     </book>
 
     <book id="3JN">
       <name>3 Jean</name>
+      <abbrev>3 Jean</abbrev>
       <group>NT</group>
       <sub-group>GeneralEpistle</sub-group>
 
       <font-choice type="book-collection" />
-      <filename>70-3JNfraLSG.usfm</filename>
-      <source>/Users/corey/OneDrive - SIM International, Inc/Documents/App Builder/flutter/usfm_bible/fraLSG_usfm/70-3JNfraLSG.usfm</source>
+      <filename>653JNS21.SFM</filename>
+      <source>/Users/corey/Library/CloudStorage/OneDrive-SIMInternational,Inc/Documents/SIM/Wolofal/My Paratext 9 Projects/S21/653JNS21.SFM</source>
     </book>
 
     <book id="JUD">
       <name>Jude</name>
+      <abbrev>Jude</abbrev>
       <group>NT</group>
       <sub-group>GeneralEpistle</sub-group>
 
       <font-choice type="book-collection" />
-      <filename>71-JUDfraLSG.usfm</filename>
-      <source>/Users/corey/OneDrive - SIM International, Inc/Documents/App Builder/flutter/usfm_bible/fraLSG_usfm/71-JUDfraLSG.usfm</source>
+      <filename>66JUDS21.SFM</filename>
+      <source>/Users/corey/Library/CloudStorage/OneDrive-SIMInternational,Inc/Documents/SIM/Wolofal/My Paratext 9 Projects/S21/66JUDS21.SFM</source>
     </book>
 
     <book id="REV">
       <name>Apocalypse</name>
+      <abbrev>Apocalypse</abbrev>
       <group>NT</group>
       <sub-group>Revelation</sub-group>
 
       <font-choice type="book-collection" />
-      <filename>72-REVfraLSG.usfm</filename>
-      <source>/Users/corey/OneDrive - SIM International, Inc/Documents/App Builder/flutter/usfm_bible/fraLSG_usfm/72-REVfraLSG.usfm</source>
-      <features type="book">
-        <feature name="wj-marked" value="true"/>
-      </features>
+      <filename>67REVS21.SFM</filename>
+      <source>/Users/corey/Library/CloudStorage/OneDrive-SIMInternational,Inc/Documents/SIM/Wolofal/My Paratext 9 Projects/S21/67REVS21.SFM</source>
     </book>
   </books>
 
