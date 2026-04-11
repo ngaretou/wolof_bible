@@ -101,6 +101,11 @@
       <find>⸥</find>
       <replace>˼</replace>
     </change>
+    <change>
+      <name>extra stars in footnote contexts</name>
+      <find>(\s)\*\w</find>
+      <replace>$1</replace>
+    </change>
   </changes>
 
   <firebase>
@@ -2463,7 +2468,7 @@
   </books>
 
   <books id="C03">
-    <book-collection-name>S21</book-collection-name>
+    <book-collection-name>Segond 21</book-collection-name>
     <book-collection-abbrev>S21</book-collection-abbrev>
 
     <features type="bc">
