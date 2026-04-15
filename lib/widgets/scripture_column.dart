@@ -9,7 +9,6 @@ import 'package:skeletonizer/skeletonizer.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/services.dart';
 import 'package:collection/collection.dart';
-// import 'package:wolof_bible/logic/bulk_verse_copy_logic.dart';
 
 import '../logic/data_initializer.dart';
 import '../logic/chapter_fetch_service.dart';
@@ -24,6 +23,7 @@ import '../widgets/paragraph_builder.dart';
 import '../widgets/user_interaction.dart';
 import '../widgets/column_header.dart';
 import '../widgets/content_tile.dart';
+import '../widgets/filter_combo_box.dart';
 
 class ScriptureColumn extends StatefulWidget {
   final int myColumnIndex;
@@ -59,6 +59,10 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
 
   late ItemScrollController itemScrollController;
   late ScrollGroup _scrollGroup;
+
+  final asgbKey = GlobalKey<AutoSuggestBoxState>(
+    debugLabel: 'Manually controlled AutoSuggestBox',
+  );
 
   @override
   void dispose() {
@@ -1033,6 +1037,11 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
     late AlignmentGeometry alignment;
     double? comboBoxFontSize = 16;
 
+    final comboBoxTextStyle = DefaultTextStyle.of(context).style.copyWith(
+      fontFamily: widget.comboBoxFont,
+      fontSize: comboBoxFontSize,
+    );
+
     if (thisCollection.textDirection == 'LTR') {
       textDirection = ui.TextDirection.ltr;
       alignment = Alignment.centerLeft;
@@ -1082,10 +1091,7 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
                   valueListenable: currentCollection,
                   builder: (context, val, child) {
                     return ComboBox<String>(
-                      style: DefaultTextStyle.of(context).style.copyWith(
-                        fontFamily: widget.comboBoxFont,
-                        fontSize: comboBoxFontSize,
-                      ),
+                      style: comboBoxTextStyle,
                       isExpanded: true,
                       items: widget.collections
                           .map(
@@ -1121,51 +1127,181 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
               ),
 
               // Book
+              // TODO selectable combobox
               SizedBox(
                 width: 175,
                 child: ValueListenableBuilder<String>(
                   valueListenable: currentBook,
                   builder: (context, val, child) {
-                    return ComboBox<String>(
-                      style: DefaultTextStyle.of(context).style.copyWith(
-                        fontFamily: widget.comboBoxFont,
-                        fontSize: comboBoxFontSize,
-                      ),
-                      isExpanded: true,
-                      items: currentCollectionBooks.map((e) {
-                        late String name;
-                        if (e.name.contains('Προσ')) {
-                          name = e.name.substring(5);
-                        } else {
-                          name = e.name;
-                        }
+                    Map<String, Widget> comboItems = {};
+                    for (var e in currentCollectionBooks) {
+                      String name = e.name.contains('Προσ')
+                          ? e.name.substring(5)
+                          : e.name;
+                      comboItems[e.id] = Align(
+                        alignment: alignment,
+                        child: Text(
+                          name,
+                          overflow: textOverflow,
+                          textDirection: textDirection,
+                          style: comboBoxTextStyle,
+                        ),
+                      );
+                    }
 
-                        return ComboBoxItem<String>(
-                          value: e.id,
-                          child: Align(
-                            alignment: alignment,
-                            child: Text(
-                              name,
-                              overflow: textOverflow,
-                              textDirection: textDirection,
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                      value: val,
-                      onChanged: (value) {
-                        if (value != null) {
-                          setActiveColumnKey();
-                          scrollToReference(
-                            collection: currentCollection.value,
-                            bookID: value,
-                            chapter: currentChapter.value,
-                            verse: currentVerse.value,
-                            thisColumnNavigation: true,
+                    String placeholder =
+                        currentCollectionBooks
+                            .firstWhereOrNull((b) => b.id == val)
+                            ?.name ??
+                        '...';
+
+                    return FilterComboBox<String>(
+                      style: comboBoxTextStyle,
+                      items: comboItems,
+                      displayString: (id) {
+                        try {
+                          final e = currentCollectionBooks.firstWhere(
+                            (b) => b.id == id,
                           );
+                          return e.name.contains('Προσ')
+                              ? e.name.substring(5)
+                              : e.name;
+                        } catch (_) {
+                          return '';
                         }
                       },
+                      placeholder: placeholder,
+                      value: val,
+                      onSelected: (selectedId) {
+                        setActiveColumnKey();
+                        scrollToReference(
+                          collection: currentCollection.value,
+                          bookID: selectedId,
+                          chapter: currentChapter.value,
+                          verse: currentVerse.value,
+                          thisColumnNavigation: true,
+                        );
+                      },
                     );
+
+                    // Map<String, Widget> items = {};
+
+                    // for (var e in currentCollectionBooks) {
+                    //   late String name;
+                    //   if (e.name.contains('Προσ')) {
+                    //     name = e.name.substring(5);
+                    //   } else {
+                    //     name = e.name;
+                    //   }
+
+                    //   items.addAll({
+                    //     e.id: Align(
+                    //       alignment: alignment,
+                    //       child: Text(
+                    //         name,
+                    //         overflow: textOverflow,
+                    //         textDirection: textDirection,
+                    //       ),
+                    //     ),
+                    //   });
+                    // }
+                    // return EditableComboBox<String>(
+                    //   style: DefaultTextStyle.of(context).style.copyWith(
+                    //     fontFamily: widget.comboBoxFont,
+                    //     fontSize: comboBoxFontSize,
+                    //   ),
+                    //   items: currentCollectionBooks.map((e) {
+                    //     late String name;
+                    //     if (e.name.contains('Προσ')) {
+                    //       name = e.name.substring(5);
+                    //     } else {
+                    //       name = e.name;
+                    //     }
+
+                    //     return ComboBoxItem<String>(
+                    //       value: e.id,
+                    //       child: Align(
+                    //         alignment: alignment,
+                    //         child: Text(
+                    //           name,
+                    //           overflow: textOverflow,
+                    //           textDirection: textDirection,
+                    //         ),
+                    //       ),
+                    //     );
+                    //   }).toList(),
+                    //   value: val,
+                    //   onFieldSubmitted: (text) {
+                    //     print(text);
+                    //     return text;
+                    //   },
+                    //   onChanged: (value) {
+                    //     if (value != null) {
+                    //       setActiveColumnKey();
+                    //       scrollToReference(
+                    //         collection: currentCollection.value,
+                    //         bookID: value,
+                    //         chapter: currentChapter.value,
+                    //         verse: currentVerse.value,
+                    //         thisColumnNavigation: true,
+                    //       );
+                    //     }
+                    //   },
+                    // );
+
+                    //  Map<String, String> items = {};
+
+                    // for (var e in currentCollectionBooks) {
+                    //   late String name;
+                    //   if (e.name.contains('Προσ')) {
+                    //     name = e.name.substring(5);
+                    //   } else {
+                    //     name = e.name;
+                    //   }
+
+                    //   items.addAll({e.id: name});
+                    // }
+
+                    // return ComboBox<String>(
+                    //   style: DefaultTextStyle.of(context).style.copyWith(
+                    //     fontFamily: widget.comboBoxFont,
+                    //     fontSize: comboBoxFontSize,
+                    //   ),
+                    //   isExpanded: true,
+                    //   items: currentCollectionBooks.map((e) {
+                    //     late String name;
+                    //     if (e.name.contains('Προσ')) {
+                    //       name = e.name.substring(5);
+                    //     } else {
+                    //       name = e.name;
+                    //     }
+
+                    //     return ComboBoxItem<String>(
+                    //       value: e.id,
+                    //       child: Align(
+                    //         alignment: alignment,
+                    //         child: Text(
+                    //           name,
+                    //           overflow: textOverflow,
+                    //           textDirection: textDirection,
+                    //         ),
+                    //       ),
+                    //     );
+                    //   }).toList(),
+                    //   value: val,
+                    //   onChanged: (value) {
+                    //     if (value != null) {
+                    //       setActiveColumnKey();
+                    //       scrollToReference(
+                    //         collection: currentCollection.value,
+                    //         bookID: value,
+                    //         chapter: currentChapter.value,
+                    //         verse: currentVerse.value,
+                    //         thisColumnNavigation: true,
+                    //       );
+                    //     }
+                    //   },
+                    // );
                   },
                 ),
               ),
@@ -1180,10 +1316,7 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
                       valueListenable: currentChapter,
                       builder: (context, val, child) {
                         return ComboBox<String>(
-                          style: DefaultTextStyle.of(context).style.copyWith(
-                            fontFamily: widget.comboBoxFont,
-                            fontSize: comboBoxFontSize,
-                          ),
+                          style: comboBoxTextStyle,
                           isExpanded: true,
                           items: currentBookChapters.map((e) {
                             // account for chapter 0 as intro
@@ -1221,10 +1354,7 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
                       valueListenable: currentVerse,
                       builder: (context, val, child) {
                         return ComboBox<String>(
-                          style: DefaultTextStyle.of(context).style.copyWith(
-                            fontFamily: widget.comboBoxFont,
-                            fontSize: comboBoxFontSize,
-                          ),
+                          style: comboBoxTextStyle,
                           placeholder: const Text('--'),
                           isExpanded: true,
                           items: currentChapterVerseNumbers
