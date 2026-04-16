@@ -299,7 +299,7 @@ Colossiens 1:26
                                           child: Container(
                                             color: FluentTheme.of(
                                               context,
-                                            ).accentColor,
+                                            ).accentColor.lightest,
                                           ),
                                         ),
                                       ),
@@ -400,7 +400,7 @@ class _HoverCardState extends State<HoverCard> {
             Positioned.fill(
               child: Card(
                 backgroundColor: _hovering
-                    ? FluentTheme.of(context).accentColor.lightest
+                    ? FluentTheme.of(context).accentColor.lightest.withAlpha(52)
                     : FluentTheme.of(context).cardColor,
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
@@ -444,8 +444,6 @@ Widget copyHelperIcon(BuildContext context, {required IconData icon}) {
       // color: Colors.red,
       shape: BoxShape.circle, // makes it a perfect circle
     ),
-    child: Center(
-      child: Icon(icon, color: FluentTheme.of(context).shadowColor),
-    ),
+    child: Center(child: Icon(icon, color: Colors.white)),
   );
 }

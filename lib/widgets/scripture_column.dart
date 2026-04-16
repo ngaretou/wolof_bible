@@ -16,6 +16,8 @@ import '../logic/verse_composer.dart';
 import '../logic/text_utils.dart';
 import '../logic/touch_media.dart';
 
+import '../main.dart';
+
 import '../providers/column_manager.dart';
 import '../providers/user_prefs.dart';
 
@@ -23,7 +25,7 @@ import '../widgets/paragraph_builder.dart';
 import '../widgets/user_interaction.dart';
 import '../widgets/column_header.dart';
 import '../widgets/content_tile.dart';
-import '../widgets/filter_combo_box.dart';
+import '../widgets/filter_combo_box3.dart';
 
 class ScriptureColumn extends StatefulWidget {
   final int myColumnIndex;
@@ -1090,6 +1092,52 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
                 child: ValueListenableBuilder<String>(
                   valueListenable: currentCollection,
                   builder: (context, val, child) {
+                    // Map<String, Widget> comboItems = {};
+                    // for (var e in widget.collections) {
+                    //   comboItems[e.id] = Align(
+                    //     alignment: alignment,
+                    //     child: Text(
+                    //       e.name,
+                    //       overflow: textOverflow,
+                    //       textDirection: textDirection,
+                    //       style: comboBoxTextStyle,
+                    //     ),
+                    //   );
+                    // }
+
+                    // String placeholder =
+                    //     widget.collections
+                    //         .firstWhereOrNull((b) => b.id == val)
+                    //         ?.name ??
+                    //     '...';
+
+                    // return FilterComboBox<String>(
+                    //   style: comboBoxTextStyle,
+
+                    //   items: comboItems,
+                    //   displayString: (id) {
+                    //     try {
+                    //       final e = widget.collections.firstWhere(
+                    //         (b) => b.id == id,
+                    //       );
+                    //       return e.name;
+                    //     } catch (_) {
+                    //       return '';
+                    //     }
+                    //   },
+                    //   placeholder: placeholder,
+                    //   value: val,
+                    //   onSelected: (selectedID) {
+                    //     setActiveColumnKey();
+                    //     scrollToReference(
+                    //       collection: selectedID,
+                    //       bookID: currentBook.value,
+                    //       chapter: currentChapter.value,
+                    //       verse: currentVerse.value,
+                    //       thisColumnNavigation: true,
+                    //     );
+                    //   },
+                    // );
                     return ComboBox<String>(
                       style: comboBoxTextStyle,
                       isExpanded: true,
@@ -1127,181 +1175,117 @@ class _ScriptureColumnState extends State<ScriptureColumn> {
               ),
 
               // Book
-              // TODO selectable combobox
               SizedBox(
                 width: 175,
                 child: ValueListenableBuilder<String>(
                   valueListenable: currentBook,
                   builder: (context, val, child) {
-                    Map<String, Widget> comboItems = {};
-                    for (var e in currentCollectionBooks) {
-                      String name = e.name.contains('Προσ')
-                          ? e.name.substring(5)
-                          : e.name;
-                      comboItems[e.id] = Align(
-                        alignment: alignment,
-                        child: Text(
-                          name,
-                          overflow: textOverflow,
-                          textDirection: textDirection,
-                          style: comboBoxTextStyle,
+                    if (userPrefsBox.get('experimentalBookSelector') ?? false) {
+                      Map<String, Widget> comboItems = {};
+                      for (var e in currentCollectionBooks) {
+                        String name = e.name.contains('Προσ')
+                            ? e.name.substring(5)
+                            : e.name;
+                        comboItems[e.id] = Align(
+                          alignment: alignment,
+                          child: Text(
+                            name,
+                            overflow: textOverflow,
+                            textDirection: textDirection,
+                            style: comboBoxTextStyle,
+                          ),
+                        );
+                      }
+
+                      String placeholder =
+                          currentCollectionBooks
+                              .firstWhereOrNull((b) => b.id == val)
+                              ?.name ??
+                          '...';
+
+                      return FilterComboBox<String>(
+                        style: comboBoxTextStyle,
+                        items: comboItems,
+                        displayString: (id) {
+                          try {
+                            final e = currentCollectionBooks.firstWhere(
+                              (b) => b.id == id,
+                            );
+                            return e.name.contains('Προσ')
+                                ? e.name.substring(5)
+                                : e.name;
+                          } catch (_) {
+                            return '';
+                          }
+                        },
+                        placeholder: placeholder,
+                        value: val,
+                        onSelected: (selectedId) {
+                          setActiveColumnKey();
+                          scrollToReference(
+                            collection: currentCollection.value,
+                            bookID: selectedId,
+                            chapter: currentChapter.value,
+                            verse: currentVerse.value,
+                            thisColumnNavigation: true,
+                          );
+                        },
+                      );
+                    } else {
+                      // Map<String, String> items = {};
+
+                      // for (var e in currentCollectionBooks) {
+                      //   late String name;
+                      //   if (e.name.contains('Προσ')) {
+                      //     name = e.name.substring(5);
+                      //   } else {
+                      //     name = e.name;
+                      //   }
+
+                      //   items.addAll({e.id: name});
+                      // }
+
+                      return ComboBox<String>(
+                        style: DefaultTextStyle.of(context).style.copyWith(
+                          fontFamily: widget.comboBoxFont,
+                          fontSize: comboBoxFontSize,
                         ),
+                        isExpanded: true,
+                        items: currentCollectionBooks.map((e) {
+                          late String name;
+                          if (e.name.contains('Προσ')) {
+                            name = e.name.substring(5);
+                          } else {
+                            name = e.name;
+                          }
+
+                          return ComboBoxItem<String>(
+                            value: e.id,
+                            child: Align(
+                              alignment: alignment,
+                              child: Text(
+                                name,
+                                overflow: textOverflow,
+                                textDirection: textDirection,
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                        value: val,
+                        onChanged: (value) {
+                          if (value != null) {
+                            setActiveColumnKey();
+                            scrollToReference(
+                              collection: currentCollection.value,
+                              bookID: value,
+                              chapter: currentChapter.value,
+                              verse: currentVerse.value,
+                              thisColumnNavigation: true,
+                            );
+                          }
+                        },
                       );
                     }
-
-                    String placeholder =
-                        currentCollectionBooks
-                            .firstWhereOrNull((b) => b.id == val)
-                            ?.name ??
-                        '...';
-
-                    return FilterComboBox<String>(
-                      style: comboBoxTextStyle,
-                      items: comboItems,
-                      displayString: (id) {
-                        try {
-                          final e = currentCollectionBooks.firstWhere(
-                            (b) => b.id == id,
-                          );
-                          return e.name.contains('Προσ')
-                              ? e.name.substring(5)
-                              : e.name;
-                        } catch (_) {
-                          return '';
-                        }
-                      },
-                      placeholder: placeholder,
-                      value: val,
-                      onSelected: (selectedId) {
-                        setActiveColumnKey();
-                        scrollToReference(
-                          collection: currentCollection.value,
-                          bookID: selectedId,
-                          chapter: currentChapter.value,
-                          verse: currentVerse.value,
-                          thisColumnNavigation: true,
-                        );
-                      },
-                    );
-
-                    // Map<String, Widget> items = {};
-
-                    // for (var e in currentCollectionBooks) {
-                    //   late String name;
-                    //   if (e.name.contains('Προσ')) {
-                    //     name = e.name.substring(5);
-                    //   } else {
-                    //     name = e.name;
-                    //   }
-
-                    //   items.addAll({
-                    //     e.id: Align(
-                    //       alignment: alignment,
-                    //       child: Text(
-                    //         name,
-                    //         overflow: textOverflow,
-                    //         textDirection: textDirection,
-                    //       ),
-                    //     ),
-                    //   });
-                    // }
-                    // return EditableComboBox<String>(
-                    //   style: DefaultTextStyle.of(context).style.copyWith(
-                    //     fontFamily: widget.comboBoxFont,
-                    //     fontSize: comboBoxFontSize,
-                    //   ),
-                    //   items: currentCollectionBooks.map((e) {
-                    //     late String name;
-                    //     if (e.name.contains('Προσ')) {
-                    //       name = e.name.substring(5);
-                    //     } else {
-                    //       name = e.name;
-                    //     }
-
-                    //     return ComboBoxItem<String>(
-                    //       value: e.id,
-                    //       child: Align(
-                    //         alignment: alignment,
-                    //         child: Text(
-                    //           name,
-                    //           overflow: textOverflow,
-                    //           textDirection: textDirection,
-                    //         ),
-                    //       ),
-                    //     );
-                    //   }).toList(),
-                    //   value: val,
-                    //   onFieldSubmitted: (text) {
-                    //     print(text);
-                    //     return text;
-                    //   },
-                    //   onChanged: (value) {
-                    //     if (value != null) {
-                    //       setActiveColumnKey();
-                    //       scrollToReference(
-                    //         collection: currentCollection.value,
-                    //         bookID: value,
-                    //         chapter: currentChapter.value,
-                    //         verse: currentVerse.value,
-                    //         thisColumnNavigation: true,
-                    //       );
-                    //     }
-                    //   },
-                    // );
-
-                    //  Map<String, String> items = {};
-
-                    // for (var e in currentCollectionBooks) {
-                    //   late String name;
-                    //   if (e.name.contains('Προσ')) {
-                    //     name = e.name.substring(5);
-                    //   } else {
-                    //     name = e.name;
-                    //   }
-
-                    //   items.addAll({e.id: name});
-                    // }
-
-                    // return ComboBox<String>(
-                    //   style: DefaultTextStyle.of(context).style.copyWith(
-                    //     fontFamily: widget.comboBoxFont,
-                    //     fontSize: comboBoxFontSize,
-                    //   ),
-                    //   isExpanded: true,
-                    //   items: currentCollectionBooks.map((e) {
-                    //     late String name;
-                    //     if (e.name.contains('Προσ')) {
-                    //       name = e.name.substring(5);
-                    //     } else {
-                    //       name = e.name;
-                    //     }
-
-                    //     return ComboBoxItem<String>(
-                    //       value: e.id,
-                    //       child: Align(
-                    //         alignment: alignment,
-                    //         child: Text(
-                    //           name,
-                    //           overflow: textOverflow,
-                    //           textDirection: textDirection,
-                    //         ),
-                    //       ),
-                    //     );
-                    //   }).toList(),
-                    //   value: val,
-                    //   onChanged: (value) {
-                    //     if (value != null) {
-                    //       setActiveColumnKey();
-                    //       scrollToReference(
-                    //         collection: currentCollection.value,
-                    //         bookID: value,
-                    //         chapter: currentChapter.value,
-                    //         verse: currentVerse.value,
-                    //         thisColumnNavigation: true,
-                    //       );
-                    //     }
-                    //   },
-                    // );
                   },
                 ),
               ),

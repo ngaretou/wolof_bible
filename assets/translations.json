@@ -34,7 +34,8 @@
     "noInternet": "No internet connection detected",
     "timeout": "Request timed out",
     "switchingToOfflineMode": "Switching to offline mode.",
-    "resetUserSettings": "Reset User Settings"
+    "resetUserSettings": "Reset User Settings",
+    "experimentalBookSelector": "Experimental Book Selector"
   },
   {
     "langCode": "fr",
@@ -71,7 +72,8 @@
     "noInternet": "Aucune connexion Internet détectée",
     "timeout": "Délai d'attente de la requête dépassé",
     "switchingToOfflineMode": "Passage en mode hors ligne",
-    "resetUserSettings": "Réinitialiser les paramètres de l'utilisateur"
+    "resetUserSettings": "Réinitialiser les paramètres de l'utilisateur",
+    "experimentalBookSelector": "Sélecteur de livres expérimental"
   },
   {
     "langCode": "wol",
@@ -93,7 +95,7 @@
     "viewAllCollections": "Indi booley leeral yépp",
     "bulkVerseCopy": "Jàppandoo aaya yu bare",
     "instructions": "Tegtal yi",
-    "bulkVerseCopyInstructions": "Bindal aaya yi nga bëgga jàpp ci néeg bi ci suuf. Bësal butoŋ bi; su fekkee am na njuumte, dinañu la ko won, te man ngaa xool li génn ci néeg bi ci sa ndeyjoor-- bësal néeg bi ngir jàpp aaya yi.\n\nMan ngaa jëfandikoo turi téere yi ci angale, tubaab walla turu téere yi ni ñu ko binde ci Paratext (GEN EXO ak yeneen) ak itam gàttal yi nu tàmma jëfandikoo -- xoolal butoŋ bi ci sa ndeyjoor ngir gis tur yi ak gàttal téere yi ci mana baax. Man ngaa def walla baña def maas yi ci turu téere yi ak seeni gàttal, dañu leen di dindi ci seetu bi.\n\nMan ngaa jëfandikoo : walla . ngir xàjale saar ak aaya, man ngaa boole ay aaya yu toppante (MAT 8.9-14) walla ab saar lëmm (MAT 8), waaye manuloo jël aaya yu toppantewul (MAT 8.5, 6, 14) walla jëlandoo saar yu bokkul (Matt 8-9).",
+    "bulkVerseCopyInstructions": "Bindal aaya yi nga bëgga jàpp ci néeg bi ci suuf. Bësal butoŋ bi; su fekkee am na njuumte, dinañu la ko won, te man ngaa xool li génn ci néeg bi ci sa ndeyjoor – bësal néeg bi ngir jàpp aaya yi.\n\nMan ngaa jëfandikoo turi téere yi ci angale, tubaab walla turu téere yi ni ñu ko binde ci Paratext (GEN EXO ak yeneen) ak itam gàttal yi nu tàmma jëfandikoo – xoolal butoŋ bi ci sa ndeyjoor ngir gis tur yi ak gàttal téere yi ci mana baax. Man ngaa def walla baña def maas yi ci turu téere yi ak seeni gàttal, dañu leen di dindi ci seetu bi.\n\nMan ngaa jëfandikoo : walla . ngir xàjale saar ak aaya, man ngaa boole ay aaya yu toppante (MAT 8.9-14) walla ab saar lëmm (MAT 8), waaye manuloo jël aaya yu toppantewul (MAT 8.5, 6, 14) walla jëlandoo saar yu bokkul (Matt 8-9).",
     "close": "Tëjjal",
     "seeAllAbbreviations": "Gis gàttali téere yi yépp",
     "chooseBible": "Tànnal benn ci tekkitey téereb Kàddug Yàlla:",
@@ -108,6 +110,7 @@
     "noInternet": "Daa mel ni internet bi doxul",
     "timeout": "Xar nañu ba xàddi",
     "switchingToOfflineMode": "Jàll ci doxalin bu soxlawul internet",
-    "resetUserSettings": "Yeesalaat ponki jekk-jekkal"
+    "resetUserSettings": "Yeesalaat ponki jekk-jekkal",
+    "experimentalBookSelector": "Tànnukaayu téere bu bees"
   }
 ]

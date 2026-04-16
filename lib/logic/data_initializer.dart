@@ -150,6 +150,7 @@ class Translation {
   String timeout;
   String switchingToOfflineMode;
   String resetUserSettings;
+  String experimentalBookSelector;
 
   Translation({
     required this.langCode,
@@ -194,6 +195,7 @@ class Translation {
     required this.timeout,
     required this.switchingToOfflineMode,
     required this.resetUserSettings,
+    required this.experimentalBookSelector,
   });
 }
 
@@ -377,6 +379,7 @@ Future<void> asyncGetTranslations(BuildContext context) async {
               "timeout": translation['timeout'],
               "switchingToOfflineMode": translation['switchingToOfflineMode'],
               "resetUserSettings": translation['resetUserSettings'],
+              "experimentalBookSelector": translation['experimentalBookSelector'],
             });
           } catch (e) {
             debugPrint('Error adding translation supplement: ${e.toString()}');
@@ -432,6 +435,7 @@ Future<void> asyncGetTranslations(BuildContext context) async {
             switchingToOfflineMode:
                 translationSupplement['switchingToOfflineMode']!,
             resetUserSettings: translationSupplement['resetUserSettings']!,
+            experimentalBookSelector: translationSupplement['experimentalBookSelector']!,
           ),
         );
       } catch (e) {

@@ -289,6 +289,35 @@ class Settings extends StatelessWidget {
             );
           },
         ),
+        biggerSpacer,
+
+        Row(
+          mainAxisAlignment: .start,
+          crossAxisAlignment: .center,
+          children: [
+            Text(
+              translation.experimentalBookSelector,
+              style: FluentTheme.of(context).typography.subtitle,
+            ),
+            SizedBox(width: 20),
+
+            ValueListenableBuilder(
+              valueListenable: userPrefsBox.listenable(
+                keys: ['experimentalBookSelector'],
+              ),
+              builder: (context, box, widget) {
+                bool useExperiment =
+                    userPrefsBox.get('experimentalBookSelector') ?? false;
+                return ToggleSwitch(
+                  checked: useExperiment,
+                  onChanged: (v) {
+                    userPrefsBox.put('experimentalBookSelector', v);
+                  },
+                );
+              },
+            ),
+          ],
+        ),
 
         biggerSpacer,
         Text(
