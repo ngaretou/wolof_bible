@@ -106,7 +106,7 @@ https://github.com/BibleAquifer/AquiferOpenStudyNotesBookIntros/releases/
 
 ```
 rm -rf build/web
-flutter build web --base-href "/test/"
+flutter build web
 cd build/web
 HASH=$(sha256sum main.dart.js | cut -c1-8)
 mv main.dart.js main.dart.$HASH.js

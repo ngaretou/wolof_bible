@@ -839,7 +839,7 @@ void prettyPrintJson(String rawJson) {
   final decoded = json.decode(rawJson);
   const encoder = JsonEncoder.withIndent('  ');
   final prettyJson = encoder.convert(decoded);
-  // print(prettyJson);
+  print(prettyJson);
 }
 
 final LicenseInfo offlineLicenseInfo = LicenseInfo(

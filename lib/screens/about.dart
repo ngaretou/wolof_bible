@@ -96,7 +96,8 @@ class About extends StatelessWidget {
 
     Future<String> getHtml() async {
       await getVariables();
-      //First get the copyrights from the appdef
+
+      //get the copyrights from the appdef
       Map<String, String> copyrights = await getCollectionCopyrights();
 
       //Get the main about page html
@@ -178,6 +179,7 @@ Kàddug Yàlla+ app © 2026 Foundational LLC.
             //this is actually where the business happens; HTML just takes the data and renders it
             //SelectableHtml makes it selectable but you lose some formatting
             : Html(
+                style: {'a': Style(color: FluentTheme.of(context).accentColor)},
                 data: snapshot.data.toString(),
                 onLinkTap:
                     (
