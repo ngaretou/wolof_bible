@@ -104,7 +104,6 @@ class _SearchOptionsButtonState extends State<SearchOptionsButton> {
                           RadioGroup<bool>(
                             groupValue: widget.fuzzy,
                             onChanged: (val) {
-                              print('val changed in principle to $val');
                               if (val != null) {
                                 setState(() {
                                   widget.onFuzzyChanged(val);

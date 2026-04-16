@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:wolof_bible/logic/bulk_verse_copy_logic.dart';
 import 'package:wolof_bible/logic/data_initializer.dart';
@@ -13,12 +14,13 @@ class SearchResult {
   final String chapter;
   final String verse;
 
-  const SearchResult(
-      {required this.text,
-      required this.collection,
-      required this.book,
-      required this.chapter,
-      required this.verse});
+  const SearchResult({
+    required this.text,
+    required this.collection,
+    required this.book,
+    required this.chapter,
+    required this.verse,
+  });
 }
 
 class HydratedVerseResult {
@@ -90,10 +92,13 @@ class SearchService {
           final firstLetter = term[0];
           final indexShard = await _getIndexShard(collectionId, firstLetter);
           if (indexShard.containsKey(term)) {
-            locationsForTerm =
-                (indexShard[term] as List<dynamic>).map((loc) {
+            locationsForTerm = (indexShard[term] as List<dynamic>).map((loc) {
               return _VerseLocation(
-                  collectionId, loc[0], loc[1], loc[2].toString());
+                collectionId,
+                loc[0],
+                loc[1],
+                loc[2].toString(),
+              );
             }).toSet();
           } else {
             locationsForTerm = {};
@@ -112,10 +117,15 @@ class SearchService {
             for (final indexKey in indexShard.keys) {
               final accentStrippedIndexKey = removeDiacritics(indexKey);
               if (accentStrippedIndexKey.startsWith(accentStrippedTerm)) {
-                final locations =
-                    (indexShard[indexKey] as List<dynamic>).map((loc) {
+                final locations = (indexShard[indexKey] as List<dynamic>).map((
+                  loc,
+                ) {
                   return _VerseLocation(
-                      collectionId, loc[0], loc[1], loc[2].toString());
+                    collectionId,
+                    loc[0],
+                    loc[1],
+                    loc[2].toString(),
+                  );
                 }).toSet();
                 locationsForTerm.addAll(locations);
               }
@@ -157,12 +167,19 @@ class SearchService {
     required List<Collection> collections,
     bool includeVerseNumbers = false,
   }) async {
-    final Collection currentCollection =
-        collections.firstWhere((c) => c.id == collectionId);
+    final Collection currentCollection = collections.firstWhere(
+      (c) => c.id == collectionId,
+    );
 
     final futures = verseRanges
-        .map((vRange) => _hydrateVerseRange(
-            vRange, collectionId, currentCollection, includeVerseNumbers))
+        .map(
+          (vRange) => _hydrateVerseRange(
+            vRange,
+            collectionId,
+            currentCollection,
+            includeVerseNumbers,
+          ),
+        )
         .toList();
 
     final results = await Future.wait(futures);
@@ -171,10 +188,11 @@ class SearchService {
   }
 
   Future<HydratedVerseResult?> _hydrateVerseRange(
-      VerseRange vRange,
-      String collectionId,
-      Collection collection,
-      bool includeVerseNumbers) async {
+    VerseRange vRange,
+    String collectionId,
+    Collection collection,
+    bool includeVerseNumbers,
+  ) async {
     final List<ParsedLine> verseLines = [];
 
     final int startChapter = vRange.chapter;
@@ -198,7 +216,7 @@ class SearchService {
         }).toList();
         verseLines.addAll(parsedLines);
       } catch (e) {
-        print('Could not load chapter $chapterPath: $e');
+        debugPrint('Could not load chapter $chapterPath: $e');
       }
     }
 
@@ -287,8 +305,9 @@ class SearchService {
     }
 
     // Format reference
-    final String bookName =
-        collection.books.firstWhere((b) => b.id == vRange.book).name;
+    final String bookName = collection.books
+        .firstWhere((b) => b.id == vRange.book)
+        .name;
     String reference;
     if (vRange.startVerse == null) {
       reference = '$bookName ${vRange.chapter}';
@@ -305,11 +324,15 @@ class SearchService {
     // reference += ' (${collection.name})';
 
     return HydratedVerseResult(
-        composedText: buffer.toString().trim(), reference: reference);
+      composedText: buffer.toString().trim(),
+      reference: reference,
+    );
   }
 
   Future<Map<String, dynamic>> _getIndexShard(
-      String collectionId, String firstLetter) async {
+    String collectionId,
+    String firstLetter,
+  ) async {
     final path = 'assets/json/$collectionId/index/$firstLetter.json';
     if (_indexShardCache.containsKey(path)) {
       return _indexShardCache[path]!;
@@ -385,7 +408,7 @@ class SearchService {
           }
         }
       } catch (e) {
-        print('Error hydrating results for $chapterPath: $e');
+        debugPrint('Error hydrating results for $chapterPath: $e');
       }
     }
   }

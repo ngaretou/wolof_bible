@@ -83,7 +83,7 @@ class ResourceCollectionInfo {
     try {
       licenseInfo = LicenseInfo.fromJson(json);
     } catch (e) {
-      print('LicenseInfo.fromJson Exception: $e');
+      debugPrint('LicenseInfo.fromJson Exception: $e');
     }
     // available languages
     try {
@@ -92,7 +92,7 @@ class ResourceCollectionInfo {
           .map((e) => AvailableLanguage.fromJson(e))
           .toList();
     } catch (e) {
-      print('availableLanguagesException: $e');
+      debugPrint('availableLanguagesException: $e');
       availableLanguages = [];
     }
     // resource type
@@ -105,7 +105,7 @@ class ResourceCollectionInfo {
         }
       }
     } catch (e) {
-      print('resourceTypeException: $e');
+      debugPrint('resourceTypeException: $e');
       resourceType = ResourceType.studyNotes;
     }
     // putting it all together

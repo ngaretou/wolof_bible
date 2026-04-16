@@ -126,7 +126,7 @@ class _FilterComboBoxState<K> extends State<FilterComboBox<K>> {
           color: FluentTheme.of(context).resources.textFillColorSecondary,
         ),
         onPressed: () {
-          print('onPressed from trailing icon');
+          debugPrint('onPressed from trailing icon');
           if (focusNode.hasFocus) {
             focusNode.unfocus();
           } else {
@@ -136,7 +136,7 @@ class _FilterComboBoxState<K> extends State<FilterComboBox<K>> {
         },
       ),
       onSelected: (item) {
-        print("item selected: ${item.value}");
+        debugPrint("item selected: ${item.value}");
         // When user makes a selection
         if (item.value != null) {
           widget.onSelected?.call(item.value as K);

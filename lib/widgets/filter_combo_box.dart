@@ -89,14 +89,14 @@ class _FilterComboBoxState<K> extends State<FilterComboBox<K>> {
   }
 
   void _onFocusChanged() {
-    print('focus changed');
+    debugPrint('focus changed');
     if (!focusNode.hasFocus) {
-      print('focus changed unfocus');
+      debugPrint('focus changed unfocus');
       _removeOverlay();
       _updateTextFromValue();
       _highlightedIndex = -1;
     } else {
-      print('focus changed focus');
+      debugPrint('focus changed focus');
       // Highlight text for immediate typing replacement
       Future.microtask(() {
         if (mounted && focusNode.hasFocus && controller.text.isNotEmpty) {
@@ -188,7 +188,7 @@ class _FilterComboBoxState<K> extends State<FilterComboBox<K>> {
         final box =
             _textBoxKey.currentContext?.findRenderObject() as RenderBox?;
         if (box == null) {
-          print('box is null');
+          debugPrint('box is null');
           return const SizedBox.shrink();
         }
 
@@ -238,7 +238,7 @@ class _FilterComboBoxState<K> extends State<FilterComboBox<K>> {
                   widget: widget,
                   highlightedIndex: _highlightedIndex,
                   onSelected: (key) {
-                    print('_OverlayList key selected: $key');
+                    debugPrint('_OverlayList key selected: $key');
                     focusNode.unfocus();
                     widget.onSelected?.call(key);
                   },
@@ -275,7 +275,7 @@ class _FilterComboBoxState<K> extends State<FilterComboBox<K>> {
             suffix: IconButton(
               icon: const Icon(FluentIcons.chevron_down),
               onPressed: () {
-                print('chevron_down IconButton pressed');
+                debugPrint('chevron_down IconButton pressed');
                 if (focusNode.hasFocus) {
                   focusNode.unfocus();
                 } else {

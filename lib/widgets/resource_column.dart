@@ -107,7 +107,7 @@ class _ResourceColumnState extends State<ResourceColumn> {
     for (var key in keys) {
       if (key.contains('resource_prefs')) {
         final value = userPrefsBox.get(key);
-        print('$key: $value');
+        debugPrint('$key: $value');
       }
     }
   }
@@ -1119,9 +1119,9 @@ class _ResourceColumnState extends State<ResourceColumn> {
                     //         try {
                     //           String userCodesData =
                     //               'resource_prefs_${userResourceLanguageCode.toString()}';
-                    //           print(userCodesData);
+                    //           debugPrint(userCodesData);
                     //           final savedRaw = userPrefsBox.get(userCodesData);
-                    //           print(savedRaw);
+                    //           debugPrint(savedRaw);
                     //         } catch (e) {
                     //           debugPrint(
                     //             'Error getting userResourceCodes from prefs: $e',
