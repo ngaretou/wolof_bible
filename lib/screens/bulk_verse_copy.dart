@@ -444,6 +444,6 @@ Widget copyHelperIcon(BuildContext context, {required IconData icon}) {
       // color: Colors.red,
       shape: BoxShape.circle, // makes it a perfect circle
     ),
-    child: Center(child: Icon(icon, color: Colors.white)),
+    child: Center(child: Icon(icon, color: Colors.white.withAlpha(160))),
   );
 }

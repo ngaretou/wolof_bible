@@ -726,11 +726,12 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
                           setState(() {
                             index = 0;
                           });
+                        } else {
+                          Provider.of<ColumnManager>(
+                            context,
+                            listen: false,
+                          ).toggleSearch();
                         }
-                        Provider.of<ColumnManager>(
-                          context,
-                          listen: false,
-                        ).toggleSearch();
                       },
                     ),
                     //Add Column
@@ -743,11 +744,12 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
                           setState(() {
                             index = 0;
                           });
+                        } else {
+                          Provider.of<UserPrefs>(
+                            context,
+                            listen: false,
+                          ).addColumn(context, ColumnType.scripture);
                         }
-                        Provider.of<UserPrefs>(
-                          context,
-                          listen: false,
-                        ).addColumn(context, ColumnType.scripture);
                       },
                     ),
 
@@ -792,11 +794,12 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
                           setState(() {
                             index = 0;
                           });
+                        } else {
+                          Provider.of<UserPrefs>(
+                            context,
+                            listen: false,
+                          ).addColumn(context, ColumnType.resource);
                         }
-                        Provider.of<UserPrefs>(
-                          context,
-                          listen: false,
-                        ).addColumn(context, ColumnType.resource);
                       },
                     ),
                   ],

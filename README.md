@@ -14,6 +14,12 @@ Demo of current version at http://app.kaddugyalla.com
 use dart script @ `sfm_parser % dart run`
 to pre-process SAB data into assets
 
+### Updating offline resources: 
+TyndaleStudyNotes
+https://github.com/BibleAquifer/AquiferOpenStudyNotes/releases/
+TyndaleStudyNotesBookIntros
+https://github.com/BibleAquifer/AquiferOpenStudyNotesBookIntros/releases/
+
 ## To do:
 ### Minimal
 - Audio tracking
@@ -79,18 +85,20 @@ to pre-process SAB data into assets
  * 2.1.0+27
    * Refreshed content and interface translations
    * Todo: fix windows simulscrolling
+ * 2.1.1+28
+   * Added S21
+   * experimental book chooser
+   * corrected some colors on the bulk verse copy copy helper icons
+   * Refreshed offline aquifer content to 16 April 2026 versions
 
 
 
 ## Todo
-* When you come in to ResourceCol offline - it seems not to get that first time and gives you online resoruces
-* Viewing arabic - go offline - what happens? On Windows it goes to empty view. 
 * Add Swahili back in
 
 ### Testing
-- About page - click on add resource column - none yet- fine, but when there is one already, not language comes up
-- Are the suggested/all resources buttons working right? I saw profiles in French when looking at suggested. 
-- test teh new offline functionality
+
+
 
 
 ## cache busting web release

@@ -316,6 +316,35 @@ class Settings extends StatelessWidget {
                 );
               },
             ),
+            SizedBox(width: 20),
+            IconButton(
+              icon: Icon(FluentIcons.info),
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (context) {
+                    return ContentDialog(
+                      constraints: BoxConstraints(
+                        maxWidth: 600,
+                        maxHeight: 500,
+                      ),
+                      title: Text(translation.experimentalBookSelector),
+                      content: Center(
+                        child: Image.asset(
+                          'assets/images/exp-book-chooser.png',
+                        ),
+                      ),
+                      actions: [
+                        Button(
+                          child: Text(translation.close),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                      ],
+                    );
+                  },
+                );
+              },
+            ),
           ],
         ),
 

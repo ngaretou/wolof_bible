@@ -1,33 +1,13 @@
-# ignore_for_file: asset_directory_does_not_exist
-
 name: wolof_bible
 description: Wolof Bible app for desktop and web from USFM files.
 
-# The following line prevents the package from being accidentally published to
-# pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: "none" # Remove this line if you wish to publish to pub.dev
 
-# The following defines the version and build number for your application.
-# A version number is three numbers separated by dots, like 1.2.43
-# followed by an optional build number separated by a +.
-# Both the version and the builder number may be overridden in flutter
-# build by specifying --build-name and --build-number, respectively.
-# In Android, build-name is used as versionName while build-number used as versionCode.
-# Read more about Android versioning at https://developer.android.com/studio/publish/versioning
-# In iOS, build-name is used as CFBundleShortVersionString while build-number used as CFBundleVersion.
-# Read more about iOS versioning at
-# https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
-version: 2.1.0+27
+version: 2.1.1+28
 
 environment:
   sdk: ">=3.10.0 <4.0.0"
 
-# Dependencies specify other packages that your package needs in order to work.
-# To automatically upgrade your package dependencies to the latest versions
-# consider running `flutter pub upgrade --major-versions`. Alternatively,
-# dependencies can be manually updated by changing the version numbers below to
-# the latest version available on pub.dev. To see which dependencies have newer
-# versions available, run `flutter pub outdated`.
 dependencies:
   flutter:
     sdk: flutter
@@ -68,7 +48,6 @@ dependencies:
   macos_ui: ^2.2.2
   http: ^1.6.0
   auto_suggest_box: ^1.8.1
-  # smart_auto_suggest_box: ^0.15.0
   # just_audio: ^0.10.5
   # audio_session: ^0.2.2
 
@@ -378,13 +357,6 @@ flutter:
     - assets/aquifer/eng/TyndaleStudyNotesBookIntros/
     - assets/aquifer/fra/TyndaleStudyNotes/
     - assets/aquifer/fra/TyndaleStudyNotesBookIntros/
-
-  # An image asset can refer to one or more resolution-specific "variants", see
-  # https://flutter.dev/assets-and-images/#resolution-aware
-
-  # For details regarding adding assets from package dependencies, see
-  # https://flutter.dev/assets-and-images/#from-packages
-
   # some fonts temporarily commented out for size reduction Feb 2023
   fonts:
     - family: font1
@@ -402,9 +374,7 @@ flutter:
         - asset: assets/project/data/fonts/font3-R.ttf
         - asset: assets/project/data/fonts/font3-B.ttf
           weight: 700
-  #
-  # For details regarding fonts from package dependencies,
-  # see https://flutter.dev/custom-fonts/#from-packages
+
 # https://pub.dev/packages/msix
 # dart run msix:create
 
