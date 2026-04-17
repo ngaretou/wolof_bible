@@ -90,6 +90,10 @@ https://github.com/BibleAquifer/AquiferOpenStudyNotesBookIntros/releases/
    * experimental book chooser
    * corrected some colors on the bulk verse copy copy helper icons
    * Refreshed offline aquifer content to 16 April 2026 versions
+ * 2.1.2+29
+   * Windows initialization problem fix 
+   * Re-added Swahili language - although it seems like many books are missing notes 
+
 
 
 
