@@ -199,10 +199,15 @@ class _ResourceColumnState extends State<ResourceColumn> {
     return int.tryParse(numStr ?? '') ?? 0;
   }
 
+  Future<void> _loadTOC() async {
+    // Use C01 as default structure for navigation
+    toc = await ChapterFetchService().getCollectionToc('C01');
+  }
+
   Future<void> init() async {
     // Ensure AquiferService knows our connectivity state on startup
-    await AquiferService()
-        .initializeResourceData(); // initialize or ensure initialized
+    // await AquiferService()
+    //     .initializeResourceData(); // initialize or ensure initialized
     await _loadTOC();
 
     // if on web, will always be online as option to set this pref is not available.
@@ -217,11 +222,6 @@ class _ResourceColumnState extends State<ResourceColumn> {
       await _checkConnectivity(); // will check to see if shouldcheck is true
     }
     await setLanguage();
-  }
-
-  Future<void> _loadTOC() async {
-    // Use C01 as default structure for navigation
-    toc = await ChapterFetchService().getCollectionToc('C01');
   }
 
   @override

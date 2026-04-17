@@ -326,19 +326,20 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
   }
 
   Future<void> callInititalization() async {
-    UserPrefs userPrefs = Provider.of<UserPrefs>(context, listen: false);
     if (collections.isEmpty) {
       collections = await collectionsFromXML(context, updateProgress);
     }
-
-    await userPrefs.loadUserPrefs(collections);
+    if (!mounted) return;
+    await Provider.of<UserPrefs>(
+      context,
+      listen: false,
+    ).loadUserPrefs(collections);
 
     return;
   }
 
   Future<void> callInterfaceInitialization() async {
     await asyncGetTranslations(context);
-    // for resource data in resource column
     // for resource data in resource column
     await AquiferService().initializeResourceData();
   }

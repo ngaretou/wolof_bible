@@ -69,9 +69,11 @@ class AquiferService {
             final frenchLanguage = responseJson.removeAt(frenchLanguageIndex);
             responseJson.insert(0, frenchLanguage);
           }
-          // for now don't show Swahili - langID 12 - it's freaking out
-          // TODO check to see if Swahili works in the future
-          responseJson.removeWhere((e) => e['id'] == 12);
+          // if a language needs to be deactivated for some reason,
+          // you can remove it here before saving and loading to the app
+          // for example, if you wanted to remove the language with id 12 (Swahili):
+          // responseJson.removeWhere((e) => e['id'] == 12);
+
           // save to offline
           userPrefsBox.put('resourceLanguages', responseJson);
 
@@ -351,25 +353,38 @@ class AquiferService {
       return;
     }
 
-    // Should we refresh from online or just get from stored data?
+    bool shouldRefreshFromAquifer = true;
 
-    final DateTime lastUpdated = userPrefsBox.get(
-      'aquiferDataLastUpdated',
-      defaultValue: DateTime(2000),
-    );
-    final String lastBuildNumber = userPrefsBox.get(
-      'lastBuildNumber',
-      defaultValue: '0',
-    );
-    final packageInfo = await PackageInfo.fromPlatform();
-    final String currentBuildNumber = packageInfo.buildNumber;
-    userPrefsBox.put('lastBuildNumber', currentBuildNumber);
+    try {
+      // Should we refresh from online or just get from stored data?
 
-    bool shouldRefreshFromAquifer =
-        lastUpdated.isBefore(
-          DateTime.now().subtract(const Duration(days: 30)),
-        ) ||
-        currentBuildNumber != lastBuildNumber;
+      final DateTime lastUpdated = userPrefsBox.get(
+        'aquiferDataLastUpdated',
+        defaultValue: DateTime(2000),
+      );
+      final String lastBuildNumber = userPrefsBox.get(
+        'lastBuildNumber',
+        defaultValue: '0',
+      );
+      // windows was having trouble here so added try catch - so we'll know what's happening if it fails.
+
+      late PackageInfo packageInfo;
+
+      packageInfo = await PackageInfo.fromPlatform();
+
+      final String currentBuildNumber = packageInfo.buildNumber;
+      userPrefsBox.put('lastBuildNumber', currentBuildNumber);
+
+      shouldRefreshFromAquifer =
+          lastUpdated.isBefore(
+            DateTime.now().subtract(const Duration(days: 30)),
+          ) ||
+          currentBuildNumber != lastBuildNumber;
+    } catch (e) {
+      debugPrint('Error getting package info; refreshing: $e');
+    }
+
+    // shouldRefreshFromAquifer = true; // for testing - force refresh every time
 
     // get the two main lists of info
     _allCollections = await loadCollections(
