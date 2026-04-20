@@ -25,7 +25,7 @@ import '../widgets/paragraph_builder.dart';
 import '../widgets/user_interaction.dart';
 import '../widgets/column_header.dart';
 import '../widgets/content_tile.dart';
-import '../widgets/filter_combo_box3.dart';
+import 'filter_combo_box.dart';
 
 class ScriptureColumn extends StatefulWidget {
   final int myColumnIndex;

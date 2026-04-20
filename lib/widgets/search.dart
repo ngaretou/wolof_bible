@@ -248,13 +248,18 @@ class _SearchWidgetState extends State<SearchWidget> {
                     case ConnectionState.done:
                       final results = snapshot.data ?? [];
                       if (results.isEmpty) {
-                        return const Center(
+                        return Center(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Icon(FluentIcons.sad, size: 40),
                               SizedBox(height: 10),
-                              Text('No results found.'),
+                              Text(
+                                Provider.of<UserPrefs>(
+                                  context,
+                                  listen: false,
+                                ).currentTranslation.searchNoMatchesFound,
+                              ),
                             ],
                           ),
                         );

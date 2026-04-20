@@ -111,6 +111,7 @@ class Translation {
   String langCode;
   String langName;
   String search;
+  String searchNoMatchesFound;
   String addColumn;
   String settingsTheme;
   String systemTheme;
@@ -156,6 +157,7 @@ class Translation {
     required this.langCode,
     required this.langName,
     required this.search,
+    required this.searchNoMatchesFound,
     required this.addColumn,
     required this.settingsTheme,
     required this.systemTheme,
@@ -265,6 +267,22 @@ Future<void> asyncGetTranslations(BuildContext context) async {
             (element) => element.getAttribute('lang').toString() == langCode,
           );
       String searchText = searchTextXML.first.innerText;
+
+      Iterable<XmlElement> searchNoMatchesFoundXML = document
+          .getElement('app-definition')!
+          .getElement('translation-mappings')!
+          .findAllElements('translation-mapping')
+          .where(
+            (element) =>
+                element.getAttribute('id') == 'Search_No_Matches_Found',
+          )
+          .first
+          .findAllElements('translation')
+          .toList()
+          .where(
+            (element) => element.getAttribute('lang').toString() == langCode,
+          );
+      String searchNoMatchesFound = searchNoMatchesFoundXML.first.innerText;
 
       Iterable<XmlElement> settingsTextXml = document
           .getElement('app-definition')!
@@ -379,7 +397,8 @@ Future<void> asyncGetTranslations(BuildContext context) async {
               "timeout": translation['timeout'],
               "switchingToOfflineMode": translation['switchingToOfflineMode'],
               "resetUserSettings": translation['resetUserSettings'],
-              "experimentalBookSelector": translation['experimentalBookSelector'],
+              "experimentalBookSelector":
+                  translation['experimentalBookSelector'],
             });
           } catch (e) {
             debugPrint('Error adding translation supplement: ${e.toString()}');
@@ -393,6 +412,7 @@ Future<void> asyncGetTranslations(BuildContext context) async {
             langCode: langCode,
             langName: langName,
             search: searchText,
+            searchNoMatchesFound: searchNoMatchesFound,
             addColumn: translationSupplement['addColumn']!,
             settingsTheme: translationSupplement['settingsTheme']!,
             systemTheme: translationSupplement['systemTheme']!,
@@ -435,7 +455,8 @@ Future<void> asyncGetTranslations(BuildContext context) async {
             switchingToOfflineMode:
                 translationSupplement['switchingToOfflineMode']!,
             resetUserSettings: translationSupplement['resetUserSettings']!,
-            experimentalBookSelector: translationSupplement['experimentalBookSelector']!,
+            experimentalBookSelector:
+                translationSupplement['experimentalBookSelector']!,
           ),
         );
       } catch (e) {
