@@ -124,7 +124,23 @@ void sfmToJson() async {
         for (var k in changes.keys) {
           //convert raw string to regular string
           String findString = k.replaceAll(r'\', '\\');
-          bookText = bookText.replaceAll(RegExp(findString), changes[k]!);
+          String replaceString = changes[k]!;
+
+          bookText = bookText.replaceAllMapped(RegExp(findString), (match) {
+            // $1, $2 etc are replaced by the capture groups in findString
+            // Example: \(\w+\)\s+(\d+)\s+(\w+) → \\w+ \\d+ \\w+
+            // match.group(1) = the first \w+
+            // match.group(2) = the \d+
+            // match.group(3) = the second \w+
+
+            return replaceString.replaceAllMapped(RegExp(r'\$(\d+)'), (m) {
+              int groupNum = int.parse(m.group(1)!);
+              if (groupNum <= match.groupCount) {
+                return match.group(groupNum) ?? '';
+              }
+              return m.group(0)!; // fallback if out of bounds
+            });
+          });
         }
 
         // change ~ to no-break space when surrounded by digits

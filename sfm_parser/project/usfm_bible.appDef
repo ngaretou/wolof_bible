@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<app-definition type="SAB" program-version="13.4">
+<app-definition type="SAB" program-version="14.0">
   <project-name>usfm_bible</project-name>
   <project-description></project-description>
   <project-group>Wolof apps</project-group>
@@ -100,11 +100,6 @@
       <name>Alternate reading marker not available in Charis right</name>
       <find>⸥</find>
       <replace>˼</replace>
-    </change>
-    <change>
-      <name>extra stars in footnote contexts</name>
-      <find>(\s)\*\w</find>
-      <replace>$1</replace>
     </change>
   </changes>
 
@@ -5349,6 +5344,14 @@ Please enter your access code:</translation>
     <translation-mapping id="Resources_Config_Caption_With_Name">
       <translation lang="en">Resources - %s</translation>
     </translation-mapping>
+    <translation-mapping id="Menu_Assistant">
+      <translation lang="en">Assistant</translation>
+      <translation lang="fr">Assistant</translation>
+    </translation-mapping>
+    <translation-mapping id="Menu_Assistant_Chat">
+      <translation lang="en">Assistant Chat</translation>
+      <translation lang="fr">Chat Assistant</translation>
+    </translation-mapping>
     <translation-mapping id="Assistant_Introduction_Chapter_Message">
       <translation lang="en">The Assistant is unavailable for book introductions. To use it, please move to one of the chapters.</translation>
       <translation lang="fr">L&apos;Assistant n&apos;est pas disponible pour les introductions de livres. Pour l&apos;utiliser, veuillez passer à l&apos;un des chapitres.</translation>
@@ -5396,6 +5399,46 @@ Please enter your access code:</translation>
     <translation-mapping id="User_Database_Add_User_Error">
       <translation lang="en">Sorry, we were unable to add this information to the online database.</translation>
       <translation lang="fr">Désolé, nous n&apos;avons pas pu ajouter cette information à la base de données en ligne.</translation>
+    </translation-mapping>
+    <translation-mapping id="YouVersion_Add_Bible_Button">
+      <translation lang="en">Add Bible...</translation>
+      <translation lang="fr">Ajouter une Bible...</translation>
+    </translation-mapping>
+    <translation-mapping id="YouVersion_Adding_Bible">
+      <translation lang="en">Adding</translation>
+      <translation lang="fr">Ajout en cours</translation>
+    </translation-mapping>
+    <translation-mapping id="YouVersion_Languages_Title">
+      <translation lang="en">Select Language</translation>
+      <translation lang="fr">Sélectionner la langue</translation>
+    </translation-mapping>
+    <translation-mapping id="YouVersion_Languages_Suggested">
+      <translation lang="en">Suggested</translation>
+      <translation lang="fr">Suggestions</translation>
+    </translation-mapping>
+    <translation-mapping id="YouVersion_Languages_All">
+      <translation lang="en">All</translation>
+      <translation lang="fr">Toutes</translation>
+    </translation-mapping>
+    <translation-mapping id="YouVersion_Languages_Search">
+      <translation lang="en">Search languages</translation>
+      <translation lang="fr">Rechercher des langues</translation>
+    </translation-mapping>
+    <translation-mapping id="YouVersion_Languages_Not_Found">
+      <translation lang="en">No languages found</translation>
+      <translation lang="fr">Aucune langue trouvée</translation>
+    </translation-mapping>
+    <translation-mapping id="YouVersion_Bibles_Title">
+      <translation lang="en">Select Version</translation>
+      <translation lang="fr">Sélectionner la version</translation>
+    </translation-mapping>
+    <translation-mapping id="YouVersion_Bibles_Search">
+      <translation lang="en">Search Bibles</translation>
+      <translation lang="fr">Rechercher des Bibles</translation>
+    </translation-mapping>
+    <translation-mapping id="YouVersion_Bibles_Not_Found">
+      <translation lang="en">No Bibles found</translation>
+      <translation lang="fr">Aucune Bible trouvée</translation>
     </translation-mapping>
     <translation-mapping id="Menu_News">
       <translation lang="en">News</translation>
@@ -5532,10 +5575,6 @@ Please enter your access code:</translation>
       <translation lang="fr">Montrer mots du glossaire</translation>
       <translation lang="wol"></translation>
     </translation-mapping>
-    <translation-mapping id="Settings_Resize_Keyboard_Not_Selected">
-      <translation lang="en">Please select this app&apos;s keyboard before resizing</translation>
-      <translation lang="fr">Veuillez sélectionner le clavier de cette application avant de redimensionner</translation>
-    </translation-mapping>
     <translation-mapping id="Security_Permission_Denied">
       <translation lang="en">This device does not have permission to use this app.</translation>
       <translation lang="fr">Cet appareil n&apos;a pas la permission d&apos;utiliser cette application.</translation>
@@ -5549,6 +5588,10 @@ Please enter your access code:</translation>
       <translation lang="en">so we can save the images you create</translation>
       <translation lang="fr">afin que nous puissions enregistrer les images que vous créez</translation>
       <translation lang="wol">Ndax nga man denc photos yi nga defar</translation>
+    </translation-mapping>
+    <translation-mapping id="Settings_Resize_Keyboard_Not_Selected">
+      <translation lang="en">Please select this app&apos;s keyboard before resizing</translation>
+      <translation lang="fr">Veuillez sélectionner le clavier de cette application avant de redimensionner</translation>
     </translation-mapping>
     <translation-mapping id="Grandroid_Load_Fail">
       <translation lang="en">Sorry, the text may not display correctly on this device.</translation>

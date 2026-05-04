@@ -1,6 +1,5 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:provider/provider.dart';
-import 'package:wolof_bible/logic/data_initializer.dart';
 import '../providers/user_prefs.dart';
 
 class FilterComboBox<K> extends StatefulWidget {
