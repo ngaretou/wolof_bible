@@ -93,7 +93,7 @@ https://github.com/BibleAquifer/AquiferOpenStudyNotesBookIntros/releases/
  * 2.1.2+29
    * Windows initialization problem fix 
    * Re-added Swahili language - although it seems like many books are missing notes 
- * 2.1.2+30
+ * 2.1.3+30
    * Corrected missing translation for "no results found" in searches
    * Fixed faulty find replace for Changes in sfm_parser - not replacing group but "$1" literally
 
